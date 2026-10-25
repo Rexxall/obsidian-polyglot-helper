@@ -9,6 +9,8 @@ export const POLYGLOT_HELPER_VIEW_TYPE = "polyglot-helper-view";
 export class PolyglotHelperView extends ItemView {
     plugin: PolyglotHelper;
     private queryInput: TextAreaComponent;
+    /** The input is cleared after a query; keep the word and language for the result's buttons. */
+    private lastQuery: { text: string; type: 'english' | 'japanese' } | null = null;
     private actionsContainer: HTMLDivElement;
     private actionsContent: HTMLDivElement;
     private displayContainer: HTMLDivElement;
@@ -785,6 +787,7 @@ export class PolyglotHelperView extends ItemView {
 
         const force = this.plugin.settings.forceRefresh;
 
+        this.lastQuery = { text: query, type };
         if (type === "english") {
             this.plugin.processEnglish(query, force, targetFile);
         } else {
@@ -1166,7 +1169,7 @@ export class PolyglotHelperView extends ItemView {
         const addToVocabButton = actionsRow.createEl('button', { cls: 'polyglot-action-btn secondary' });
         setIcon(addToVocabButton, 'bookmark-plus');
         addToVocabButton.setAttribute('aria-label', '添加到词汇库');
-        addToVocabButton.addEventListener('click', () => this.addToVocabulary(result));
+        addToVocabButton.addEventListener('click', () => void this.addToVocabulary(result, historyItem));
 
         // 创建新笔记按钮
         const newNoteButton = actionsRow.createEl('button', { cls: 'polyglot-action-btn secondary' });
@@ -1288,34 +1291,31 @@ export class PolyglotHelperView extends ItemView {
     /**
      * 添加到词汇库
      */
-    private addToVocabulary(result: string): void {
-        // 提取查询的单词
-        const queryText = this.queryInput.getValue().trim();
-        if (!queryText) {
+    private async addToVocabulary(result: string, historyItem?: HistoryItem): Promise<void> {
+        const word = (historyItem?.query || this.lastQuery?.text || this.queryInput.getValue()).trim();
+        if (!word) {
             new Notice('❌ 无法确定要添加的词汇');
             return;
         }
+        const japanese = historyItem
+            ? historyItem.type === 'japanese' || historyItem.type === 'quick_to_japanese'
+            : this.lastQuery?.type === 'japanese';
 
-        // 添加到词汇库
-        if (!this.plugin.settings.vocabItems) {
-            this.plugin.settings.vocabItems = {};
+        // Same store as the lookup popover and the review page.
+        const settings = this.plugin.settings;
+        if (!settings.enableLearningTracker) settings.enableLearningTracker = true;
+        // Definition bullets sit inside callouts ("> - ..."); skip the bold field labels.
+        const definitions = result.split('\n')
+            .map(line => line.replace(/^(\s*>)+/, '').match(/^\s*-\s+(?!\*\*)(.+)/)?.[1]?.replace(/[*_`]/g, '').trim() ?? '')
+            .filter(Boolean)
+            .slice(0, 3);
+        const tracker = this.plugin.learningTracker;
+        if (japanese) {
+            await tracker.addJapaneseVocabularyItem(word, word, '', definitions[0] ?? '', '收自语言助手', [], ['查词']);
+        } else {
+            await tracker.addEnglishVocabularyItem(word.toLowerCase(), definitions[0] ?? '', '', '', definitions, '收自语言助手', [], ['查词']);
         }
-
-        this.plugin.settings.vocabItems[queryText] = {
-            word: queryText,
-            translation: result,
-            createdAt: Date.now(),
-            addedAt: Date.now(),
-            reviewCount: 0,
-            difficulty: 1,
-            masteryLevel: 0,
-            reviewHistory: [],
-            lastReviewed: 0,
-            nextReview: Date.now() + 24 * 60 * 60 * 1000 // 明天复习
-        };
-
-        this.plugin.saveSettings();
-        new Notice(`✅ "${queryText}" 已添加到词汇库`);
+        new Notice(`✅ "${word}" 已添加到词汇库`);
     }
 
     /**
