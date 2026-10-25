@@ -8,6 +8,11 @@
 
 [Features](#features) · [Quick start](#quick-start) · [API setup](#api-setup) · [Privacy](#privacy) · [中文说明](#中文说明) · [日本語](#日本語)
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/lookup-dark.jpg">
+  <img src="docs/screenshots/lookup.jpg" width="860">
+</picture>
+
 </div>
 
 ## Why
@@ -51,6 +56,8 @@ Looking up one word while studying means five browser tabs: a dictionary for the
 ### Cache
 
 - Text and audio results are cached inside the plugin folder, so the same lookup costs nothing the second time. The cleanup panel shows sizes and removes old entries; it only touches the plugin's own cache folders.
+
+<img src="docs/screenshots/review.jpg" width="860">
 
 ## Quick start
 
