@@ -21,6 +21,8 @@ Looking up one word while studying means five browser tabs: a dictionary for the
 
 ## Features
 
+<img src="docs/screenshots/review.jpg" width="860">
+
 ### Lookup popover
 
 - Select a word and run "查词小卡" (or right-click → 查词小卡). A small card opens next to the word: reading, a short meaning, what it means in this sentence, one example. Save it to the vocabulary list with the sentence it came from, or open the full entry.
@@ -46,7 +48,7 @@ Looking up one word while studying means five browser tabs: a dictionary for the
 
 ### Vocabulary and review
 
-- Every lookup is added to a vocabulary list (English and Japanese kept apart), with search, tags, import and export.
+- Add any lookup to a vocabulary list with one click, from the side panel or the lookup popover (English and Japanese kept apart), with search, tags, import and export.
 - Spaced review on a schedule you can change (default 1, 3, 7, 14, 30, 90, 180 days). The side panel's 学习 page opens on today's due count; each card has three answers, labelled with when the word comes back.
 
 ### Look
@@ -56,8 +58,6 @@ Looking up one word while studying means five browser tabs: a dictionary for the
 ### Cache
 
 - Text and audio results are cached inside the plugin folder, so the same lookup costs nothing the second time. The cleanup panel shows sizes and removes old entries; it only touches the plugin's own cache folders.
-
-<img src="docs/screenshots/review.jpg" width="860">
 
 ## Quick start
 
