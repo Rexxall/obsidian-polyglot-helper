@@ -1,0 +1,10 @@
+{
+  "id": "obsidian-polyglot-helper",
+  "name": "Polyglot Helper",
+  "version": "1.4.0",
+  "minAppVersion": "1.0.0",
+  "description": "English and Japanese lookup, translation, pronunciation and vocabulary review in a side panel.",
+  "author": "Rexxall",
+  "authorUrl": "https://github.com/Rexxall",
+  "isDesktopOnly": false
+}

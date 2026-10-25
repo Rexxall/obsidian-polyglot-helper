@@ -1,0 +1,27 @@
+
+# Obsidian
+.obsidian/
+/main.js
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Node
+/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build artifacts
+/build/
+/dist/
+
+# Cache
+.cache/
+voice-cache
+# Personal runtime data (API keys, query log)
+data.json
+polyglot-helper.log
