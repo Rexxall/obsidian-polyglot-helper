@@ -55,6 +55,8 @@ Looking up one word while studying means five browser tabs: a dictionary for the
 
 - Follows your Obsidian theme and light/dark mode. Optional "Paper & ink style" in settings.
 
+<img src="docs/screenshots/paper-review.jpg" width="860">
+
 ### Cache
 
 - Text and audio results are cached inside the plugin folder, so the same lookup costs nothing the second time. The cleanup panel shows sizes and removes old entries; it only touches the plugin's own cache folders.
