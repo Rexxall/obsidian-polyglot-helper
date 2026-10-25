@@ -169,7 +169,7 @@ export class ManagementPanelView extends ItemView {
 
         const japaneseWords = Object.keys(this.plugin.settings.japaneseVocabItems).length;
         const englishWords = Object.keys(this.plugin.settings.englishVocabItems).length;
-        const dueWords = this.plugin.learningTracker.getDueVocabulary().length;
+        const dueWords = this.plugin.learningTracker.getDueCounts().total;
         const newWords = Object.values(this.plugin.settings.vocabItems).filter(item => item.reviewCount === 0).length;
         const masteredWords = Object.values(this.plugin.settings.vocabItems).filter(item => item.difficulty === 0).length;
 

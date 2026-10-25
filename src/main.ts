@@ -19,6 +19,7 @@ import { CacheManager } from './cache-manager';
 import { PolyglotReviewView, POLYGLOT_REVIEW_VIEW_TYPE } from './review-view';
 import { ManagementPanelView, MANAGEMENT_PANEL_VIEW_TYPE } from './management-panel';
 import { CacheCleanupModal } from './cache-cleanup-modal';
+import { LookupPopover, sentenceAround } from './lookup-popover';
 
 // --- Interfaces and Defaults ---
 const DEFAULT_SETTINGS: PolyglotHelperSettings = {
@@ -54,6 +55,7 @@ const DEFAULT_SETTINGS: PolyglotHelperSettings = {
 	// UI Settings
 	lastSelectedMode: 'quick_to_japanese', // 默认选择快速翻译到日语
 	wordSelectionMode: false, // 选词模式：默认关闭
+	paperStyle: false, // 纸墨风格：默认关闭，跟随 Obsidian 主题
 
 	// Audio Settings
 	enableTTS: true,
@@ -272,6 +274,8 @@ export default class PolyglotHelper extends Plugin {
 			return;
 		}
 
+		this.applyPaperStyle();
+
 		// 注册主视图
         this.registerView(POLYGLOT_REVIEW_VIEW_TYPE, leaf => new PolyglotReviewView(leaf, this, this.learningTracker));
 
@@ -301,6 +305,21 @@ export default class PolyglotHelper extends Plugin {
 		this.addRibbonIcon('settings', '打开 Polyglot 管理面板', () => {
 			this.activateManagementPanel();
 		});
+
+		// === 查词小卡 ===
+		this.addCommand({
+			id: 'lookup-popover',
+			name: '查词小卡（选中的词）',
+			editorCallback: (editor: Editor, view: MarkdownView) => this.openLookupPopover(editor, view.file),
+		});
+		this.registerEvent(this.app.workspace.on('editor-menu', (menu, editor, info) => {
+			const selection = editor.getSelection().trim();
+			if (!selection || selection.length > 60 || selection.includes('\n')) return;
+			menu.addItem(item => item
+				.setTitle('查词小卡')
+				.setIcon('book-a')
+				.onClick(() => this.openLookupPopover(editor, info.file)));
+		}));
 
 		// === 核心翻译功能 ===
 		this.addCommand({
@@ -497,7 +516,57 @@ export default class PolyglotHelper extends Plugin {
 		new Notice('Polyglot Helper is now active!');
 	}
 
+	/**
+	 * 在选中的词旁边弹出查词小卡。位置取浏览器选区，取不到时用编辑器光标坐标。
+	 */
+	openLookupPopover(editor: Editor, file: TFile | null) {
+		const word = editor.getSelection().trim();
+		if (!word) {
+			new Notice('先选中一个词');
+			return;
+		}
+		const from = editor.getCursor('from');
+		const sentence = sentenceAround(editor.getLine(from.line), word);
+		let rect: DOMRect | null = null;
+		const sel = window.getSelection();
+		if (sel && sel.rangeCount > 0) {
+			const r = sel.getRangeAt(0).getBoundingClientRect();
+			if (r.width > 0 || r.height > 0) rect = r;
+		}
+		if (!rect) {
+			// CodeMirror 6：按文档偏移取坐标
+			const cm = (editor as unknown as { cm?: { coordsAtPos(pos: number): { left: number; right: number; top: number; bottom: number } | null } }).cm;
+			const c = cm?.coordsAtPos(editor.posToOffset(from));
+			if (c) rect = new DOMRect(c.left, c.top, Math.max(1, c.right - c.left), c.bottom - c.top);
+		}
+		if (!rect) rect = new DOMRect(window.innerWidth / 2 - 190, window.innerHeight / 3, 1, 1);
+		new LookupPopover(this, word, sentence, rect, file).open();
+	}
+
+	/** 查词小卡的“完整词条”：结果固定送到侧栏，不按输出位置去改笔记。 */
+	async openFullEntry(word: string, japanese: boolean, file: TFile | null) {
+		await this.activateView();
+		if (japanese) await this.processJapanese(word, false, file, undefined, { forceSidebar: true });
+		else await this.processEnglish(word, false, file, undefined, { forceSidebar: true });
+	}
+
+	/** 取某项功能的接口配置；没有可用配置时返回 null。 */
+	tryGetApiConfig(functionName: keyof PolyglotHelperSettings['apiSelectors']) {
+		try {
+			return this.getApiConfig(functionName);
+		} catch {
+			return null;
+		}
+	}
+
+	/** 纸墨风格：给 body 加一个类，样式表里只在这个类下叠加 B 版细节。 */
+	applyPaperStyle() {
+		document.body.toggleClass('polyglot-paper', !!this.settings.paperStyle);
+	}
+
 	onunload() {
+		LookupPopover.close();
+		document.body.removeClass('polyglot-paper');
 		this.app.workspace.detachLeavesOfType(POLYGLOT_HELPER_VIEW_TYPE);
 		this.app.workspace.detachLeavesOfType(SIMPLE_VOCAB_VIEW_TYPE);
 
@@ -580,7 +649,7 @@ export default class PolyglotHelper extends Plugin {
 
 	// 统一面板功能已移除
 
-	async processEnglish(query: string, force: boolean, file: TFile | null, selection?: { from: { line: number, ch: number }, to: { line: number, ch: number } }) {
+	async processEnglish(query: string, force: boolean, file: TFile | null, selection?: { from: { line: number, ch: number }, to: { line: number, ch: number } }, opts: { forceSidebar?: boolean } = {}) {
 		try {
 			if (!this.manifest.dir) {
 				new Notice("致命错误：找不到插件目录。");
@@ -595,7 +664,7 @@ export default class PolyglotHelper extends Plugin {
 				const outputInfo = await handlePriorityOutput(
 					this.app,
 					{
-						outputDestination: this.settings.outputDestination,
+						outputDestination: opts.forceSidebar ? 'sidebar' : this.settings.outputDestination,
 						newFileLocation: this.settings.newFileLocation,
 						fixedOutputFile: this.settings.fixedOutputFile
 					},
@@ -626,7 +695,7 @@ export default class PolyglotHelper extends Plugin {
 		}
 	}
 
-	async processJapanese(query: string, force: boolean, file: TFile | null, selection?: { from: { line: number, ch: number }, to: { line: number, ch: number } }) {
+	async processJapanese(query: string, force: boolean, file: TFile | null, selection?: { from: { line: number, ch: number }, to: { line: number, ch: number } }, opts: { forceSidebar?: boolean } = {}) {
 		if (!this.manifest.dir) {
 			this.logger.error("插件目录未定义，无法处理日语。");
 			new Notice("致命错误：插件目录未找到。");
@@ -671,7 +740,7 @@ export default class PolyglotHelper extends Plugin {
 				const outputInfo = await handlePriorityOutput(
 					this.app,
 					{
-						outputDestination: this.settings.outputDestination,
+						outputDestination: opts.forceSidebar ? 'sidebar' : this.settings.outputDestination,
 						newFileLocation: this.settings.newFileLocation,
 						fixedOutputFile: this.settings.fixedOutputFile
 					},
@@ -1460,21 +1529,7 @@ Input text: "${inputText}"`;
 		// 创建一个临时的播放按钮
 		const playButton = document.createElement('button');
 		playButton.textContent = `🔊 播放: ${text}`;
-		playButton.style.cssText = `
-			position: fixed;
-			top: 50%;
-			left: 50%;
-			transform: translate(-50%, -50%);
-			z-index: 10000;
-			background: var(--interactive-accent);
-			color: var(--text-on-accent);
-			border: none;
-			padding: 12px 24px;
-			border-radius: 8px;
-			font-size: 16px;
-			cursor: pointer;
-			box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-		`;
+		playButton.className = 'polyglot-mobile-play';
 
 		playButton.addEventListener('click', async () => {
 			try {
@@ -1707,6 +1762,7 @@ Input text: "${inputText}"`;
 	async saveSettings() {
 		const storageCopy = await this.encryptSensitiveFields();
 		await this.saveData(storageCopy);
+		this.applyPaperStyle();
 		this.app.workspace.trigger('polyglot-settings-change');
 	}
 

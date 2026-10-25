@@ -858,6 +858,72 @@ export class LearningTracker {
     }
 
     /**
+     * 条目属于哪个词库。英语和旧版条目都有 word 字段，只能按所在词库判断。
+     */
+    kindOf(item: VocabularyItem | JapaneseVocabularyItem | EnglishVocabularyItem): 'japanese' | 'english' | 'legacy' {
+        if ('japaneseText' in item) return 'japanese';
+        if (this.settings.englishVocabItems[item.word] === item) return 'english';
+        return 'legacy';
+    }
+
+    /**
+     * 复习页用：已到期的条目，新词在前，其余按到期时间。没有 nextReview 的条目视为到期。
+     * 旧版 vocabItems 在加载时已整体迁入英语／日语词库，这里不再重复计入。
+     */
+    getDueReviewItems(scope: 'all' | 'english' | 'japanese' = 'all', limit = 50): Array<JapaneseVocabularyItem | EnglishVocabularyItem> {
+        if (!this.settings.enableLearningTracker) return [];
+        const now = Date.now();
+        const pool: Array<JapaneseVocabularyItem | EnglishVocabularyItem> = [];
+        if (scope !== 'japanese') pool.push(...Object.values(this.settings.englishVocabItems));
+        if (scope !== 'english') pool.push(...Object.values(this.settings.japaneseVocabItems));
+        return pool
+            .filter(item => !item.nextReview || item.nextReview <= now)
+            .sort((a, b) => {
+                if (a.reviewCount === 0 && b.reviewCount > 0) return -1;
+                if (b.reviewCount === 0 && a.reviewCount > 0) return 1;
+                return (a.nextReview || 0) - (b.nextReview || 0);
+            })
+            .slice(0, limit);
+    }
+
+    getDueCounts(): { english: number; japanese: number; total: number } {
+        return {
+            english: this.getDueReviewItems('english', Infinity).length,
+            japanese: this.getDueReviewItems('japanese', Infinity).length,
+            total: this.getDueReviewItems('all', Infinity).length,
+        };
+    }
+
+    /**
+     * 按条目所在词库记录复习结果。
+     */
+    async recordItemReview(item: VocabularyItem | JapaneseVocabularyItem | EnglishVocabularyItem, performance: number, timeSpent?: number): Promise<void> {
+        const kind = this.kindOf(item);
+        if (kind === 'japanese') {
+            const jp = item as JapaneseVocabularyItem;
+            await this.recordJapaneseReview(jp.originalText, jp.japaneseText, performance, timeSpent);
+        } else if (kind === 'english') {
+            await this.recordEnglishReview((item as EnglishVocabularyItem).word, performance, timeSpent);
+        } else {
+            await this.recordReview((item as VocabularyItem).word, performance, timeSpent);
+        }
+    }
+
+    /**
+     * 预估按某个评分记录后多久再见到这个词：与 calculateNextReview 同一套规则，不含随机扰动，不改条目。
+     */
+    previewNextReview(item: VocabularyItem | JapaneseVocabularyItem | EnglishVocabularyItem, performance: number): { hours?: number; days?: number } {
+        if (performance <= 1) return { hours: 1 };
+        const reviewCount = item.reviewCount + 1;
+        const difficulty = performance >= 4 ? Math.max(0, item.difficulty - 1) : item.difficulty;
+        const easeFactor = this.adjustEaseFactor(this.getEaseFactor(item), performance);
+        let interval = this.calculateBaseInterval(reviewCount, performance);
+        if (reviewCount > 1) interval = Math.round(interval * easeFactor);
+        interval = Math.round(interval * [1.3, 1.15, 1.0, 0.85, 0.7][difficulty]);
+        return { days: Math.max(interval, 1) };
+    }
+
+    /**
      * 记录日语词汇复习结果
      */
     async recordJapaneseReview(originalText: string, japaneseText: string, performance: number, timeSpent?: number): Promise<void> {

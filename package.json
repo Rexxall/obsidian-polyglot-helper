@@ -1,6 +1,6 @@
 {
   "name": "obsidian-polyglot-helper",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "English and Japanese lookup, translation, pronunciation and vocabulary review inside Obsidian.",
   "main": "src/main.ts",
   "scripts": {

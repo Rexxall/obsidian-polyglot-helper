@@ -502,6 +502,16 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	private displayUISettings(containerEl: HTMLElement) {
 		containerEl.createEl('h3', {text: '学习与界面'});
 
+		new Setting(containerEl)
+			.setName('Paper & ink style')
+			.setDesc('纸墨风格：纸感底纹、细墨线、衬线标题。关闭时完全跟随当前 Obsidian 主题。')
+			.addToggle(toggle => toggle
+				.setValue(!!this.plugin.settings.paperStyle)
+				.onChange(async (value) => {
+					this.plugin.settings.paperStyle = value;
+					await this.plugin.saveSettings();
+				}));
+
 		// 学习进度追踪设置
 		
 		new Setting(containerEl)

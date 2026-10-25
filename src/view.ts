@@ -2,6 +2,7 @@ import { ItemView, WorkspaceLeaf, Notice, TextAreaComponent, Editor, ToggleCompo
 import PolyglotHelper from "./main";
 import { HistoryItem } from "./types";
 import { getFromCache, saveToCache } from './cache';
+import { ReviewSession, sourceNote } from './review-session';
 
 export const POLYGLOT_HELPER_VIEW_TYPE = "polyglot-helper-view";
 
@@ -19,6 +20,9 @@ export class PolyglotHelperView extends ItemView {
     private activeMode: 'japanese' | 'english' | 'quick_to_japanese' | 'quick_english' = 'quick_to_japanese';
     private modeButtons: { japBtn?: HTMLButtonElement; engBtn?: HTMLButtonElement; quickJpBtn?: HTMLButtonElement; quickZhBtn?: HTMLButtonElement } = {};
     private wordSelectionToggle?: HTMLButtonElement;
+    private review: ReviewSession | null = null;
+    private panes: { look?: HTMLElement; learn?: HTMLElement } = {};
+    private tabButtons: { look?: HTMLElement; learn?: HTMLElement } = {};
 
     constructor(leaf: WorkspaceLeaf, plugin: PolyglotHelper) {
         super(leaf);
@@ -131,11 +135,31 @@ export class PolyglotHelperView extends ItemView {
     getIcon() { return "book-open"; }
 
     async onOpen() {
-        const container = this.containerEl.children[1] as HTMLElement;
-        container.empty();
-        container.addClass('polyglot-helper-view-container');
+        const root = this.containerEl.children[1] as HTMLElement;
+        root.empty();
+        root.addClass('polyglot-root', 'polyglot-helper-view-container');
 
-        // --- Create main layout ---
+        // --- 顶部：标题、设置、两页切换 ---
+        const head = root.createDiv({ cls: 'polyglot-view-head' });
+        head.createEl('h3', { text: '语言助手' });
+        const settingsEntry = head.createEl('button', { text: '设置', cls: 'polyglot-link' });
+        settingsEntry.addEventListener('click', () => {
+            const settings = (this.app as typeof this.app & { setting?: { open(): void; openTabById(id: string): void } }).setting;
+            settings?.open();
+            settings?.openTabById(this.plugin.manifest.id);
+        });
+        const tabs = root.createDiv({ cls: 'polyglot-tabs' });
+        this.tabButtons.look = tabs.createEl('button', { text: '查词' });
+        this.tabButtons.learn = tabs.createEl('button', { text: '学习' });
+        this.tabButtons.look.addEventListener('click', () => this.showPane('look'));
+        this.tabButtons.learn.addEventListener('click', () => this.showPane('learn'));
+
+        const container = root.createDiv({ cls: 'polyglot-pane polyglot-pane-look' });
+        this.panes.look = container;
+        this.panes.learn = root.createDiv({ cls: 'polyglot-pane polyglot-pane-learn' });
+        this.review = new ReviewSession(this.plugin, this.panes.learn.createDiv());
+
+        // --- 查词页：输入与操作 / 拖动条 / 结果 ---
         this.actionsContainer = container.createDiv('polyglot-actions-container');
         this.resizer = container.createDiv('polyglot-resizer');
         this.displayContainer = container.createDiv('polyglot-display-container');
@@ -147,17 +171,6 @@ export class PolyglotHelperView extends ItemView {
 
         this.setupResizer();
 
-        const heading = this.actionsContainer.createDiv({ cls: 'polyglot-workspace-heading' });
-        heading.createEl('h2', { text: '语言工作台' });
-        heading.createEl('p', { text: '从一句原文开始，理解、听读、记住。' });
-
-
-        const settingsEntry = heading.createEl('button', { text: '插件设置', cls: 'plugin-settings-entry' });
-        settingsEntry.addEventListener('click', () => {
-            const settings = (this.app as typeof this.app & { setting?: { open(): void; openTabById(id: string): void } }).setting;
-            settings?.open();
-            settings?.openTabById(this.plugin.manifest.id);
-        });
         // --- Populate Actions Container ---
         this.actionsContent = this.actionsContainer.createDiv('polyglot-actions-content');
         this.actionsContent.style.flex = '1'; // Ensure content fills the container
@@ -352,6 +365,16 @@ export class PolyglotHelperView extends ItemView {
         // 注册选词模式监听器
         this.setupWordSelectionMode();
 
+        this.showPane('look');
+    }
+
+    /** 切换“查词”“学习”两页；学习页每次打开都重新数到期的词。 */
+    showPane(which: 'look' | 'learn') {
+        for (const key of ['look', 'learn'] as const) {
+            this.panes[key]?.toggleClass('is-active', key === which);
+            this.tabButtons[key]?.toggleClass('is-active', key === which);
+        }
+        if (which === 'learn') this.review?.renderHome();
     }
 
     async renderResult(result: string, isHistory = false, historyItem?: HistoryItem) {
@@ -370,7 +393,9 @@ export class PolyglotHelperView extends ItemView {
         // 处理渲染后的内容，应用卡片布局和折叠区域
         this.applyCardLayout(contentDiv);
         this.applyCollapsibleSections(contentDiv);
+        this.foldSecondarySections(contentDiv);
         this.applyPOSTagging(contentDiv);
+        this.renderVocabFooter(contentDiv, result, historyItem);
 
         // 添加增强的操作按钮
         this.createEnhancedActionButtons(actionBar, result, contentDiv, historyItem);
@@ -451,11 +476,43 @@ export class PolyglotHelperView extends ItemView {
                 collapsible.classList.toggle('open');
             });
             
-            // 默认展开第一个区域
-            if (headings[0] === heading) {
-                collapsible.classList.add('open');
-            }
+            // 默认全部展开，点标题收起
+            collapsible.classList.add('open');
         });
+    }
+
+    /** 医学用法、俚语、习语默认收起，点标题展开。 */
+    private foldSecondarySections(container: HTMLElement) {
+        container.querySelectorAll<HTMLElement>('.callout').forEach(callout => {
+            const title = callout.querySelector<HTMLElement>('.callout-title');
+            if (!title || !/医学|俚语|习语|Medical|Slang|Idiom/i.test(title.textContent || '')) return;
+            callout.addClass('polyglot-folded');
+            title.addEventListener('click', () => callout.toggleClass('is-open', !callout.hasClass('is-open')));
+        });
+    }
+
+    /** 词已在生词本里时，结果底部显示掌握程度、下次复习日和出处。 */
+    private renderVocabFooter(container: HTMLElement, result: string, historyItem?: HistoryItem) {
+        const heading = result.match(/^##\s+(.+?)(?:\s+-\s+.*)?\s*$/m)?.[1]?.trim();
+        const word = (historyItem?.query || heading || '').trim();
+        if (!word || !this.plugin.settings.enableLearningTracker) return;
+        const s = this.plugin.settings;
+        const item = s.englishVocabItems[word.toLowerCase()] || s.englishVocabItems[word]
+            || Object.values(s.japaneseVocabItems).find(v => v.japaneseText === word || v.originalText === word);
+        if (!item) return;
+
+        const foot = container.createDiv({ cls: 'polyglot-vocab-foot' });
+        const source = sourceNote(item.notes);
+        if (source) foot.createDiv({ cls: 'polyglot-muted', text: source });
+        const row = foot.createDiv({ cls: 'polyglot-vocab-foot-row' });
+        row.createSpan({ text: '掌握程度' });
+        const level = row.createSpan({ cls: 'polyglot-level' });
+        const filled = 4 - Math.min(4, Math.max(0, item.difficulty));
+        for (let i = 0; i < 4; i++) level.createEl('i', { cls: i < filled ? 'is-on' : '' });
+        const next = item.nextReview && item.nextReview > Date.now()
+            ? `下次复习：${new Date(item.nextReview).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })}`
+            : '今天可以复习';
+        row.createSpan({ text: next });
     }
 
     // 添加词性标签
@@ -698,7 +755,9 @@ export class PolyglotHelperView extends ItemView {
         }
     }
 
-    async onClose() {}
+    async onClose() {
+        this.review?.destroy();
+    }
 
     private _getActiveEditor(): Editor | undefined {
         // This is still useful for the initial query trigger, 
@@ -1389,12 +1448,6 @@ export class PolyglotHelperView extends ItemView {
         panel.style.left = `${rect.left}px`;
         panel.style.top = `${rect.bottom + 5}px`;
         panel.style.zIndex = '1000';
-        panel.style.backgroundColor = 'var(--background-primary)';
-        panel.style.border = '1px solid var(--background-modifier-border)';
-        panel.style.borderRadius = '8px';
-        panel.style.padding = '8px';
-        panel.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-        panel.style.minWidth = '180px';
 
         const sectionNames: Record<keyof typeof sections, string> = {
             vocabAnalysis: '词汇分析',
@@ -1412,39 +1465,11 @@ export class PolyglotHelperView extends ItemView {
             const sectionName = sectionNames[typedKey];
 
             const item = panel.createDiv('polyglot-option-item');
-            item.style.display = 'flex';
-            item.style.alignItems = 'center';
-            item.style.padding = '6px 8px';
-            item.style.cursor = 'pointer';
-            item.style.borderRadius = '4px';
 
             const checkbox = item.createEl('input', { type: 'checkbox' });
             checkbox.checked = sections[typedKey];
-            checkbox.style.marginRight = '8px';
 
             const label = item.createEl('span', { text: sectionName });
-            label.style.flex = '1';
-
-            // 悬停效果（移动端使用点击效果）
-            if ('ontouchstart' in window) {
-                // 移动端：使用点击效果
-                item.addEventListener('touchstart', () => {
-                    item.style.backgroundColor = 'var(--background-modifier-hover)';
-                });
-                item.addEventListener('touchend', () => {
-                    setTimeout(() => {
-                        item.style.backgroundColor = 'transparent';
-                    }, 150);
-                });
-            } else {
-                // 桌面端：使用悬停效果
-                item.addEventListener('mouseenter', () => {
-                    item.style.backgroundColor = 'var(--background-modifier-hover)';
-                });
-                item.addEventListener('mouseleave', () => {
-                    item.style.backgroundColor = 'transparent';
-                });
-            }
 
             // 点击切换
             item.addEventListener('click', async (e) => {
@@ -1458,17 +1483,10 @@ export class PolyglotHelperView extends ItemView {
         // 语音生成开关
         const sep = panel.createDiv(); sep.createEl('hr');
         const voiceItem = panel.createDiv('polyglot-option-item');
-        voiceItem.style.display = 'flex';
-        voiceItem.style.alignItems = 'center';
-        voiceItem.style.padding = '6px 8px';
-        voiceItem.style.cursor = 'pointer';
-        voiceItem.style.borderRadius = '4px';
 
         const voiceCheckbox = voiceItem.createEl('input', { type: 'checkbox' });
         voiceCheckbox.checked = !this.plugin.settings.disableJapaneseVoiceDuringAnalysis;
-        voiceCheckbox.style.marginRight = '8px';
         const voiceLabel = voiceItem.createEl('span', { text: '生成语音' });
-        voiceLabel.style.flex = '1';
 
         voiceItem.addEventListener('click', async (e) => {
             e.stopPropagation();
@@ -1510,12 +1528,6 @@ export class PolyglotHelperView extends ItemView {
         panel.style.left = `${rect.left}px`;
         panel.style.top = `${rect.bottom + 5}px`;
         panel.style.zIndex = '1000';
-        panel.style.backgroundColor = 'var(--background-primary)';
-        panel.style.border = '1px solid var(--background-modifier-border)';
-        panel.style.borderRadius = '8px';
-        panel.style.padding = '8px';
-        panel.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-        panel.style.minWidth = '180px';
 
         const sectionNames: Record<keyof typeof sections, string> = {
             definitions: '词典释义',
@@ -1532,39 +1544,11 @@ export class PolyglotHelperView extends ItemView {
             const sectionName = sectionNames[key];
 
             const item = panel.createDiv('polyglot-option-item');
-            item.style.display = 'flex';
-            item.style.alignItems = 'center';
-            item.style.padding = '6px 8px';
-            item.style.cursor = 'pointer';
-            item.style.borderRadius = '4px';
 
             const checkbox = item.createEl('input', { type: 'checkbox' });
             checkbox.checked = sections[key];
-            checkbox.style.marginRight = '8px';
 
             const label = item.createEl('span', { text: sectionName });
-            label.style.flex = '1';
-
-            // 悬停效果（移动端使用点击效果）
-            if ('ontouchstart' in window) {
-                // 移动端：使用点击效果
-                item.addEventListener('touchstart', () => {
-                    item.style.backgroundColor = 'var(--background-modifier-hover)';
-                });
-                item.addEventListener('touchend', () => {
-                    setTimeout(() => {
-                        item.style.backgroundColor = 'transparent';
-                    }, 150);
-                });
-            } else {
-                // 桌面端：使用悬停效果
-                item.addEventListener('mouseenter', () => {
-                    item.style.backgroundColor = 'var(--background-modifier-hover)';
-                });
-                item.addEventListener('mouseleave', () => {
-                    item.style.backgroundColor = 'transparent';
-                });
-            }
 
             // 点击切换
             item.addEventListener('click', async (e) => {
@@ -1605,12 +1589,6 @@ export class PolyglotHelperView extends ItemView {
         panel.style.left = `${rect.left}px`;
         panel.style.top = `${rect.bottom + 5}px`;
         panel.style.zIndex = '1000';
-        panel.style.backgroundColor = 'var(--background-primary)';
-        panel.style.border = '1px solid var(--background-modifier-border)';
-        panel.style.borderRadius = '8px';
-        panel.style.padding = '8px';
-        panel.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-        panel.style.minWidth = '160px';
 
         const entries: Array<{ key: 'showRomaji' | 'playAudio'; label: string; }> = [
             { key: 'showRomaji', label: '罗马音标注' },
@@ -1619,22 +1597,13 @@ export class PolyglotHelperView extends ItemView {
 
         entries.forEach(({ key, label }) => {
             const item = panel.createDiv('polyglot-option-item');
-            item.style.display = 'flex';
-            item.style.alignItems = 'center';
-            item.style.padding = '6px 8px';
-            item.style.cursor = 'pointer';
-            item.style.borderRadius = '4px';
 
             const checkbox = item.createEl('input', { type: 'checkbox' });
             // @ts-ignore
             checkbox.checked = opts[key] ?? false;
-            checkbox.style.marginRight = '8px';
 
             const labelEl = item.createEl('span', { text: label });
-            labelEl.style.flex = '1';
 
-            item.addEventListener('mouseenter', () => item.style.backgroundColor = 'var(--background-modifier-hover)');
-            item.addEventListener('mouseleave', () => item.style.backgroundColor = 'transparent');
 
             item.addEventListener('click', async (e) => {
                 e.stopPropagation();
@@ -1719,7 +1688,7 @@ export class PolyglotHelperView extends ItemView {
 
         // 添加面板标题
         const header = panel.createDiv({ cls: 'polyglot-settings-header' });
-        header.createEl('span', { text: '🎵 语音设置', cls: 'polyglot-settings-title' });
+        header.createEl('span', { text: '语音', cls: 'polyglot-settings-title' });
 
         // TTS引擎选择
         const ttsSection = panel.createDiv({ cls: 'polyglot-settings-section' });
@@ -1843,8 +1812,6 @@ export class PolyglotHelperView extends ItemView {
         const refreshLabel = refreshContainer.createEl('label');
         refreshLabel.setAttribute('for', 'polyglot-force-refresh-audio');
         refreshLabel.textContent = '🔄 强制刷新音频';
-        refreshLabel.style.marginLeft = '8px';
-        refreshLabel.style.cursor = 'pointer';
 
         refreshCheckbox.addEventListener('change', async () => {
             this.plugin.settings.forceRefreshAudio = refreshCheckbox.checked;

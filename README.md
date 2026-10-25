@@ -16,6 +16,10 @@ Looking up one word while studying means five browser tabs: a dictionary for the
 
 ## Features
 
+### Lookup popover
+
+- Select a word and run "查词小卡" (or right-click → 查词小卡). A small card opens next to the word: reading, a short meaning, what it means in this sentence, one example. Save it to the vocabulary list with the sentence it came from, or open the full entry.
+
 ### English
 
 - One command on a selected word or phrase: definitions and part of speech, phonetics, example sentences, collocations, etymology, idioms, slang, and medical usage if you turn it on.
@@ -38,7 +42,11 @@ Looking up one word while studying means five browser tabs: a dictionary for the
 ### Vocabulary and review
 
 - Every lookup is added to a vocabulary list (English and Japanese kept apart), with search, tags, import and export.
-- Spaced review on a schedule you can change (default 1, 3, 7, 14, 30, 90, 180 days).
+- Spaced review on a schedule you can change (default 1, 3, 7, 14, 30, 90, 180 days). The side panel's 学习 page opens on today's due count; each card has three answers, labelled with when the word comes back.
+
+### Look
+
+- Follows your Obsidian theme and light/dark mode. Optional "Paper & ink style" in settings.
 
 ### Cache
 
@@ -97,6 +105,8 @@ npm test
 - Works on mobile, but speech and large vocabulary lists are slower on phones.
 
 ## Changelog
+
+**1.5.0** — New look that follows your theme, optional paper & ink style; lookup popover next to the selected word; 查词 / 学习 pages in the side panel with a three-answer review; reviews now reschedule English and Japanese words correctly.
 
 **1.4.0**
 
