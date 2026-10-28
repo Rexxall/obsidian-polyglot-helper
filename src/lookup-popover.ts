@@ -23,7 +23,8 @@ export function isJapaneseText(text: string): boolean {
 
 /** 从一行里取出包含选中词的那一句。 */
 export function sentenceAround(line: string, word: string): string {
-    const parts = line.split(/(?<=[.!?。！？])\s*/);
+    // 不用后行断言：iOS 16.4 以前的 WebKit 不支持
+    const parts = line.match(/[^.!?。！？]+[.!?。！？]*/g) || [line];
     return (parts.find(p => p.includes(word)) || line).trim();
 }
 

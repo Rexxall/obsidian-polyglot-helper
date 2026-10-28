@@ -175,41 +175,47 @@ export class ManagementPanelView extends ItemView {
 
         const statsGrid = stats.createDiv({ cls: 'polyglot-stats-grid' });
 
-        statsGrid.createDiv({ cls: 'polyglot-stat-card' }).innerHTML = `
-            <div class="stat-icon">📚</div>
-            <div class="stat-number">${totalWords + japaneseWords + englishWords}</div>
-            <div class="stat-label">总词汇量</div>
-        `;
+        {
+            const host = statsGrid.createDiv({ cls: 'polyglot-stat-card' });
+            host.createEl('div', { cls: 'stat-icon', text: '📚' });
+            host.createEl('div', { cls: 'stat-number', text: `${totalWords + japaneseWords + englishWords}` });
+            host.createEl('div', { cls: 'stat-label', text: '总词汇量' });
+        }
 
-        statsGrid.createDiv({ cls: 'polyglot-stat-card' }).innerHTML = `
-            <div class="stat-icon">🇯🇵</div>
-            <div class="stat-number">${japaneseWords}</div>
-            <div class="stat-label">日语词汇</div>
-        `;
+        {
+            const host = statsGrid.createDiv({ cls: 'polyglot-stat-card' });
+            host.createEl('div', { cls: 'stat-icon', text: '🇯🇵' });
+            host.createEl('div', { cls: 'stat-number', text: `${japaneseWords}` });
+            host.createEl('div', { cls: 'stat-label', text: '日语词汇' });
+        }
 
-        statsGrid.createDiv({ cls: 'polyglot-stat-card' }).innerHTML = `
-            <div class="stat-icon">🇺🇸</div>
-            <div class="stat-number">${englishWords}</div>
-            <div class="stat-label">英语词汇</div>
-        `;
+        {
+            const host = statsGrid.createDiv({ cls: 'polyglot-stat-card' });
+            host.createEl('div', { cls: 'stat-icon', text: '🇺🇸' });
+            host.createEl('div', { cls: 'stat-number', text: `${englishWords}` });
+            host.createEl('div', { cls: 'stat-label', text: '英语词汇' });
+        }
 
-        statsGrid.createDiv({ cls: 'polyglot-stat-card' }).innerHTML = `
-            <div class="stat-icon">⏰</div>
-            <div class="stat-number">${dueWords}</div>
-            <div class="stat-label">待复习</div>
-        `;
+        {
+            const host = statsGrid.createDiv({ cls: 'polyglot-stat-card' });
+            host.createEl('div', { cls: 'stat-icon', text: '⏰' });
+            host.createEl('div', { cls: 'stat-number', text: `${dueWords}` });
+            host.createEl('div', { cls: 'stat-label', text: '待复习' });
+        }
 
-        statsGrid.createDiv({ cls: 'polyglot-stat-card' }).innerHTML = `
-            <div class="stat-icon">🆕</div>
-            <div class="stat-number">${newWords}</div>
-            <div class="stat-label">新单词</div>
-        `;
+        {
+            const host = statsGrid.createDiv({ cls: 'polyglot-stat-card' });
+            host.createEl('div', { cls: 'stat-icon', text: '🆕' });
+            host.createEl('div', { cls: 'stat-number', text: `${newWords}` });
+            host.createEl('div', { cls: 'stat-label', text: '新单词' });
+        }
 
-        statsGrid.createDiv({ cls: 'polyglot-stat-card' }).innerHTML = `
-            <div class="stat-icon">⭐</div>
-            <div class="stat-number">${masteredWords}</div>
-            <div class="stat-label">已掌握</div>
-        `;
+        {
+            const host = statsGrid.createDiv({ cls: 'polyglot-stat-card' });
+            host.createEl('div', { cls: 'stat-icon', text: '⭐' });
+            host.createEl('div', { cls: 'stat-number', text: `${masteredWords}` });
+            host.createEl('div', { cls: 'stat-label', text: '已掌握' });
+        }
 
         // 操作按钮
         const actions = container.createDiv({ cls: 'polyglot-vocab-actions' });
@@ -373,11 +379,9 @@ export class ManagementPanelView extends ItemView {
 
         if (words.length === 0) {
             const emptyState = container.createDiv({ cls: 'polyglot-empty-state' });
-            emptyState.innerHTML = `
-                <div class="empty-icon">📚</div>
-                <div class="empty-title">没有找到词汇</div>
-                <div class="empty-subtitle">尝试调整筛选条件或添加新单词</div>
-            `;
+            emptyState.createEl('div', { cls: 'empty-icon', text: '📚' });
+            emptyState.createEl('div', { cls: 'empty-title', text: '没有找到词汇' });
+            emptyState.createEl('div', { cls: 'empty-subtitle', text: '尝试调整筛选条件或添加新单词' });
             return;
         }
 
@@ -476,20 +480,14 @@ export class ManagementPanelView extends ItemView {
 
         // 元数据
         const wordMeta = wordContent.createDiv({ cls: 'polyglot-vocab-meta' });
-        wordMeta.innerHTML = `
-            <span class="meta-item">📊 复习 ${item.reviewCount} 次</span>
-            <span class="meta-item">🎯 难度 ${item.difficulty}/4</span>
-            <span class="meta-item">📅 添加于 ${new Date(item.createdAt).toLocaleDateString()}</span>
-        `;
+        wordMeta.createEl('span', { cls: 'meta-item', text: `📊 复习 ${item.reviewCount} 次` });
+        wordMeta.createEl('span', { cls: 'meta-item', text: `🎯 难度 ${item.difficulty}/4` });
+        wordMeta.createEl('span', { cls: 'meta-item', text: `📅 添加于 ${new Date(item.createdAt).toLocaleDateString()}` });
 
         if (item.nextReview) {
             const nextReviewDate = new Date(item.nextReview);
             const isOverdue = nextReviewDate.getTime() <= now;
-            wordMeta.innerHTML += `
-                <span class="meta-item ${isOverdue ? 'overdue' : ''}">
-                    ⏰ ${isOverdue ? '已到期' : '下次复习'}: ${nextReviewDate.toLocaleDateString()}
-                </span>
-            `;
+            wordMeta.createEl('span', { cls: `meta-item ${isOverdue ? 'overdue' : ''}`, text: `⏰ ${isOverdue ? '已到期' : '下次复习'}: ${nextReviewDate.toLocaleDateString()}` });
         }
 
         // 标签
@@ -791,15 +789,17 @@ export class ManagementPanelView extends ItemView {
 
             const overviewGrid = overviewSection.createDiv({ cls: 'polyglot-stats-grid' });
 
-            overviewGrid.createDiv({ cls: 'polyglot-stat-card' }).innerHTML = `
-                <div class="stat-number">${stats.total}</div>
-                <div class="stat-label">总文件数</div>
-            `;
+            {
+                const host = overviewGrid.createDiv({ cls: 'polyglot-stat-card' });
+                host.createEl('div', { cls: 'stat-number', text: `${stats.total}` });
+                host.createEl('div', { cls: 'stat-label', text: '总文件数' });
+            }
 
-            overviewGrid.createDiv({ cls: 'polyglot-stat-card' }).innerHTML = `
-                <div class="stat-number">${this.formatFileSize(stats.totalSize)}</div>
-                <div class="stat-label">总大小</div>
-            `;
+            {
+                const host = overviewGrid.createDiv({ cls: 'polyglot-stat-card' });
+                host.createEl('div', { cls: 'stat-number', text: `${this.formatFileSize(stats.totalSize)}` });
+                host.createEl('div', { cls: 'stat-label', text: '总大小' });
+            }
 
             // 类型分布统计
             const typeSection = container.createDiv({ cls: 'polyglot-cache-section' });
@@ -813,12 +813,13 @@ export class ManagementPanelView extends ItemView {
                 const icon = type === 'translation' ? '📝' : '🎵';
                 const label = type === 'translation' ? '翻译缓存' : '音频缓存';
 
-                typeGrid.createDiv({ cls: 'polyglot-stat-card' }).innerHTML = `
-                    <div class="stat-icon">${icon}</div>
-                    <div class="stat-number">${count}</div>
-                    <div class="stat-label">${label}</div>
-                    <div class="stat-size">${this.formatFileSize(typeSize)}</div>
-                `;
+                {
+                    const host = typeGrid.createDiv({ cls: 'polyglot-stat-card' });
+                    host.createEl('div', { cls: 'stat-icon', text: `${icon}` });
+                    host.createEl('div', { cls: 'stat-number', text: `${count}` });
+                    host.createEl('div', { cls: 'stat-label', text: `${label}` });
+                    host.createEl('div', { cls: 'stat-size', text: `${this.formatFileSize(typeSize)}` });
+                }
             });
 
             // 分类统计
@@ -832,11 +833,9 @@ export class ManagementPanelView extends ItemView {
                 const categorySize = categoryItems.reduce((sum, item) => sum + item.size, 0);
 
                 const categoryItem = categoryList.createDiv({ cls: 'polyglot-category-item' });
-                categoryItem.innerHTML = `
-                    <span class="category-name">${category}</span>
-                    <span class="category-count">${count} 个文件</span>
-                    <span class="category-size">${this.formatFileSize(categorySize)}</span>
-                `;
+                categoryItem.createEl('span', { cls: 'category-name', text: `${category}` });
+                categoryItem.createEl('span', { cls: 'category-count', text: `${count} 个文件` });
+                categoryItem.createEl('span', { cls: 'category-size', text: `${this.formatFileSize(categorySize)}` });
             });
 
             // 时间分布统计
@@ -848,10 +847,8 @@ export class ManagementPanelView extends ItemView {
 
             Object.entries(timeStats).forEach(([period, count]) => {
                 const timeItem = timeList.createDiv({ cls: 'polyglot-time-item' });
-                timeItem.innerHTML = `
-                    <span class="time-period">${period}</span>
-                    <span class="time-count">${count} 个文件</span>
-                `;
+                timeItem.createEl('span', { cls: 'time-period', text: `${period}` });
+                timeItem.createEl('span', { cls: 'time-count', text: `${count} 个文件` });
             });
 
             // 内存缓存统计
@@ -860,10 +857,11 @@ export class ManagementPanelView extends ItemView {
             memorySection.createEl('h5', { text: '💾 内存缓存' });
 
             const memoryGrid = memorySection.createDiv({ cls: 'polyglot-stats-grid' });
-            memoryGrid.createDiv({ cls: 'polyglot-stat-card' }).innerHTML = `
-                <div class="stat-number">${memoryStats.size}</div>
-                <div class="stat-label">缓存项数</div>
-            `;
+            {
+                const host = memoryGrid.createDiv({ cls: 'polyglot-stat-card' });
+                host.createEl('div', { cls: 'stat-number', text: `${memoryStats.size}` });
+                host.createEl('div', { cls: 'stat-label', text: '缓存项数' });
+            }
 
             // 音频缓存统计
             const audioStats = this.plugin.audioCacheManager.getCacheStats();
@@ -871,10 +869,11 @@ export class ManagementPanelView extends ItemView {
             audioSection.createEl('h5', { text: '🎵 音频内存缓存' });
 
             const audioGrid = audioSection.createDiv({ cls: 'polyglot-stats-grid' });
-            audioGrid.createDiv({ cls: 'polyglot-stat-card' }).innerHTML = `
-                <div class="stat-number">${audioStats.size}</div>
-                <div class="stat-label">音频缓存项</div>
-            `;
+            {
+                const host = audioGrid.createDiv({ cls: 'polyglot-stat-card' });
+                host.createEl('div', { cls: 'stat-number', text: `${audioStats.size}` });
+                host.createEl('div', { cls: 'stat-label', text: '音频缓存项' });
+            }
 
         } catch (error) {
             container.createEl('div', { text: '获取缓存统计失败', cls: 'polyglot-error' });
@@ -1030,7 +1029,8 @@ class SingleWordReviewModal extends Modal {
             cls: 'polyglot-btn-primary'
         });
 
-        const translationDiv = contentEl.createDiv({ cls: 'polyglot-review-translation', attr: { style: 'display: none;' } });
+        const translationDiv = contentEl.createDiv({ cls: 'polyglot-review-translation' });
+        translationDiv.hide();
         translationDiv.createEl('p', { text: this.item.translation });
 
         if (this.item.notes) {
@@ -1038,8 +1038,8 @@ class SingleWordReviewModal extends Modal {
         }
 
         showTranslationBtn.addEventListener('click', () => {
-            translationDiv.style.display = 'block';
-            showTranslationBtn.style.display = 'none';
+            translationDiv.show();
+            showTranslationBtn.hide();
             this.showRatingButtons(contentEl);
         });
     }
@@ -1451,7 +1451,8 @@ class JapaneseReviewModal extends Modal {
             cls: 'polyglot-btn-primary'
         });
 
-        const translationDiv = contentEl.createDiv({ cls: 'polyglot-review-translation', attr: { style: 'display: none;' } });
+        const translationDiv = contentEl.createDiv({ cls: 'polyglot-review-translation' });
+        translationDiv.hide();
         translationDiv.createEl('p', { text: `日文: ${this.item.japaneseText}` });
         if (this.item.reading) {
             translationDiv.createEl('p', { text: `读音: ${this.item.reading}` });
@@ -1463,8 +1464,8 @@ class JapaneseReviewModal extends Modal {
         }
 
         showTranslationBtn.addEventListener('click', () => {
-            translationDiv.style.display = 'block';
-            showTranslationBtn.style.display = 'none';
+            translationDiv.show();
+            showTranslationBtn.hide();
             this.showRatingButtons(contentEl);
         });
     }
@@ -1534,7 +1535,8 @@ class EnglishReviewModal extends Modal {
             cls: 'polyglot-btn-primary'
         });
 
-        const translationDiv = contentEl.createDiv({ cls: 'polyglot-review-translation', attr: { style: 'display: none;' } });
+        const translationDiv = contentEl.createDiv({ cls: 'polyglot-review-translation' });
+        translationDiv.hide();
         translationDiv.createEl('p', { text: `翻译: ${this.item.translation}` });
         if (this.item.phonetics) {
             translationDiv.createEl('p', { text: `音标: ${this.item.phonetics}` });
@@ -1548,8 +1550,8 @@ class EnglishReviewModal extends Modal {
         }
 
         showTranslationBtn.addEventListener('click', () => {
-            translationDiv.style.display = 'block';
-            showTranslationBtn.style.display = 'none';
+            translationDiv.show();
+            showTranslationBtn.hide();
             this.showRatingButtons(contentEl);
         });
     }
@@ -1617,31 +1619,24 @@ ManagementPanelView.prototype.renderJapaneseVocabulary = function(this: Manageme
 
     // 统计信息
     const stats = container.createDiv({ cls: 'polyglot-vocab-stats' });
-    stats.innerHTML = `
-        <div class="polyglot-stat-card">
-            <div class="stat-number">${japaneseVocab.length}</div>
-            <div class="stat-label">日语词汇总数</div>
-        </div>
-        <div class="polyglot-stat-card">
-            <div class="stat-number">${japaneseVocab.filter(item => !item.nextReview || item.nextReview <= Date.now()).length}</div>
-            <div class="stat-label">待复习</div>
-        </div>
-        <div class="polyglot-stat-card">
-            <div class="stat-number">${japaneseVocab.filter(item => item.reviewCount === 0).length}</div>
-            <div class="stat-label">新词汇</div>
-        </div>
-    `;
+    const el1 = stats.createEl('div', { cls: 'polyglot-stat-card' });
+    el1.createEl('div', { cls: 'stat-number', text: `${japaneseVocab.length}` });
+    el1.createEl('div', { cls: 'stat-label', text: '日语词汇总数' });
+    const el2 = stats.createEl('div', { cls: 'polyglot-stat-card' });
+    el2.createEl('div', { cls: 'stat-number', text: `${japaneseVocab.filter(item => !item.nextReview || item.nextReview <= Date.now()).length}` });
+    el2.createEl('div', { cls: 'stat-label', text: '待复习' });
+    const el3 = stats.createEl('div', { cls: 'polyglot-stat-card' });
+    el3.createEl('div', { cls: 'stat-number', text: `${japaneseVocab.filter(item => item.reviewCount === 0).length}` });
+    el3.createEl('div', { cls: 'stat-label', text: '新词汇' });
 
     // 词汇列表
     const vocabList = container.createDiv({ cls: 'polyglot-vocab-list' });
 
     if (japaneseVocab.length === 0) {
         const emptyState = vocabList.createDiv({ cls: 'polyglot-empty-state' });
-        emptyState.innerHTML = `
-            <div class="empty-icon">🇯🇵</div>
-            <div class="empty-title">还没有日语词汇</div>
-            <div class="empty-subtitle">开始分析日语文本来自动添加词汇吧！</div>
-        `;
+        emptyState.createEl('div', { cls: 'empty-icon', text: '🇯🇵' });
+        emptyState.createEl('div', { cls: 'empty-title', text: '还没有日语词汇' });
+        emptyState.createEl('div', { cls: 'empty-subtitle', text: '开始分析日语文本来自动添加词汇吧！' });
         return;
     }
 
@@ -1738,31 +1733,24 @@ ManagementPanelView.prototype.renderEnglishVocabulary = function(this: Managemen
 
     // 统计信息
     const stats = container.createDiv({ cls: 'polyglot-vocab-stats' });
-    stats.innerHTML = `
-        <div class="polyglot-stat-card">
-            <div class="stat-number">${englishVocab.length}</div>
-            <div class="stat-label">英语单词总数</div>
-        </div>
-        <div class="polyglot-stat-card">
-            <div class="stat-number">${englishVocab.filter(item => !item.nextReview || item.nextReview <= Date.now()).length}</div>
-            <div class="stat-label">待复习</div>
-        </div>
-        <div class="polyglot-stat-card">
-            <div class="stat-number">${englishVocab.filter(item => item.reviewCount === 0).length}</div>
-            <div class="stat-label">新单词</div>
-        </div>
-    `;
+    const el1 = stats.createEl('div', { cls: 'polyglot-stat-card' });
+    el1.createEl('div', { cls: 'stat-number', text: `${englishVocab.length}` });
+    el1.createEl('div', { cls: 'stat-label', text: '英语单词总数' });
+    const el2 = stats.createEl('div', { cls: 'polyglot-stat-card' });
+    el2.createEl('div', { cls: 'stat-number', text: `${englishVocab.filter(item => !item.nextReview || item.nextReview <= Date.now()).length}` });
+    el2.createEl('div', { cls: 'stat-label', text: '待复习' });
+    const el3 = stats.createEl('div', { cls: 'polyglot-stat-card' });
+    el3.createEl('div', { cls: 'stat-number', text: `${englishVocab.filter(item => item.reviewCount === 0).length}` });
+    el3.createEl('div', { cls: 'stat-label', text: '新单词' });
 
     // 词汇列表
     const vocabList = container.createDiv({ cls: 'polyglot-vocab-list' });
 
     if (englishVocab.length === 0) {
         const emptyState = vocabList.createDiv({ cls: 'polyglot-empty-state' });
-        emptyState.innerHTML = `
-            <div class="empty-icon">🇺🇸</div>
-            <div class="empty-title">还没有英语单词</div>
-            <div class="empty-subtitle">开始分析英语文本来自动添加单词吧！</div>
-        `;
+        emptyState.createEl('div', { cls: 'empty-icon', text: '🇺🇸' });
+        emptyState.createEl('div', { cls: 'empty-title', text: '还没有英语单词' });
+        emptyState.createEl('div', { cls: 'empty-subtitle', text: '开始分析英语文本来自动添加单词吧！' });
         return;
     }
 
@@ -1857,31 +1845,24 @@ ManagementPanelView.prototype.renderFavoriteVocabulary = function(this: Manageme
 
     // 统计信息
     const stats = container.createDiv({ cls: 'polyglot-vocab-stats' });
-    stats.innerHTML = `
-        <div class="polyglot-stat-card">
-            <div class="stat-number">${totalFavorites}</div>
-            <div class="stat-label">收藏总数</div>
-        </div>
-        <div class="polyglot-stat-card">
-            <div class="stat-number">${japaneseVocab.length}</div>
-            <div class="stat-label">日语收藏</div>
-        </div>
-        <div class="polyglot-stat-card">
-            <div class="stat-number">${englishVocab.length}</div>
-            <div class="stat-label">英语收藏</div>
-        </div>
-    `;
+    const el1 = stats.createEl('div', { cls: 'polyglot-stat-card' });
+    el1.createEl('div', { cls: 'stat-number', text: `${totalFavorites}` });
+    el1.createEl('div', { cls: 'stat-label', text: '收藏总数' });
+    const el2 = stats.createEl('div', { cls: 'polyglot-stat-card' });
+    el2.createEl('div', { cls: 'stat-number', text: `${japaneseVocab.length}` });
+    el2.createEl('div', { cls: 'stat-label', text: '日语收藏' });
+    const el3 = stats.createEl('div', { cls: 'polyglot-stat-card' });
+    el3.createEl('div', { cls: 'stat-number', text: `${englishVocab.length}` });
+    el3.createEl('div', { cls: 'stat-label', text: '英语收藏' });
 
     // 词汇列表
     const vocabList = container.createDiv({ cls: 'polyglot-vocab-list' });
 
     if (totalFavorites === 0) {
         const emptyState = vocabList.createDiv({ cls: 'polyglot-empty-state' });
-        emptyState.innerHTML = `
-            <div class="empty-icon">💖</div>
-            <div class="empty-title">还没有收藏的词汇</div>
-            <div class="empty-subtitle">在复习时点击收藏按钮来添加收藏吧！</div>
-        `;
+        emptyState.createEl('div', { cls: 'empty-icon', text: '💖' });
+        emptyState.createEl('div', { cls: 'empty-title', text: '还没有收藏的词汇' });
+        emptyState.createEl('div', { cls: 'empty-subtitle', text: '在复习时点击收藏按钮来添加收藏吧！' });
         return;
     }
 

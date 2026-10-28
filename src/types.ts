@@ -64,6 +64,8 @@ export interface PolyglotHelperSettings {
 	theme?: 'auto' | 'light' | 'dark';
 	lastSelectedMode?: 'japanese' | 'english' | 'quick_to_japanese' | 'quick_english'; // 记住上次选择的模式
 	wordSelectionMode?: boolean; // 选词模式：开启后鼠标选择的词汇直接加入文本框
+	showDueInStatusBar?: boolean; // 状态栏显示待复习数，点一下进复习
+	vocabExportFolder?: string; // 词库导出（闪卡笔记、Anki 文本）所在文件夹
 	paperStyle?: boolean; // 纸墨风格：默认关，开启后叠加纸感、细墨线和衬线标题
 
 	// Audio Settings

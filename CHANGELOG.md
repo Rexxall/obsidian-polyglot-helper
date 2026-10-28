@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.6.0
+
+- **Plugin ID is now `polyglot-helper`.** The Obsidian community directory does not allow "obsidian" in an ID. On first start the new version imports settings, API keys and both vocabulary lists from the old `obsidian-polyglot-helper` folder. See [Upgrading from 1.5 or earlier](#upgrading-from-15-or-earlier).
+- **Export your vocabulary.** "导出词库为闪卡笔记" writes a `#flashcards/polyglot` note that the Spaced Repetition plugin can review (`word::reading · meaning`); exporting again keeps its review schedule. "导出词库为 Anki 导入文件" writes a tab-separated file with tags for Anki's File → Import. Folder in Settings → 学习与界面.
+- **Due words in the status bar.** "待复习 N" appears when words are due; click it to start reviewing. Can be turned off.
+- Settings use Obsidian's native section headings; floating panels and the review card use theme classes instead of inline styles; command names no longer start with emoji; the management panel's ribbon icon is a library, not a gear.
+- Security: no HTML strings are inserted into the page any more; all panels are built with Obsidian's DOM helpers.
+- Mobile: removed a Node.js `path` import that is not available on phones, and a regular expression that older iOS versions cannot run.
+- Closing the plugin no longer closes its panes, so they reopen in place after an update.
+- Requires Obsidian 1.8.7 or later.
+
 ## 1.5.0
 
 - New look. The stylesheet was rewritten from scratch. By default it uses only Obsidian theme variables, so it follows your theme and light/dark mode. An optional "Paper & ink style" (Settings → 学习与界面) adds a paper texture, thin ink lines and serif headings, in light and dark.

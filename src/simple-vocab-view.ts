@@ -35,10 +35,9 @@ export class SimpleVocabView extends ItemView {
         const totalWords = Object.keys(vocab).length;
         const favoriteWords = Object.values(vocab).filter((item: any) => item.isFavorite).length;
         
-        stats.innerHTML = `
-            <span class="stat-item">📖 总词汇: ${totalWords}</span>
-            <span class="stat-item">⭐ 收藏: ${favoriteWords}</span>
-        `;
+        stats.empty();
+        stats.createEl('span', { cls: 'stat-item', text: `📖 总词汇: ${totalWords}` });
+        stats.createEl('span', { cls: 'stat-item', text: `⭐ 收藏: ${favoriteWords}` });
     }
 
     private renderSearchBar() {
@@ -73,11 +72,9 @@ export class SimpleVocabView extends ItemView {
 
         if (filteredVocab.length === 0) {
             const emptyDiv = this.vocabList.createDiv({ cls: 'simple-vocab-empty' });
-            emptyDiv.innerHTML = `
-                <div class="empty-icon">📚</div>
-                <h3>词汇库为空</h3>
-                <p>点击"添加词汇"开始收集你的词汇吧！</p>
-            `;
+            emptyDiv.createEl('div', { cls: 'empty-icon', text: '📚' });
+            emptyDiv.createEl('h3', { text: '词汇库为空' });
+            emptyDiv.createEl('p', { text: '点击"添加词汇"开始收集你的词汇吧！' });
             return;
         }
 
@@ -137,10 +134,8 @@ export class SimpleVocabView extends ItemView {
         
         // 显示统计信息
         const stats = footer.createDiv({ cls: 'vocab-stats' });
-        stats.innerHTML = `
-            <span class="stat">复习: ${item.reviewCount}次</span>
-            <span class="stat">添加: ${new Date(item.createdAt).toLocaleDateString()}</span>
-        `;
+        stats.createEl('span', { cls: 'stat', text: `复习: ${item.reviewCount}次` });
+        stats.createEl('span', { cls: 'stat', text: `添加: ${new Date(item.createdAt).toLocaleDateString()}` });
     }
 
     private filterVocab(searchTerm: string) {
@@ -150,27 +145,20 @@ export class SimpleVocabView extends ItemView {
     private showAddVocabModal() {
         const modal = document.createElement('div');
         modal.className = 'simple-vocab-modal';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <h3>➕ 添加新词汇</h3>
-                <div class="form-group">
-                    <label>词汇:</label>
-                    <input type="text" id="vocab-word" placeholder="输入词汇">
-                </div>
-                <div class="form-group">
-                    <label>翻译:</label>
-                    <input type="text" id="vocab-translation" placeholder="输入翻译">
-                </div>
-                <div class="form-group">
-                    <label>备注:</label>
-                    <textarea id="vocab-notes" placeholder="可选备注"></textarea>
-                </div>
-                <div class="modal-actions">
-                    <button id="cancel-btn">取消</button>
-                    <button id="save-btn" class="primary">保存</button>
-                </div>
-            </div>
-        `;
+        const el1 = modal.createEl('div', { cls: 'modal-content' });
+        el1.createEl('h3', { text: '➕ 添加新词汇' });
+        const el2 = el1.createEl('div', { cls: 'form-group' });
+        el2.createEl('label', { text: '词汇:' });
+        el2.createEl('input', { attr: { type: 'text', id: 'vocab-word', placeholder: '输入词汇' } });
+        const el3 = el1.createEl('div', { cls: 'form-group' });
+        el3.createEl('label', { text: '翻译:' });
+        el3.createEl('input', { attr: { type: 'text', id: 'vocab-translation', placeholder: '输入翻译' } });
+        const el4 = el1.createEl('div', { cls: 'form-group' });
+        el4.createEl('label', { text: '备注:' });
+        el4.createEl('textarea', { attr: { id: 'vocab-notes', placeholder: '可选备注' } });
+        const el5 = el1.createEl('div', { cls: 'modal-actions' });
+        el5.createEl('button', { text: '取消', attr: { id: 'cancel-btn' } });
+        el5.createEl('button', { cls: 'primary', text: '保存', attr: { id: 'save-btn' } });
         
         document.body.appendChild(modal);
         

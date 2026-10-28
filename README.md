@@ -51,6 +51,11 @@ Looking up one word while studying means five browser tabs: a dictionary for the
 - Add any lookup to a vocabulary list with one click, from the side panel or the lookup popover (English and Japanese kept apart), with search, tags, import and export.
 - Spaced review on a schedule you can change (default 1, 3, 7, 14, 30, 90, 180 days). The side panel's 学习 page opens on today's due count; each card has three answers, labelled with when the word comes back.
 
+### Export and reminders
+
+- Export the vocabulary as a Spaced Repetition flashcard note (`#flashcards/polyglot`, one `word::reading · meaning` card per line) or as an Anki import file. Re-exporting keeps Spaced Repetition's schedule comments.
+- A "待复习 N" status bar item shows how many words are due; click it to review.
+
 ### Look
 
 - Follows your Obsidian theme and light/dark mode. Optional "Paper & ink style" in settings.
@@ -63,10 +68,21 @@ Looking up one word while studying means five browser tabs: a dictionary for the
 
 ## Quick start
 
-1. Download `obsidian-polyglot-helper-1.4.0.zip` from [Releases](https://github.com/Rexxall/obsidian-polyglot-helper/releases) and unzip it into `<your vault>/.obsidian/plugins/obsidian-polyglot-helper/`.
+1. Download `main.js`, `manifest.json` and `styles.css` from the [latest release](https://github.com/Rexxall/obsidian-polyglot-helper/releases/latest) into `<your vault>/.obsidian/plugins/polyglot-helper/`. (Once the plugin is listed, install it from **Settings → Community plugins → Browse** instead.)
 2. In Obsidian, open **Settings → Community plugins** and enable **Polyglot Helper**.
 3. Open the plugin settings and add one API key (see below).
-4. Select a word and run **🇺🇸 英语分析** or **🇯🇵 日语分析** from the command palette. Assign hotkeys if you use it often.
+4. Select a word and run **英语分析** or **日语分析** from the command palette. Assign hotkeys if you use it often.
+
+## Upgrading from 1.5 or earlier
+
+Earlier versions used the ID `obsidian-polyglot-helper` and lived in `.obsidian/plugins/obsidian-polyglot-helper/`. From 1.6.0 the ID is `polyglot-helper`, so Obsidian keeps it in `.obsidian/plugins/polyglot-helper/`.
+
+1. Install 1.6.0 into the new folder (or from the community directory once listed).
+2. In **Settings → Community plugins**, turn the old Polyglot Helper off, then turn the new one on. Do not run both at once; they register the same panes.
+3. On first start the new version copies the old `data.json` — settings, API keys and the English and Japanese vocabulary lists with their review history — and shows a notice. The old folder is left untouched.
+4. Check your words in the 学习 page, then remove the old plugin. Custom hotkeys are stored under the plugin ID, so assign them once more in **Settings → Hotkeys**.
+
+Not carried over: the lookup cache (the first lookup of each word is fetched again). API keys move with `data.json` and still decrypt, because the device key is kept per vault, not per plugin.
 
 ## API setup
 
@@ -89,6 +105,8 @@ Optional: a Merriam-Webster key for the thesaurus and medical sections, and an O
 | Cached results and audio | `.cache/` in the plugin folder |
 | The word or sentence you look up | Sent to the dictionaries and the AI service you enabled |
 | Log file | Written only when **Debug mode** is on |
+
+Network use: lookups go to the AI service you configure (OpenRouter, OpenAI or a custom OpenAI-compatible endpoint) and, depending on the sections you enable, to dictionaryapi.dev, Cambridge Dictionary, Etymonline, Merriam-Webster (with your key), Jisho, Tatoeba, YourDictionary, WordHippo, The Free Dictionary idioms and an unofficial Urban Dictionary API. Speech uses the OpenAI, Gemini or Youdao TTS service you pick. All requests use Obsidian's `requestUrl`. Some of these services need your own API key and may charge for use.
 
 There is no account and no server of our own. Because the decryption key stays on the device, a synced or committed `data.json` does not expose your API keys; on a new device you enter them once more.
 
@@ -115,6 +133,8 @@ npm test
 
 ## Changelog
 
+**1.6.0** — New plugin ID `polyglot-helper` with automatic import from the old folder; vocabulary export to Spaced Repetition flashcards and Anki; due count in the status bar; native settings headings; no HTML strings; mobile fixes. Full list in [CHANGELOG.md](CHANGELOG.md).
+
 **1.5.0** — New look that follows your theme, optional paper & ink style; lookup popover next to the selected word; 查词 / 学习 pages in the side panel with a three-answer review; reviews now reschedule English and Japanese words correctly.
 
 **1.4.0**
@@ -137,9 +157,9 @@ npm test
 **是什么：** 学英语、日语时用的 Obsidian 插件。选中一个词，一个命令同时查多个词典，再由 AI 整理成一条格式统一的学习记录，写到你指定的位置，并收进可以复习的词库。
 
 **怎么用：**
-1. 从 Releases 下载 zip，解压到 `<库>/.obsidian/plugins/obsidian-polyglot-helper/`，在“第三方插件”里启用。
+1. 从 Releases 下载 `main.js`、`manifest.json`、`styles.css`，放进 `<库>/.obsidian/plugins/polyglot-helper/`，在“第三方插件”里启用。**从 1.5 及更早版本升级：** 插件 ID 改为 `polyglot-helper`，先停用旧版再启用新版，新版首次启动会自动导入旧目录里的设置、API key 和两个词库；确认后删除旧版，快捷键需重设一次。
 2. 在插件设置里填一个 API key（默认 OpenRouter，也可以用 OpenAI 或任何兼容接口）。
-3. 选中词，在命令面板运行“🇺🇸 英语分析”或“🇯🇵 日语分析”。
+3. 选中词，在命令面板运行“英语分析”或“日语分析”。词库可用“导出词库为闪卡笔记”交给 Spaced Repetition 插件复习，或导出为 Anki 导入文件。
 
 **隐私：** 设置和词库在插件文件夹的 `data.json`。API key 加密保存，解密用的钥匙只存在本机，所以同步或提交 `data.json` 不会泄露 key；换设备时要重新填一次。查询的词会发给你启用的词典和 AI 服务。日志只在调试模式下写。
 
@@ -147,7 +167,7 @@ npm test
 
 **概要：** 英語・日本語の学習に使う Obsidian プラグインです。ノートで単語を選んでコマンドを実行すると、複数の辞書を同時に調べ、AI が意味・読み・例文・語源を一つの学習メモにまとめます。調べた単語は単語帳に入り、間隔反復で復習できます。
 
-**使い方：** Releases の zip をプラグインフォルダに展開して有効にし、設定で API キーを一つ入力します。単語を選び、「🇺🇸 英语分析」または「🇯🇵 日语分析」を実行してください。
+**使い方：** Releases の zip をプラグインフォルダに展開して有効にし、設定で API キーを一つ入力します。単語を選び、「英语分析」または「日语分析」を実行してください。1.5 以前から更新する場合、プラグイン ID が `polyglot-helper` に変わります。旧版を無効にしてから新版を有効にすると、設定・API キー・単語帳が自動で引き継がれます。
 
 **プライバシー：** API キーは暗号化して保存し、復号の鍵はこの端末にだけ残ります。調べた語は、有効にした辞書と AI サービスに送られます。
 

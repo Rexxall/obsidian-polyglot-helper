@@ -168,14 +168,14 @@ export class PolyglotHelperView extends ItemView {
 
         this.app.workspace.onLayoutReady(() => {
             // Set initial height for the actions container
-            this.actionsContainer.style.flexBasis = '38%';
+            this.actionsContainer.addClass('polyglot-actions-initial');
         });
 
         this.setupResizer();
 
         // --- Populate Actions Container ---
         this.actionsContent = this.actionsContainer.createDiv('polyglot-actions-content');
-        this.actionsContent.style.flex = '1'; // Ensure content fills the container
+        this.actionsContent.addClass('polyglot-fill'); // Ensure content fills the container
 
         // 文本框容器，包含输入框和选词模式开关
         const inputContainer = this.actionsContent.createDiv({ cls: 'polyglot-input-container' });
@@ -1232,10 +1232,7 @@ export class PolyglotHelperView extends ItemView {
         try {
             const textArea = document.createElement('textarea');
             textArea.value = text;
-            textArea.style.position = 'fixed';
-            textArea.style.left = '-999999px';
-            textArea.style.top = '-999999px';
-            textArea.style.opacity = '0';
+            textArea.addClass('polyglot-offscreen');
             document.body.appendChild(textArea);
             
             // 移动端兼容性处理
@@ -1444,10 +1441,8 @@ export class PolyglotHelperView extends ItemView {
 
         // 设置面板位置
         const rect = (event.target as HTMLElement).getBoundingClientRect();
-        panel.style.position = 'fixed';
-        panel.style.left = `${rect.left}px`;
-        panel.style.top = `${rect.bottom + 5}px`;
-        panel.style.zIndex = '1000';
+        panel.addClass('polyglot-floating-panel');
+        panel.setCssStyles({ left: `${rect.left}px`, top: `${rect.bottom + 5}px` });
 
         const sectionNames: Record<keyof typeof sections, string> = {
             vocabAnalysis: '词汇分析',
@@ -1524,10 +1519,8 @@ export class PolyglotHelperView extends ItemView {
 
         // 设置面板位置
         const rect = (event.target as HTMLElement).getBoundingClientRect();
-        panel.style.position = 'fixed';
-        panel.style.left = `${rect.left}px`;
-        panel.style.top = `${rect.bottom + 5}px`;
-        panel.style.zIndex = '1000';
+        panel.addClass('polyglot-floating-panel');
+        panel.setCssStyles({ left: `${rect.left}px`, top: `${rect.bottom + 5}px` });
 
         const sectionNames: Record<keyof typeof sections, string> = {
             definitions: '词典释义',
@@ -1585,10 +1578,8 @@ export class PolyglotHelperView extends ItemView {
 
         const panel = document.body.createDiv('polyglot-options-panel');
         const rect = (event.target as HTMLElement).getBoundingClientRect();
-        panel.style.position = 'fixed';
-        panel.style.left = `${rect.left}px`;
-        panel.style.top = `${rect.bottom + 5}px`;
-        panel.style.zIndex = '1000';
+        panel.addClass('polyglot-floating-panel');
+        panel.setCssStyles({ left: `${rect.left}px`, top: `${rect.bottom + 5}px` });
 
         const entries: Array<{ key: 'showRomaji' | 'playAudio'; label: string; }> = [
             { key: 'showRomaji', label: '罗马音标注' },
@@ -1681,10 +1672,8 @@ export class PolyglotHelperView extends ItemView {
 
         // 计算位置
         const rect = (event.target as HTMLElement).getBoundingClientRect();
-        panel.style.position = 'fixed';
-        panel.style.top = `${rect.bottom + 8}px`;
-        panel.style.left = `${Math.max(10, rect.left - 100)}px`; // 防止超出屏幕
-        panel.style.zIndex = '1000';
+        panel.addClasses(['polyglot-floating-panel', 'polyglot-fade']);
+        panel.setCssStyles({ top: `${rect.bottom + 8}px`, left: `${Math.max(10, rect.left - 100)}px` }); // 防止超出屏幕
 
         // 添加面板标题
         const header = panel.createDiv({ cls: 'polyglot-settings-header' });
@@ -1694,11 +1683,10 @@ export class PolyglotHelperView extends ItemView {
         const ttsSection = panel.createDiv({ cls: 'polyglot-settings-section' });
         ttsSection.createEl('label', { text: '引擎', cls: 'polyglot-settings-label' });
         const ttsSelect = ttsSection.createEl('select', { cls: 'polyglot-settings-select' });
-        ttsSelect.innerHTML = `
-            <option value="openai" ${this.plugin.settings.ttsEngine === 'openai' ? 'selected' : ''}>🤖 OpenAI</option>
-            <option value="youdao" ${this.plugin.settings.ttsEngine === 'youdao' ? 'selected' : ''}>📚 有道</option>
-            <option value="gemini" ${this.plugin.settings.ttsEngine === 'gemini' ? 'selected' : ''}>💎 Gemini</option>
-        `;
+        for (const [value, label] of [['openai', '🤖 OpenAI'], ['youdao', '📚 有道'], ['gemini', '💎 Gemini']]) {
+            ttsSelect.createEl('option', { value, text: label });
+        }
+        ttsSelect.value = this.plugin.settings.ttsEngine;
         ttsSelect.addEventListener('change', async () => {
             this.plugin.settings.ttsEngine = ttsSelect.value as 'openai' | 'youdao' | 'gemini';
             await this.plugin.saveSettings();
@@ -1737,14 +1725,13 @@ export class PolyglotHelperView extends ItemView {
             const voiceSection = panel.createDiv({ cls: 'polyglot-settings-section' });
             voiceSection.createEl('label', { text: '声音', cls: 'polyglot-settings-label' });
             const voiceSelect = voiceSection.createEl('select', { cls: 'polyglot-settings-select' });
-            voiceSelect.innerHTML = `
-                <option value="alloy" ${this.plugin.settings.openaiTtsVoice === 'alloy' ? 'selected' : ''}>🎭 Alloy</option>
-                <option value="echo" ${this.plugin.settings.openaiTtsVoice === 'echo' ? 'selected' : ''}>🔊 Echo</option>
-                <option value="fable" ${this.plugin.settings.openaiTtsVoice === 'fable' ? 'selected' : ''}>📖 Fable</option>
-                <option value="onyx" ${this.plugin.settings.openaiTtsVoice === 'onyx' ? 'selected' : ''}>💎 Onyx</option>
-                <option value="nova" ${this.plugin.settings.openaiTtsVoice === 'nova' ? 'selected' : ''}>⭐ Nova</option>
-                <option value="shimmer" ${this.plugin.settings.openaiTtsVoice === 'shimmer' ? 'selected' : ''}>✨ Shimmer</option>
-            `;
+            for (const [value, label] of [
+                ['alloy', '🎭 Alloy'], ['echo', '🔊 Echo'], ['fable', '📖 Fable'],
+                ['onyx', '💎 Onyx'], ['nova', '⭐ Nova'], ['shimmer', '✨ Shimmer'],
+            ]) {
+                voiceSelect.createEl('option', { value, text: label });
+            }
+            voiceSelect.value = this.plugin.settings.openaiTtsVoice ?? 'alloy';
             voiceSelect.addEventListener('change', async () => {
                 this.plugin.settings.openaiTtsVoice = voiceSelect.value;
                 await this.plugin.saveSettings();
@@ -1788,9 +1775,10 @@ export class PolyglotHelperView extends ItemView {
                 { value: 'Sulafat', label: 'Sulafat (温暖)' }
             ];
 
-            voiceSelect.innerHTML = geminiVoices.map(voice =>
-                `<option value="${voice.value}" ${this.plugin.settings.geminiTtsVoice === voice.value ? 'selected' : ''}>${voice.label}</option>`
-            ).join('');
+            for (const voice of geminiVoices) {
+                voiceSelect.createEl('option', { value: voice.value, text: voice.label });
+            }
+            voiceSelect.value = this.plugin.settings.geminiTtsVoice ?? 'Zephyr';
 
             voiceSelect.addEventListener('change', async () => {
                 this.plugin.settings.geminiTtsVoice = voiceSelect.value;
@@ -1824,20 +1812,13 @@ export class PolyglotHelperView extends ItemView {
 
         document.body.appendChild(panel);
 
-        // 添加动画效果
-        panel.style.opacity = '0';
-        panel.style.transform = 'translateY(-10px)';
-        requestAnimationFrame(() => {
-            panel.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
-            panel.style.opacity = '1';
-            panel.style.transform = 'translateY(0)';
-        });
+        // 添加动画效果：.polyglot-fade 默认透明，加 is-open 后淡入
+        requestAnimationFrame(() => panel.addClass('is-open'));
 
         // 点击外部关闭面板
         const closePanel = (e: MouseEvent) => {
             if (!panel.contains(e.target as Node)) {
-                panel.style.opacity = '0';
-                panel.style.transform = 'translateY(-10px)';
+                panel.removeClass('is-open');
                 setTimeout(() => panel.remove(), 200);
                 document.removeEventListener('click', closePanel);
             }

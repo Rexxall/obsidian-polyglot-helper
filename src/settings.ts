@@ -16,7 +16,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	display(): void {
 		const {containerEl} = this;
 		containerEl.empty();
-		containerEl.createEl('h2', {text: '语言助手设置'});
 
 		// 创建标签页导航
 		this.createTabNavigation(containerEl);
@@ -90,7 +89,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	}
 
 	private displayGeneralSettings(containerEl: HTMLElement) {
-		containerEl.createEl('h3', {text: '输出与保存'});
+		new Setting(containerEl).setName('输出与保存').setHeading();
 
 		new Setting(containerEl)
 			.setName('自动添加到词汇库')
@@ -123,17 +122,21 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		// --- 输出位置设置 ---
-		containerEl.createEl('h3', {text: '📁 输出位置设置'});
+		new Setting(containerEl).setName('输出位置').setHeading();
 
 		const outputDesc = containerEl.createDiv({cls: 'polyglot-setting-description'});
-		outputDesc.innerHTML = `
-			<p><strong>优先级说明：</strong></p>
-			<ul>
-				<li>🥇 <strong>最高优先级</strong>：侧边栏选择的输出位置</li>
-				<li>🥈 <strong>语言特定路径</strong>：仅在选择"固定文件"或"创建新文件"时使用下方的语言专用路径</li>
-				<li>🥉 <strong>通用路径</strong>：其他情况使用此处设置的通用路径</li>
-			</ul>
-		`;
+		outputDesc.createEl('p').createEl('strong', { text: '优先级说明：' });
+		const priorityList = outputDesc.createEl('ul');
+		for (const [medal, title, detail] of [
+			['🥇', '最高优先级', '：侧边栏选择的输出位置'],
+			['🥈', '语言特定路径', '：仅在选择"固定文件"或"创建新文件"时使用下方的语言专用路径'],
+			['🥉', '通用路径', '：其他情况使用此处设置的通用路径'],
+		]) {
+			const li = priorityList.createEl('li');
+			li.appendText(`${medal} `);
+			li.createEl('strong', { text: title });
+			li.appendText(detail);
+		}
 
 		new Setting(containerEl)
 			.setName('默认输出位置')
@@ -178,7 +181,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		}
 
 		// --- 快速翻译专属设置 ---
-		containerEl.createEl('h4', {text: '⚡ 快速翻译设置'});
+		new Setting(containerEl).setName('快速翻译').setHeading();
 		new Setting(containerEl)
 			.setName('快速翻译：罗马音标注')
 			.setDesc('在“→日”快速翻译结果中显示罗马音（仅日语文本时生效）。')
@@ -218,26 +221,26 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		// --- 语言特定路径设置 ---
-		containerEl.createEl('h4', {text: '🌍 语言特定路径设置'});
+		new Setting(containerEl).setName('语言特定路径').setHeading();
 
 		const languageDesc = containerEl.createDiv({cls: 'polyglot-setting-description'});
-		languageDesc.innerHTML = `
-			<p><strong>说明：</strong>这些路径仅在选择"固定文件"或"创建新文件"输出模式时使用。</p>
-			<p>如果留空，将使用上方的通用路径设置。</p>
-		`;
+		const languageNote = languageDesc.createEl('p');
+		languageNote.createEl('strong', { text: '说明：' });
+		languageNote.appendText('这些路径仅在选择"固定文件"或"创建新文件"输出模式时使用。');
+		languageDesc.createEl('p', { text: '如果留空，将使用上方的通用路径设置。' });
 
 		// 日语特定路径设置
-		this.createLanguagePathSettings(containerEl, '🇯🇵 日语分析', 'japaneseOutputSettings');
+		this.createLanguagePathSettings(containerEl, '日语分析', 'japaneseOutputSettings');
 
 		// 英语特定路径设置
-		this.createLanguagePathSettings(containerEl, '🇺🇸 英语分析', 'englishOutputSettings');
+		this.createLanguagePathSettings(containerEl, '英语分析', 'englishOutputSettings');
 
 		// 快捷翻译特定路径设置
-		this.createLanguagePathSettings(containerEl, '⚡ 快捷翻译', 'quickTranslationOutputSettings');
+		this.createLanguagePathSettings(containerEl, '快捷翻译', 'quickTranslationOutputSettings');
 	}
 
 	private displayTranslationSettings(containerEl: HTMLElement) {
-		containerEl.createEl('h3', {text: '🌐 翻译API配置'});
+		new Setting(containerEl).setName('翻译API配置').setHeading();
 
 		// API配置列表
 		this.plugin.settings.apiConfigs.forEach((config, index) => {
@@ -245,7 +248,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 			// 配置标题和删除按钮
 			const headerContainer = configContainer.createDiv({ cls: 'api-config-header' });
-			headerContainer.createEl('h4', { text: `${config.name} API配置` });
+			new Setting(headerContainer).setName(`${config.name} API配置`).setHeading();
 
 			// 只有超过1个配置时才显示删除按钮
 			if (this.plugin.settings.apiConfigs.length > 1) {
@@ -341,7 +344,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		// --- 功能API选择器 ---
-		containerEl.createEl('h3', {text: '功能API选择'});
+		new Setting(containerEl).setName('功能API选择').setHeading();
 
 		const enabledConfigs = this.plugin.settings.apiConfigs.filter(config => config.enabled);
 
@@ -390,10 +393,10 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		// 语音转日语功能已移除
 
 		// --- 内容定制设置 ---
-		containerEl.createEl('h3', {text: '📝 内容定制'});
+		new Setting(containerEl).setName('内容定制').setHeading();
 
 		// 日语内容定制
-		containerEl.createEl('h4', {text: '🇯🇵 日语内容定制'});
+		new Setting(containerEl).setName('日语内容定制').setHeading();
         const japaneseSectionToggles: Record<keyof PolyglotHelper['settings']['japaneseSections'], string> = {
             vocabAnalysis: '词汇分析',
             relatedVocab: '相关词汇解析',
@@ -415,7 +418,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
         });
 
 		// 英语内容定制
-		containerEl.createEl('h4', {text: '🇺🇸 英语内容定制'});
+		new Setting(containerEl).setName('英语内容定制').setHeading();
 		const englishSectionToggles: Record<keyof EnglishSections, string> = {
             definitions: '词典释义 (核心)',
             example: '例句 (LLM生成)',
@@ -441,10 +444,10 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	}
 
 	private displayAudioSettings(containerEl: HTMLElement) {
-		containerEl.createEl('h3', {text: '语音'});
+		new Setting(containerEl).setName('语音').setHeading();
 
 		// 音频文件存储设置
-		containerEl.createEl('h4', {text: '📁 音频文件设置'});
+		new Setting(containerEl).setName('音频文件').setHeading();
 
 		new Setting(containerEl)
 			.setName('日语音频文件存储路径')
@@ -468,7 +471,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		// TTS Engine for Japanese
-		containerEl.createEl('h4', {text: '🎤 TTS 音频生成'});
+		new Setting(containerEl).setName('TTS 音频生成').setHeading();
 		new Setting(containerEl)
 			.setName('TTS 引擎选择')
 			.addDropdown(dropdown => dropdown
@@ -493,14 +496,14 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		// 音频格式信息
 		const audioFormatDiv = containerEl.createDiv({ cls: 'polyglot-info-section' });
-		audioFormatDiv.createEl('h4', { text: '📋 音频格式信息' });
+		new Setting(audioFormatDiv).setName('音频格式信息').setHeading();
 		audioFormatDiv.createEl('p', { text: '• 支持格式: MP3, WAV, M4A' });
 		audioFormatDiv.createEl('p', { text: '• 默认格式: MP3 (兼容性最佳)' });
 		audioFormatDiv.createEl('p', { text: '• 音频文件会自动嵌入到翻译结果中' });
 	}
 
 	private displayUISettings(containerEl: HTMLElement) {
-		containerEl.createEl('h3', {text: '学习与界面'});
+		new Setting(containerEl).setName('学习与界面').setHeading();
 
 		new Setting(containerEl)
 			.setName('Paper & ink style')
@@ -509,6 +512,27 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				.setValue(!!this.plugin.settings.paperStyle)
 				.onChange(async (value) => {
 					this.plugin.settings.paperStyle = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('状态栏显示待复习数')
+			.setDesc('有到期单词时在状态栏显示“待复习 N”，点一下打开复习页。仅桌面端有状态栏。')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.showDueInStatusBar !== false)
+				.onChange(async (value) => {
+					this.plugin.settings.showDueInStatusBar = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('词库导出文件夹')
+			.setDesc('命令“导出词库为闪卡笔记”“导出词库为 Anki 导入文件”写到这里。闪卡笔记可直接被 Spaced Repetition 插件复习，重新导出会保留它的复习排程。')
+			.addText(text => text
+				.setPlaceholder('Polyglot')
+				.setValue(this.plugin.settings.vocabExportFolder || 'Polyglot')
+				.onChange(async (value) => {
+					this.plugin.settings.vocabExportFolder = value.trim() || 'Polyglot';
 					await this.plugin.saveSettings();
 				}));
 
@@ -615,14 +639,14 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	}
 
 	private displayCacheSettings(containerEl: HTMLElement) {
-		containerEl.createEl('h3', {text: '缓存'});
+		new Setting(containerEl).setName('缓存').setHeading();
 
 		// 创建智能清理区域
 		this.createSmartCleanupSection(containerEl);
 
 		// 快速清理选项
 		const quickCleanDiv = containerEl.createDiv({ cls: 'polyglot-quick-clean-section' });
-		quickCleanDiv.createEl('h4', { text: '快速清理' });
+		new Setting(quickCleanDiv).setName('快速清理').setHeading();
 
 		// 翻译缓存清理
 		new Setting(quickCleanDiv)
@@ -678,7 +702,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	}
 
 	private displayAdvancedSettings(containerEl: HTMLElement) {
-		containerEl.createEl('h3', {text: '高级'});
+		new Setting(containerEl).setName('高级').setHeading();
 
 		new Setting(containerEl)
 			.setName('启用调试模式')
@@ -702,14 +726,14 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		// 开发者信息
 		const devInfo = containerEl.createDiv({ cls: 'polyglot-dev-info' });
-		devInfo.createEl('h4', { text: '📋 插件信息' });
+		new Setting(devInfo).setName('插件信息').setHeading();
 		devInfo.createEl('p', { text: `版本: ${this.plugin.manifest.version}` });
 		devInfo.createEl('p', { text: `作者: ${this.plugin.manifest.author}` });
 		devInfo.createEl('p', { text: `描述: ${this.plugin.manifest.description}` });
 	}
 
 	private createLanguagePathSettings(containerEl: HTMLElement, title: string, settingsKey: keyof Pick<PolyglotHelperSettings, 'japaneseOutputSettings' | 'englishOutputSettings' | 'quickTranslationOutputSettings'>) {
-		containerEl.createEl('h5', {text: title});
+		new Setting(containerEl).setName(title).setHeading();
 
 		const settings = this.plugin.settings[settingsKey];
 
@@ -737,7 +761,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	}
 
 	private displayOpenAITTSSettings(containerEl: HTMLElement) {
-		containerEl.createEl('h5', {text: 'OpenAI TTS 设置'});
+		new Setting(containerEl).setName('OpenAI TTS').setHeading();
 		new Setting(containerEl).setName('TTS 接口地址 (Base URL)').addText(text => text.setValue(this.plugin.settings.openaiTtsBaseUrl || '').onChange(async (value) => { this.plugin.settings.openaiTtsBaseUrl = value; await this.plugin.saveSettings(); }));
 		new Setting(containerEl).setName('TTS API Key').setDesc("如果留空，将使用上面的 OpenAI API Key").addText(text => { text.inputEl.type = 'password'; text.setValue(this.plugin.settings.openaiTtsApiKey || '').onChange(async (value) => { this.plugin.settings.openaiTtsApiKey = value; await this.plugin.saveSettings(); }); });
 		new Setting(containerEl).setName('TTS 模型名称').setDesc('例如: tts-1, tts-1-hd').addText(text => text.setValue(this.plugin.settings.openaiTtsModel || '').onChange(async (value) => { this.plugin.settings.openaiTtsModel = value; await this.plugin.saveSettings(); }));
@@ -774,7 +798,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	}
 
 	private displayYoudaoTTSSettings(containerEl: HTMLElement) {
-		containerEl.createEl('h5', {text: '有道 TTS 设置'});
+		new Setting(containerEl).setName('有道 TTS').setHeading();
 		new Setting(containerEl).setName('有道应用 AppKey').addText(text => { text.inputEl.type = 'password'; text.setValue(this.plugin.settings.youdaoAppKey || '').onChange(async (value) => { this.plugin.settings.youdaoAppKey = value; await this.plugin.saveSettings(); }); });
 		new Setting(containerEl).setName('有道应用 AppSecret').addText(text => { text.inputEl.type = 'password'; text.setValue(this.plugin.settings.youdaoAppSecret || '').onChange(async (value) => { this.plugin.settings.youdaoAppSecret = value; await this.plugin.saveSettings(); }); });
 
@@ -808,7 +832,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	}
 
 	private displayGeminiTTSSettings(containerEl: HTMLElement) {
-		containerEl.createEl('h5', {text: 'Gemini TTS 设置'});
+		new Setting(containerEl).setName('Gemini TTS').setHeading();
 
 		new Setting(containerEl)
 			.setName('Gemini TTS Base URL')
@@ -936,7 +960,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	private async createSmartCleanupSection(containerEl: HTMLElement) {
 		// 智能清理容器
 		const smartCleanupDiv = containerEl.createDiv({ cls: 'polyglot-smart-cleanup-section' });
-		smartCleanupDiv.createEl('h4', { text: '🧠 智能缓存清理' });
+		new Setting(smartCleanupDiv).setName('智能缓存清理').setHeading();
 
 		// 加载缓存数据 - 使用动态导入以支持移动端
 		const { CacheManager } = await import('./cache-manager');
@@ -1019,7 +1043,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 	private createInlineFilterSection(containerEl: HTMLElement, data: any) {
 		const filterDiv = containerEl.createDiv({ cls: 'polyglot-inline-filter' });
-		filterDiv.createEl('h5', { text: '📋 筛选条件' });
+		new Setting(filterDiv).setName('筛选条件').setHeading();
 
 		const filterRow = filterDiv.createDiv({ cls: 'polyglot-filter-row' });
 
@@ -1062,7 +1086,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 	private createInlinePreviewSection(containerEl: HTMLElement, data: any) {
 		const previewDiv = containerEl.createDiv({ cls: 'polyglot-inline-preview' });
-		previewDiv.createEl('h5', { text: '👀 预览结果' });
+		new Setting(previewDiv).setName('预览结果').setHeading();
 
 		// 统计信息
 		const statsDiv = previewDiv.createDiv({ cls: 'polyglot-inline-stats' });
@@ -1177,13 +1201,12 @@ export class PolyglotSettingTab extends PluginSettingTab {
 			return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 		};
 
-		statsDiv.innerHTML = `
-			<div class="polyglot-stat-item">📊 筛选结果: ${filteredItems.length} 个文件 (${formatSize(totalSize)})</div>
-			<div class="polyglot-stat-item selected">✅ 已选择: ${selectedItems.size} 个文件 (${formatSize(selectedSize)})</div>
-		`;
+		statsDiv.empty();
+		statsDiv.createEl('div', { cls: 'polyglot-stat-item', text: `📊 筛选结果: ${filteredItems.length} 个文件 (${formatSize(totalSize)})` });
+		statsDiv.createEl('div', { cls: 'polyglot-stat-item selected', text: `✅ 已选择: ${selectedItems.size} 个文件 (${formatSize(selectedSize)})` });
 
 		// 更新文件列表
-		listDiv.innerHTML = '';
+		listDiv.empty();
 
 		if (filteredItems.length === 0) {
 			listDiv.createEl('div', {

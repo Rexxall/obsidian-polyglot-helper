@@ -8,7 +8,6 @@ import { getRelatedIdiomsTS } from './apis/idioms';
 import { getEtymologyInfoTS } from './apis/etymology';
 import { getTatoebaExamplesTS } from './apis/tatoeba';
 import { getLlmInfoTS, getChineseTranslationTS } from './apis/llm';
-import { normalize } from 'path';
 import { extractRootWord, ENGLISH_STOP_WORDS, getAudioUrl, getImageUrl, addQueryToHistory } from './utils';
 import { getCambridgeInfoTS } from './apis/cambridge';
 import { getFromCache, saveToCache } from './cache';

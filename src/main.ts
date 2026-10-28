@@ -1,4 +1,4 @@
-import { Editor, MarkdownView, Notice, Plugin, ItemView, WorkspaceLeaf, TFile, requestUrl } from 'obsidian';
+import { Editor, MarkdownView, Notice, Plugin, ItemView, WorkspaceLeaf, TFile, normalizePath, requestUrl } from 'obsidian';
 import { PolyglotHelperSettings, HistoryItem } from './types';
 import { runEnglishProcess } from './english-processor';
 import { getChineseTranslationTS } from './apis/llm';
@@ -20,6 +20,8 @@ import { PolyglotReviewView, POLYGLOT_REVIEW_VIEW_TYPE } from './review-view';
 import { ManagementPanelView, MANAGEMENT_PANEL_VIEW_TYPE } from './management-panel';
 import { CacheCleanupModal } from './cache-cleanup-modal';
 import { LookupPopover, sentenceAround } from './lookup-popover';
+import { LEGACY_PLUGIN_ID, readLegacyPluginData } from './legacy-migration';
+import { collectCards, toAnkiText, toFlashcardNote } from './vocab-export';
 
 // --- Interfaces and Defaults ---
 const DEFAULT_SETTINGS: PolyglotHelperSettings = {
@@ -55,6 +57,8 @@ const DEFAULT_SETTINGS: PolyglotHelperSettings = {
 	// UI Settings
 	lastSelectedMode: 'quick_to_japanese', // 默认选择快速翻译到日语
 	wordSelectionMode: false, // 选词模式：默认关闭
+	showDueInStatusBar: true,
+	vocabExportFolder: 'Polyglot',
 	paperStyle: false, // 纸墨风格：默认关闭，跟随 Obsidian 主题
 
 	// Audio Settings
@@ -222,7 +226,7 @@ export default class PolyglotHelper extends Plugin {
 				file: !!this.settings.debugMode,
 				filePath: `${pluginDir}/polyglot-helper.log`,
 			});
-			console.log("Polyglot Helper: Logger initialized successfully");
+			console.debug("Polyglot Helper: Logger initialized successfully");
 		} catch (error) {
 			console.error("Failed to initialize logger:", error);
 			new Notice("插件初始化失败：日志系统");
@@ -302,9 +306,11 @@ export default class PolyglotHelper extends Plugin {
 		});
 
 		// 添加管理面板侧边栏按钮
-		this.addRibbonIcon('settings', '打开 Polyglot 管理面板', () => {
+		this.addRibbonIcon('library-big', '打开 Polyglot 管理面板', () => {
 			this.activateManagementPanel();
 		});
+
+		this.setupDueStatus();
 
 		// === 查词小卡 ===
 		this.addCommand({
@@ -324,7 +330,7 @@ export default class PolyglotHelper extends Plugin {
 		// === 核心翻译功能 ===
 		this.addCommand({
 			id: 'analyze-english',
-			name: '🇺🇸 英语分析',
+			name: '英语分析',
 			editorCallback: (editor: Editor, view: MarkdownView) => {
 				const query = editor.getSelection()?.trim();
 				if (query) {
@@ -337,7 +343,7 @@ export default class PolyglotHelper extends Plugin {
 
 		this.addCommand({
 			id: 'analyze-japanese',
-			name: '🇯🇵 日语分析',
+			name: '日语分析',
 			editorCallback: (editor: Editor, view: MarkdownView) => {
 				const query = editor.getSelection()?.trim();
 				if (query) {
@@ -351,7 +357,7 @@ export default class PolyglotHelper extends Plugin {
 		// 拆分为两个独立的快速翻译命令
 		this.addCommand({
 			id: 'quick-translate-to-chinese',
-			name: '⚡ 快速翻译 → 汉语',
+			name: '快速翻译 → 汉语',
 			callback: async () => {
 				let text = this.app.workspace.activeEditor?.editor?.getSelection()?.trim();
 				if (!text) {
@@ -372,7 +378,7 @@ export default class PolyglotHelper extends Plugin {
 
 		this.addCommand({
 			id: 'quick-translate-to-japanese',
-			name: '⚡ 快速翻译 → 日语',
+			name: '快速翻译 → 日语',
 			callback: async () => {
 				let text = this.app.workspace.activeEditor?.editor?.getSelection()?.trim();
 				if (!text) {
@@ -394,7 +400,7 @@ export default class PolyglotHelper extends Plugin {
 		// === 界面工具 ===
 		this.addCommand({
 			id: 'open-polyglot-panel',
-			name: '📱 打开助手面板',
+			name: '打开助手面板',
 			callback: () => {
 				this.activateView();
 			}
@@ -402,7 +408,7 @@ export default class PolyglotHelper extends Plugin {
 
 		this.addCommand({
 			id: 'open-simple-vocab',
-			name: '📚 打开词汇库',
+			name: '打开词汇库',
 			callback: () => {
 				this.activateSimpleVocabView();
 			}
@@ -410,7 +416,7 @@ export default class PolyglotHelper extends Plugin {
 
 		this.addCommand({
 			id: 'open-polyglot-tab',
-			name: '🆕 在新标签页打开助手',
+			name: '在新标签页打开助手',
 			callback: () => {
 				this.activateViewInNewTab();
 			}
@@ -418,7 +424,7 @@ export default class PolyglotHelper extends Plugin {
 
 		this.addCommand({
 			id: 'toggle-word-selection-mode',
-			name: '🖱️ 切换选词模式',
+			name: '切换选词模式',
 			callback: async () => {
 				this.settings.wordSelectionMode = !this.settings.wordSelectionMode;
 				await this.saveSettings();
@@ -432,7 +438,7 @@ export default class PolyglotHelper extends Plugin {
 		// === 词汇管理 ===
 		this.addCommand({
 			id: 'add-to-vocabulary',
-			name: '📝 添加到词汇库',
+			name: '添加到词汇库',
 			editorCallback: async (editor: Editor) => {
 				const selection = editor.getSelection()?.trim();
 				if (!selection) {
@@ -472,7 +478,7 @@ export default class PolyglotHelper extends Plugin {
 		// === 语音功能 ===
 		this.addCommand({
 			id: 'play-voice',
-			name: '🔊 播放语音',
+			name: '播放语音',
 			editorCallback: async (editor: Editor) => {
 				const selectedText = editor.getSelection()?.trim();
 				if (!selectedText) {
@@ -492,8 +498,20 @@ export default class PolyglotHelper extends Plugin {
 
 		// === 系统工具 ===
 		this.addCommand({
+			id: 'export-vocab-flashcards',
+			name: '导出词库为闪卡笔记（Spaced Repetition 格式）',
+			callback: () => void this.exportVocabulary('flashcards'),
+		});
+
+		this.addCommand({
+			id: 'export-vocab-anki',
+			name: '导出词库为 Anki 导入文件',
+			callback: () => void this.exportVocabulary('anki'),
+		});
+
+		this.addCommand({
 			id: 'clear-cache',
-			name: '🗑️ 清理缓存',
+			name: '清理缓存',
 			callback: async () => {
 				try {
 					await this.clearAllCache();
@@ -505,7 +523,7 @@ export default class PolyglotHelper extends Plugin {
 
 		this.addCommand({
 			id: 'smart-cache-cleanup',
-			name: '🧠 智能缓存管理',
+			name: '智能缓存管理',
 			callback: () => {
 				const modal = new CacheCleanupModal(this.app, this.logger, this.manifest.dir || '');
 				modal.open();
@@ -567,8 +585,6 @@ export default class PolyglotHelper extends Plugin {
 	onunload() {
 		LookupPopover.close();
 		document.body.removeClass('polyglot-paper');
-		this.app.workspace.detachLeavesOfType(POLYGLOT_HELPER_VIEW_TYPE);
-		this.app.workspace.detachLeavesOfType(SIMPLE_VOCAB_VIEW_TYPE);
 
 		// 清理性能优化器资源
 		if (this.performanceOptimizer) {
@@ -1669,7 +1685,16 @@ Input text: "${inputText}"`;
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign(freshDefaultSettings(), await this.loadData());
+		let stored: unknown = await this.loadData();
+		if (!stored) {
+			const legacy = await readLegacyPluginData(this.app.vault.adapter, this.app.vault.configDir, this.manifest.dir);
+			if (legacy) {
+				stored = legacy;
+				await this.saveData(legacy);
+				new Notice(`Polyglot Helper：已从旧版插件目录（${LEGACY_PLUGIN_ID}）导入设置和词库。确认无误后可在第三方插件里停用并删除旧版。`, 12000);
+			}
+		}
+		this.settings = Object.assign(freshDefaultSettings(), stored);
 
 		// Decrypt API keys loaded from disk
 		await this.decryptSensitiveFields();
@@ -1754,7 +1779,7 @@ Input text: "${inputText}"`;
 			// 如果有迁移，保存设置
 			if (migrated) {
 				await this.saveSettings();
-				console.log('Polyglot: 词汇数据已迁移到分离的词库');
+				console.debug('Polyglot: 词汇数据已迁移到分离的词库');
 			}
 		}
 	}
@@ -1763,7 +1788,54 @@ Input text: "${inputText}"`;
 		const storageCopy = await this.encryptSensitiveFields();
 		await this.saveData(storageCopy);
 		this.applyPaperStyle();
+		this.updateDueStatus();
 		this.app.workspace.trigger('polyglot-settings-change');
+	}
+
+	private dueStatusEl: HTMLElement | null = null;
+
+	/** 状态栏的“待复习 N”：复习、加词都会经过 saveSettings，所以在那里刷新；另每 10 分钟刷新一次以跟上到期时间。 */
+	private setupDueStatus() {
+		this.dueStatusEl = this.addStatusBarItem();
+		this.dueStatusEl.addClass('polyglot-due-status', 'mod-clickable');
+		this.dueStatusEl.setAttr('aria-label', '打开 Polyglot 复习');
+		this.dueStatusEl.setAttr('data-tooltip-position', 'top');
+		this.registerDomEvent(this.dueStatusEl, 'click', () => void this.activateReviewView());
+		this.registerInterval(window.setInterval(() => this.updateDueStatus(), 10 * 60 * 1000));
+		this.updateDueStatus();
+	}
+
+	private updateDueStatus() {
+		const el = this.dueStatusEl;
+		if (!el || !this.learningTracker) return;
+		const due = this.learningTracker.getDueCounts().total;
+		const visible = this.settings.showDueInStatusBar !== false && this.settings.enableLearningTracker && due > 0;
+		el.toggle(visible);
+		if (visible) el.setText(`待复习 ${due}`);
+	}
+
+	/** 把英语、日语词库导出成 Spaced Repetition 闪卡笔记或 Anki 导入文本。 */
+	async exportVocabulary(format: 'flashcards' | 'anki') {
+		const cards = collectCards(this.settings.englishVocabItems || {}, this.settings.japaneseVocabItems || {});
+		if (cards.length === 0) {
+			new Notice('词库是空的，先查几个词再导出');
+			return;
+		}
+		const folder = normalizePath(this.settings.vocabExportFolder?.trim() || 'Polyglot');
+		const path = normalizePath(`${folder}/${format === 'flashcards' ? '词库闪卡.md' : '词库-Anki.txt'}`);
+		const { vault } = this.app;
+		if (!vault.getAbstractFileByPath(folder)) await vault.createFolder(folder);
+		const existing = vault.getAbstractFileByPath(path);
+		if (existing instanceof TFile) {
+			await vault.process(existing, previous => format === 'flashcards' ? toFlashcardNote(cards, previous) : toAnkiText(cards));
+		} else {
+			await vault.create(path, format === 'flashcards' ? toFlashcardNote(cards) : toAnkiText(cards));
+		}
+		new Notice(`已导出 ${cards.length} 张卡片到 ${path}`);
+		if (format === 'flashcards') {
+			const file = vault.getAbstractFileByPath(path);
+			if (file instanceof TFile) await this.app.workspace.getLeaf(false).openFile(file);
+		}
 	}
 
 	// ── Encrypted settings helpers ──

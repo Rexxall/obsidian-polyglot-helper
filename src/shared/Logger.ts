@@ -287,7 +287,7 @@ export class Logger {
 				console.debug(formatted);
 				break;
 			case LogLevel.INFO:
-				console.info(formatted);
+				console.debug(formatted);
 				break;
 			case LogLevel.WARN:
 				console.warn(formatted);

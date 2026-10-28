@@ -519,6 +519,12 @@ button.polyglot-action-btn.danger:hover { color: var(--pg-err); }
 .polyglot-option-item span { flex: 1; }
 .polyglot-options-panel hr { margin: 4px 0; border-color: var(--pg-line); }
 
+.polyglot-floating-panel { position: fixed; z-index: var(--layer-menu); }
+.polyglot-fade { opacity: 0; transform: translateY(-10px); transition: opacity 0.2s ease, transform 0.2s ease; }
+.polyglot-fade.is-open { opacity: 1; transform: none; }
+.polyglot-offscreen { position: fixed; left: -999999px; top: -999999px; opacity: 0; }
+.polyglot-actions-initial { flex-basis: 38%; }
+.polyglot-fill { flex: 1; }
 .polyglot-settings-panel { width: 240px; padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; }
 .polyglot-settings-header { display: flex; justify-content: space-between; }
 .polyglot-settings-title { font-weight: var(--font-semibold); }
