@@ -52,6 +52,7 @@ test('definitions are grouped by part of speech and source labels go to the foot
   const [card] = parseWordCards(english);
   const defs = card.sections.find((s) => s.title === '详细释义');
   assert.equal(JSON.stringify(defs.groups.map((g) => [g.pos, g.lines.length])), JSON.stringify([['动词', 1], ['形容词', 2], [null, 1]]));
+  assert.equal(JSON.stringify(defs.groups.map((g) => g.source || null)), JSON.stringify(['Free Dictionary', null, 'Cambridge Dictionary']));
   assert.equal(defs.groups[2].lines[0].text, '(often of something bad) intentional or planned');
   assert.equal(card.sources.join(), 'Free Dictionary,Cambridge Dictionary');
   assert.ok(!JSON.stringify(card).includes('Dictionary API'));

@@ -5,6 +5,7 @@ import { getFromCache, saveToCache } from './cache';
 import { ReviewSession, sourceNote } from './review-session';
 import { parseWordCards, WordCard, CardLine } from './word-card';
 import { getAudioUrl } from './utils';
+import { createObsidianPicker } from './ui/obsidian-picker';
 
 export const POLYGLOT_HELPER_VIEW_TYPE = "polyglot-helper-view";
 
@@ -148,6 +149,13 @@ export class PolyglotHelperView extends ItemView {
         setIcon(headMenu, 'more-horizontal');
         headMenu.addEventListener('click', (event) => {
             const menu = new Menu();
+            menu.addItem(item => item.setTitle('强制刷新（不用缓存）').setIcon('refresh-cw').setChecked(!!this.plugin.settings.forceRefresh).onClick(async () => {
+                this.plugin.settings.forceRefresh = !this.plugin.settings.forceRefresh;
+                await this.plugin.saveSettings();
+            }));
+            menu.addItem(item => item.setTitle('朗读输入框里的文字').setIcon('volume-2').onClick(() => this.handleVoiceSynthesis()));
+            menu.addItem(item => item.setTitle('语音选项…').setIcon('audio-lines').onClick(() => this.showSettingsPanel(headMenu)));
+            menu.addSeparator();
             menu.addItem(item => item.setTitle('跳到上次输出位置').setIcon('external-link').onClick(() => this.jumpToLastOutputLocation()));
             menu.addItem(item => item.setTitle('设置').setIcon('settings').onClick(() => {
                 const settings = (this.app as typeof this.app & { setting?: { open(): void; openTabById(id: string): void } }).setting;
@@ -192,6 +200,29 @@ export class PolyglotHelperView extends ItemView {
 
         // 右侧按钮容器
         const rightButtonsContainer = inputContainer.createDiv({ cls: 'polyglot-input-right-buttons' });
+
+        // 结果显示位置：胶囊选择器，放在输入框底栏左侧
+        const outputPicker = createObsidianPicker(
+            this.app,
+            inputContainer.createDiv({ cls: 'polyglot-output-picker' }),
+            [
+                { value: 'sidebar', label: '显示在侧栏' },
+                { value: 'replace', label: '替换选文' },
+                { value: 'appendCurrent', label: '追加到当前笔记' },
+                { value: 'newFile', label: '写入新笔记' },
+                { value: 'fixedFile', label: '写入固定文件' },
+            ],
+            this.plugin.settings.outputDestination ?? 'sidebar',
+            async (value) => {
+                this.plugin.settings.outputDestination = value;
+                // 同一个选择也用于“快速翻译”的输出位置
+                this.plugin.settings.quickTranslationOptions = this.plugin.settings.quickTranslationOptions || { showRomaji: false, playAudio: true, outputDestination: 'sidebar' };
+                this.plugin.settings.quickTranslationOptions.outputDestination = value;
+                await this.plugin.saveSettings();
+            },
+            '结果显示位置',
+        );
+        outputPicker.button.addClass('is-plain');
 
         // 选词模式开关按钮
         const wordSelectionToggle = rightButtonsContainer.createEl('button', {
@@ -256,62 +287,6 @@ export class PolyglotHelperView extends ItemView {
                 this.runActiveMode();
             }
         });
-
-        // --- Compact Options Row ---
-        const optionsContainer = this.actionsContent.createDiv({ cls: 'polyglot-compact-options' });
-
-        // 强制刷新按钮（小图标）
-        const refreshBtn = optionsContainer.createEl('button', {
-            cls: `polyglot-icon-button ${this.plugin.settings.forceRefresh ? 'active' : ''}`,
-            title: '强制刷新'
-        });
-        setIcon(refreshBtn, 'refresh-cw');
-        refreshBtn.addEventListener('click', async () => {
-            this.plugin.settings.forceRefresh = !this.plugin.settings.forceRefresh;
-            refreshBtn.toggleClass('active', this.plugin.settings.forceRefresh);
-            await this.plugin.saveSettings();
-        });
-
-        // 语音合成按钮
-        const voiceBtn = optionsContainer.createEl('button', {
-            cls: 'polyglot-icon-button',
-            title: '语音合成'
-        });
-        setIcon(voiceBtn, 'volume-2');
-        voiceBtn.addEventListener('click', () => this.handleVoiceSynthesis());
-
-        // 设置菜单按钮
-        const settingsBtn = optionsContainer.createEl('button', {
-            cls: 'polyglot-icon-button',
-            title: '语音选项',
-            attr: { 'aria-label': '语音选项' }
-        });
-        setIcon(settingsBtn, 'settings');
-        settingsBtn.addEventListener('click', (event) => this.showSettingsPanel(event));
-
-        // 输出位置下拉（保持但样式更紧凑）
-        const outputContainer = optionsContainer.createDiv({cls: 'polyglot-output-container'});
-        const outputDropdown = new DropdownComponent(outputContainer)
-            .addOptions({
-                'sidebar': '侧边栏',
-                'replace': '替换选文',
-                'appendCurrent': '追加当前文件',
-                'newFile': '创建新文件',
-                'fixedFile': '固定文件'
-            })
-            .setValue(this.plugin.settings.outputDestination)
-            .onChange(async (value: 'replace' | 'appendCurrent' | 'newFile' | 'sidebar' | 'fixedFile') => {
-                this.plugin.settings.outputDestination = value;
-                // 合并为一个控制：同时应用于"快速翻译"的输出目的地
-                this.plugin.settings.quickTranslationOptions = this.plugin.settings.quickTranslationOptions || { showRomaji: false, playAudio: true, outputDestination: 'sidebar' };
-                this.plugin.settings.quickTranslationOptions.outputDestination = value;
-                await this.plugin.saveSettings();
-            });
-
-        // 移除紧凑行中的"快捷翻译设置"按钮（已放到→日旁）
-
-
-
 
         // 初始化时记录当前活动文件
         this.updateLastActiveFile();
@@ -458,7 +433,9 @@ export class PolyglotHelperView extends ItemView {
             } else {
                 block.createDiv({ cls: 'polyglot-word-section-title', text: section.title });
             }
+            const sources = new Set(section.groups.map(group => group.source).filter(Boolean));
             for (const group of section.groups) {
+                if (group.source && sources.size > 1) body.createDiv({ cls: 'polyglot-word-group-source', text: group.source });
                 if (group.pos) body.createDiv({ cls: 'polyglot-word-group' }).createSpan({ cls: 'ap-pill', text: group.pos });
                 const list = body.createDiv({ cls: 'polyglot-word-lines' });
                 group.lines.forEach((line, i) => this.renderCardLine(list, line, group.numbered ? i + 1 : 0));
@@ -1787,14 +1764,15 @@ export class PolyglotHelperView extends ItemView {
     /**
      * 显示设置面板
      */
-    private showSettingsPanel(event: MouseEvent): void {
+    /** 语音选项浮层，贴着 anchor 下方打开。 */
+    private showSettingsPanel(anchor: HTMLElement): void {
         const panel = document.createElement('div');
         panel.className = 'polyglot-settings-panel';
 
         // 计算位置
-        const rect = (event.target as HTMLElement).getBoundingClientRect();
+        const rect = anchor.getBoundingClientRect();
         panel.addClasses(['polyglot-floating-panel', 'polyglot-fade', 'ap', 'ap-glass']);
-        panel.setCssStyles({ top: `${rect.bottom + 8}px`, left: `${Math.max(10, rect.left - 100)}px` }); // 防止超出屏幕
+        panel.setCssStyles({ top: `${rect.bottom + 8}px`, left: `${Math.max(10, Math.min(rect.left - 100, window.innerWidth - 300))}px` }); // 防止超出屏幕
 
         // 添加面板标题
         const header = panel.createDiv({ cls: 'polyglot-settings-header' });
@@ -1813,7 +1791,7 @@ export class PolyglotHelperView extends ItemView {
             await this.plugin.saveSettings();
             // 重新渲染面板以显示/隐藏语音选择
             panel.remove();
-            this.showSettingsPanel(event);
+            this.showSettingsPanel(anchor);
         });
 
         // 语音速度

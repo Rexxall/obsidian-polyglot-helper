@@ -17,6 +17,8 @@ export interface CardGroup {
 	pos?: string;
 	/** 词典义项，逐条编号 */
 	numbered?: boolean;
+	/** 这一组是哪本词典的第一组；一节里有几本词典时，组前标出来源 */
+	source?: string;
 	lines: CardLine[];
 }
 
@@ -169,7 +171,11 @@ function parseEntry(entry: string): WordCard | null {
 					if (!byPos.has(pos)) byPos.set(pos, []);
 					byPos.get(pos)!.push({ text: text.replace(/[:：]$/, ''), audio });
 				}
-				for (const [pos, groupLines] of byPos) section.groups.push({ pos: pos || undefined, numbered: true, lines: groupLines });
+				let first = true;
+				for (const [pos, groupLines] of byPos) {
+					section.groups.push({ pos: pos || undefined, numbered: true, source: first ? SOURCE_LABELS[label] : undefined, lines: groupLines });
+					first = false;
+				}
 				continue;
 			}
 			if (label && SOURCE_LABELS[label]) card.sources.push(SOURCE_LABELS[label]);
