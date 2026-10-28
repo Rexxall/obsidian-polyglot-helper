@@ -1408,3 +1408,77 @@ button.polyglot-page-btn:hover { background: var(--pg-hover); }
     font-weight: 600;
     box-shadow: none;
 }
+
+/* 侧栏顶部：标题右边一个“…”菜单（跳到上次输出、设置） */
+.polyglot-view-head { align-items: center; }
+.ap button.polyglot-head-more,
+.ap button.polyglot-due-more,
+.ap button.polyglot-word-more { width: 28px; height: 28px; padding: 0; border-radius: var(--ap-r-pill); color: var(--ap-label-2); }
+
+/* 语种：一个分段控件＋当前语种的选项＋“翻译成中文” */
+.polyglot-mode-row { display: flex; align-items: center; gap: var(--ap-s2); flex-wrap: wrap; flex: none; }
+.polyglot-mode-seg { flex: 1 1 180px; max-width: 260px; }
+.ap .polyglot-mode-seg button.is-active { font-weight: 600; }
+.theme-dark .ap .polyglot-mode-seg button.is-active { background: color-mix(in srgb, var(--text-normal) 16%, var(--ap-page)); }
+.ap button.polyglot-mode-options { width: 28px; height: 28px; padding: 0; border-radius: var(--ap-r-pill); color: var(--ap-label-2); }
+.ap button.polyglot-to-chinese { margin-left: auto; }
+
+/* 词卡 */
+.polyglot-word { display: grid; gap: var(--ap-s3); margin-bottom: var(--ap-s3); padding: var(--ap-s4) var(--ap-s4) var(--ap-s3); }
+.polyglot-word-top { display: flex; align-items: flex-start; gap: var(--ap-s2); }
+.polyglot-word-head { flex: 1; min-width: 0; font: 700 28px/34px var(--ap-font); letter-spacing: -0.02em; color: var(--ap-label); overflow-wrap: anywhere; }
+.polyglot-word.is-compact .polyglot-word-head { font-size: 22px; line-height: 28px; }
+.polyglot-word-meta { display: flex; align-items: center; gap: var(--ap-s2); margin-top: calc(-1 * var(--ap-s2)); flex-wrap: wrap; }
+.polyglot-word-phonetic { font: var(--ap-subhead); color: var(--ap-label-2); font-variant-ligatures: none; }
+.polyglot-word-spacer { flex: 1; }
+.ap button.polyglot-word-play {
+    width: 28px; height: 28px; padding: 0; border: 0; border-radius: var(--ap-r-pill);
+    background: var(--ap-accent-tint); color: var(--ap-accent); box-shadow: none;
+    transition: transform var(--ap-fast) var(--ap-ease);
+}
+.ap button.polyglot-word-play:active { transform: scale(0.92); }
+.ap button.polyglot-word-play svg { width: 15px; height: 15px; }
+.ap button.polyglot-word-play.is-small { width: 24px; height: 24px; flex: none; background: transparent; color: var(--ap-label-2); }
+.ap button.polyglot-word-play.is-small:hover { background: var(--ap-fill); color: var(--ap-accent); }
+.ap button.polyglot-word-add { display: inline-flex; align-items: center; gap: 4px; }
+.ap button.polyglot-word-add svg { width: 14px; height: 14px; }
+.ap button.polyglot-word-add.is-done { background: var(--ap-fill); color: var(--ap-label-2); cursor: default; }
+.polyglot-word-gloss { display: flex; align-items: baseline; gap: var(--ap-s2); flex-wrap: wrap; font: var(--ap-body); color: var(--ap-label); }
+.polyglot-word-section { display: grid; gap: var(--ap-s1); padding-top: var(--ap-s3); border-top: 0.5px solid var(--ap-sep); }
+.polyglot-word-section-title { font: 600 12px/16px var(--ap-font); color: var(--ap-label-2); }
+.polyglot-word-group { margin-top: var(--ap-s1); }
+.polyglot-word-lines { display: grid; }
+.polyglot-word-line { display: flex; align-items: flex-start; gap: var(--ap-s2); padding: 5px 0; }
+.polyglot-word-line + .polyglot-word-line { border-top: 0.5px solid color-mix(in srgb, var(--ap-sep) 60%, transparent); }
+.polyglot-word-index { flex: none; width: 16px; font: 600 11px/15px var(--ap-font-round); color: var(--ap-label-3); font-variant-numeric: tabular-nums; }
+.polyglot-word-line-main { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.polyglot-word-label { font: 500 11px/14px var(--ap-font); color: var(--ap-label-2); }
+.polyglot-word-text { font: var(--ap-callout); color: var(--ap-label); }
+.polyglot-word-text strong { color: var(--ap-accent); font-weight: 600; }
+.polyglot-word-sub { font: var(--ap-subhead); color: var(--ap-label-2); }
+.polyglot-word-line rt { font-size: 0.6em; color: var(--ap-label-2); }
+.polyglot-word-source { padding-top: var(--ap-s2); border-top: 0.5px solid var(--ap-sep); font: var(--ap-caption); color: var(--ap-label-3); }
+.polyglot-word .polyglot-vocab-foot { margin: 0; padding: var(--ap-s2) 0 0; border-top: 0.5px solid var(--ap-sep); }
+
+/* 展开行（74 号附录补齐前先用 kit 变量写在本插件里） */
+.ap button.polyglot-expand {
+    display: flex; align-items: center; justify-content: space-between; width: 100%;
+    height: auto; padding: 2px 0; border: 0; background: none; box-shadow: none;
+    font: 600 12px/16px var(--ap-font); color: var(--ap-label-2); cursor: pointer;
+}
+.polyglot-expand-chevron { display: inline-flex; transition: transform var(--ap-base) var(--ap-ease); }
+.polyglot-expand-chevron svg { width: 14px; height: 14px; }
+.polyglot-expand[aria-expanded="true"] .polyglot-expand-chevron { transform: rotate(90deg); }
+
+/* 学习页：一张卡（标题行、三格数字、开始按钮）＋今天要复习的词 */
+.polyglot-today { display: grid; gap: var(--ap-s3); padding: var(--ap-s1) 0 var(--ap-s4); }
+.polyglot-today .ap-card-head { padding-bottom: 0; }
+.polyglot-due-stats { padding: 0 var(--ap-s1); }
+.ap button.polyglot-due-start { justify-self: stretch; margin: 0 var(--ap-s4); height: 36px; font-size: 13px; }
+.polyglot-due-list-title { margin: var(--ap-s5) 0 var(--ap-s2); }
+.polyglot-due-list .ap-row { min-height: 48px; }
+.polyglot-due-rest { margin-top: var(--ap-s2); padding-inline: var(--ap-s1); font: var(--ap-caption); }
+
+@media (prefers-reduced-motion: reduce) {
+    .polyglot-expand-chevron, .ap button.polyglot-word-play { transition: none; }
+}

@@ -1,4 +1,4 @@
-import { Notice, setIcon } from "obsidian";
+import { Menu, Notice, setIcon } from "obsidian";
 import type PolyglotHelper from "./main";
 import { EnglishVocabularyItem, JapaneseVocabularyItem, VocabularyItem } from "./types";
 
@@ -58,27 +58,66 @@ export class ReviewSession {
         }
 
         const due = this.tracker.getDueCounts();
-        const head = this.host.createDiv({ cls: 'polyglot-due' });
-        head.createDiv({ cls: 'polyglot-due-count', text: String(due.total) });
-        const meta = head.createDiv({ cls: 'polyglot-due-meta' });
-        meta.createDiv({ text: '今天到期' });
-        meta.createDiv({ cls: 'polyglot-muted', text: `英语 ${due.english} · 日语 ${due.japanese}` });
+        const total = this.tracker.getEnglishVocabulary().length + this.tracker.getJapaneseVocabulary().length;
+        const minutes = Math.max(1, Math.ceil(due.total * SECONDS_PER_CARD / 60));
+
+        // 一张卡：标题行（“…”里是分语种复习与生词本），三格数字，开始按钮
+        const card = this.host.createDiv({ cls: 'ap-card polyglot-today' });
+        const head = card.createDiv({ cls: 'ap-card-head polyglot-due-head' });
+        setIcon(head.createDiv({ cls: 'ap-icon-tile' }), 'calendar-check');
+        const title = head.createDiv({ cls: 'ap-row-main' });
+        title.createDiv({ cls: 'ap-row-title', text: '今天的复习' });
+        title.createDiv({ cls: 'ap-row-desc', text: due.total > 0 ? `约 ${minutes} 分钟` : '今天都复习完了' });
+        const more = head.createEl('button', { cls: 'clickable-icon polyglot-due-more', attr: { 'aria-label': '更多' } });
+        setIcon(more, 'more-horizontal');
+        more.addEventListener('click', (event) => {
+            const menu = new Menu();
+            if (due.english > 0) menu.addItem(item => item.setTitle('只复习英语').setIcon('languages').onClick(() => this.start('english')));
+            if (due.japanese > 0) menu.addItem(item => item.setTitle('只复习日语').setIcon('languages').onClick(() => this.start('japanese')));
+            menu.addItem(item => item.setTitle(`打开生词本（${total}）`).setIcon('book-open').onClick(() => this.plugin.activateManagementPanel()));
+            menu.showAtMouseEvent(event);
+        });
+
+        const stats = card.createDiv({ cls: 'ap-stats polyglot-due-stats' });
+        const stat = (label: string, value: number, unit: string) => {
+            const cell = stats.createDiv({ cls: 'ap-stat' });
+            cell.createDiv({ cls: 'ap-stat-label', text: label });
+            const v = cell.createDiv({ cls: 'ap-stat-value', text: String(value) });
+            v.createSpan({ cls: 'ap-unit', text: unit });
+        };
+        stat('到期', due.total, '个');
+        stat('英语', due.english, '个');
+        stat('日语', due.japanese, '个');
 
         if (due.total > 0) {
-            const minutes = Math.max(1, Math.ceil(due.total * SECONDS_PER_CARD / 60));
-            this.host.createDiv({ cls: 'polyglot-muted polyglot-due-time', text: `约 ${minutes} 分钟` });
-            const start = this.host.createEl('button', { text: '开始复习', cls: 'mod-cta polyglot-primary polyglot-due-start' });
+            const start = card.createEl('button', { text: '开始复习', cls: 'ap-btn is-primary polyglot-due-start' });
             start.addEventListener('click', () => this.start('all'));
-        } else {
-            this.host.createDiv({ cls: 'polyglot-review-empty', text: '今天没有要复习的词。查词时点“收进生词本”，新词会出现在这里。' });
         }
 
-        const foot = this.host.createDiv({ cls: 'polyglot-review-foot' });
-        const scopes = foot.createDiv({ cls: 'polyglot-quiet-links' });
-        if (due.english > 0) this.quietLink(scopes, '只复习英语', () => this.start('english'));
-        if (due.japanese > 0) this.quietLink(scopes, '只复习日语', () => this.start('japanese'));
-        const total = this.tracker.getEnglishVocabulary().length + this.tracker.getJapaneseVocabulary().length;
-        this.quietLink(foot, `生词本 ${total}`, () => this.plugin.activateManagementPanel());
+        if (due.total === 0) {
+            this.host.createDiv({ cls: 'polyglot-review-empty', text: '今天没有要复习的词。查词时点“加入生词本”，新词会出现在这里。' });
+            return;
+        }
+
+        // 今天要复习的词，最多列 8 个
+        const SHOW = 8;
+        const items = this.tracker.getDueReviewItems('all', SHOW);
+        this.host.createDiv({ cls: 'ap-section-title polyglot-due-list-title', text: '今天要复习' });
+        const list = this.host.createDiv({ cls: 'ap-group polyglot-due-list' });
+        for (const item of items) {
+            const kind = this.tracker.kindOf(item);
+            const row = list.createDiv({ cls: 'ap-row' });
+            const main = row.createDiv({ cls: 'ap-row-main' });
+            const word = kind === 'japanese' ? (item as JapaneseVocabularyItem).japaneseText : (item as EnglishVocabularyItem).word;
+            main.createDiv({ cls: 'ap-row-title', text: word });
+            const reading = kind === 'japanese' ? (item as JapaneseVocabularyItem).reading : '';
+            // 旧版本收词时可能把整段 Markdown 存进释义，这里只取第一行干净文字
+            const first = (item.translation || '').split('\n')[0].replace(/^#+\s*/, '').replace(/[*_`]/g, '').trim();
+            const meaning = [reading, first === word ? '' : first].filter(Boolean).join(' · ');
+            if (meaning) main.createDiv({ cls: 'ap-row-desc', text: meaning });
+            row.createSpan({ cls: 'ap-pill', text: kind === 'japanese' ? '日' : '英' });
+        }
+        if (due.total > SHOW) this.host.createDiv({ cls: 'polyglot-muted polyglot-due-rest', text: `还有 ${due.total - SHOW} 个，开始复习后会一起出现` });
     }
 
     private start(scope: Scope) {

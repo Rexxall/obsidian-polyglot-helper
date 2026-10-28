@@ -1,8 +1,10 @@
-import { ItemView, WorkspaceLeaf, Notice, TextAreaComponent, Editor, ToggleComponent, MarkdownRenderer, MarkdownView, TextComponent, DropdownComponent, setIcon, TFile } from "obsidian";
+import { ItemView, WorkspaceLeaf, Notice, TextAreaComponent, Editor, ToggleComponent, MarkdownRenderer, MarkdownView, TextComponent, DropdownComponent, setIcon, TFile, Menu, normalizePath, sanitizeHTMLToDom } from "obsidian";
 import PolyglotHelper from "./main";
 import { HistoryItem } from "./types";
 import { getFromCache, saveToCache } from './cache';
 import { ReviewSession, sourceNote } from './review-session';
+import { parseWordCards, WordCard, CardLine } from './word-card';
+import { getAudioUrl } from './utils';
 
 export const POLYGLOT_HELPER_VIEW_TYPE = "polyglot-helper-view";
 
@@ -20,7 +22,7 @@ export class PolyglotHelperView extends ItemView {
     private processingStartFile: any = null; // 记录开始处理时的活跃文件
     private lastActiveFile: TFile | null = null; // 记录最后的活动文件
     private activeMode: 'japanese' | 'english' | 'quick_to_japanese' | 'quick_english' = 'quick_to_japanese';
-    private modeButtons: { japBtn?: HTMLButtonElement; engBtn?: HTMLButtonElement; quickJpBtn?: HTMLButtonElement; quickZhBtn?: HTMLButtonElement } = {};
+    private modeButtons: { japBtn?: HTMLButtonElement; engBtn?: HTMLButtonElement; quickJpBtn?: HTMLButtonElement } = {};
     private wordSelectionToggle?: HTMLButtonElement;
     private review: ReviewSession | null = null;
     private panes: { look?: HTMLElement; learn?: HTMLElement } = {};
@@ -41,13 +43,11 @@ export class PolyglotHelperView extends ItemView {
     private setActiveMode(mode: 'japanese' | 'english' | 'quick_to_japanese' | 'quick_english'): void {
         this.activeMode = mode;
         // 高亮按钮
-        const { japBtn, engBtn, quickJpBtn, quickZhBtn } = this.modeButtons;
-        [japBtn, engBtn, quickJpBtn, quickZhBtn].forEach(btn => btn && btn.removeClass('active'));
-        switch (mode) {
-            case 'japanese': japBtn?.addClass('active'); break;
-            case 'english': engBtn?.addClass('active'); break;
-            case 'quick_to_japanese': quickJpBtn?.addClass('active'); break;
-            case 'quick_english': quickZhBtn?.addClass('active'); break;
+        const { japBtn, engBtn, quickJpBtn } = this.modeButtons;
+        const active = { japanese: japBtn, english: engBtn, quick_to_japanese: quickJpBtn, quick_english: undefined }[mode];
+        for (const btn of [japBtn, engBtn, quickJpBtn]) {
+            btn?.toggleClass('is-active', btn === active);
+            btn?.setAttribute('aria-pressed', String(btn === active));
         }
         
         // 保存当前选择到设置中
@@ -144,11 +144,17 @@ export class PolyglotHelperView extends ItemView {
         // --- 顶部：标题、设置、两页切换 ---
         const head = root.createDiv({ cls: 'polyglot-view-head' });
         head.createEl('h3', { text: '语言助手' });
-        const settingsEntry = head.createEl('button', { text: '设置', cls: 'polyglot-link' });
-        settingsEntry.addEventListener('click', () => {
-            const settings = (this.app as typeof this.app & { setting?: { open(): void; openTabById(id: string): void } }).setting;
-            settings?.open();
-            settings?.openTabById(this.plugin.manifest.id);
+        const headMenu = head.createEl('button', { cls: 'polyglot-head-more clickable-icon', attr: { 'aria-label': '更多' } });
+        setIcon(headMenu, 'more-horizontal');
+        headMenu.addEventListener('click', (event) => {
+            const menu = new Menu();
+            menu.addItem(item => item.setTitle('跳到上次输出位置').setIcon('external-link').onClick(() => this.jumpToLastOutputLocation()));
+            menu.addItem(item => item.setTitle('设置').setIcon('settings').onClick(() => {
+                const settings = (this.app as typeof this.app & { setting?: { open(): void; openTabById(id: string): void } }).setting;
+                settings?.open();
+                settings?.openTabById(this.plugin.manifest.id);
+            }));
+            menu.showAtMouseEvent(event);
         });
         const tabs = root.createDiv({ cls: 'polyglot-tabs' });
         this.tabButtons.look = tabs.createEl('button', { text: '查词' });
@@ -215,43 +221,32 @@ export class PolyglotHelperView extends ItemView {
         // 保存按钮引用，以便在设置变化时更新
         this.wordSelectionToggle = wordSelectionToggle;
 
-        const buttonContainer = this.actionsContent.createDiv({ cls: "polyglot-button-container-row" });
-
-        // --- Japanese Button Group ---
-        const japGroup = buttonContainer.createDiv({ cls: 'polyglot-button-group' });
-        const japBtn = japGroup.createEl("button", { text: "日语", cls: "polyglot-button" });
-        japBtn.addEventListener("click", () => { this.setActiveMode('japanese'); });
-        const japSettingsBtn = japGroup.createEl("button", { cls: "polyglot-settings-button" });
-        setIcon(japSettingsBtn, 'more-vertical');
-        japSettingsBtn.addEventListener('click', (event) => {
-            this.showJapaneseOptionsPanel(event);
-        }, { capture: false });
-
-        // --- English Button Group ---
-        const engGroup = buttonContainer.createDiv({ cls: 'polyglot-button-group' });
-        const engBtn = engGroup.createEl("button", { text: "英语", cls: "polyglot-button" });
-        engBtn.addEventListener("click", () => { this.setActiveMode('english'); });
-        const engSettingsBtn = engGroup.createEl("button", { cls: "polyglot-settings-button" });
-        setIcon(engSettingsBtn, 'more-vertical');
-        engSettingsBtn.addEventListener('click', (event) => {
-            this.showEnglishOptionsPanel(event);
-        }, { capture: false });
-        
-        // --- Quick to Japanese Group (button + settings) ---
-        const quickJpGroup = buttonContainer.createDiv({ cls: 'polyglot-button-group' });
-        const quickJpBtn = quickJpGroup.createEl("button", { text: "译日语", cls: "polyglot-button polyglot-quick-button" });
-        quickJpBtn.addEventListener("click", () => { this.setActiveMode('quick_to_japanese'); });
-        const quickSettingsSmall = quickJpGroup.createEl("button", { cls: "polyglot-settings-button", attr: { title: '快捷翻译设置' } });
-        setIcon(quickSettingsSmall, 'more-vertical');
-        quickSettingsSmall.addEventListener('click', (event) => this.showQuickOptionsPanel(event), { capture: false });
-        const quickZhBtn = buttonContainer.createEl("button", { text: "译中文", cls: "polyglot-button polyglot-quick-button" });
-        quickZhBtn.addEventListener("click", () => { this.setActiveMode('quick_english'); });
+        // 语种：一个分段控件选查词方式，旁边“…”是当前语种的选项；翻译成中文是单独的一步操作
+        const buttonContainer = this.actionsContent.createDiv({ cls: "polyglot-mode-row" });
+        const seg = buttonContainer.createDiv({ cls: 'ap-seg polyglot-mode-seg' });
+        const japBtn = seg.createEl("button", { text: "日语" });
+        const engBtn = seg.createEl("button", { text: "英语" });
+        const quickJpBtn = seg.createEl("button", { text: "译日语" });
+        japBtn.addEventListener("click", () => this.setActiveMode('japanese'));
+        engBtn.addEventListener("click", () => this.setActiveMode('english'));
+        quickJpBtn.addEventListener("click", () => this.setActiveMode('quick_to_japanese'));
+        const modeOptions = buttonContainer.createEl("button", { cls: "polyglot-mode-options clickable-icon", attr: { 'aria-label': '当前语种的选项' } });
+        setIcon(modeOptions, 'sliders-horizontal');
+        modeOptions.addEventListener('click', (event) => {
+            if (this.activeMode === 'japanese') this.showJapaneseOptionsPanel(event);
+            else if (this.activeMode === 'english') this.showEnglishOptionsPanel(event);
+            else this.showQuickOptionsPanel(event);
+        });
+        const quickZhBtn = buttonContainer.createEl("button", { text: "翻译成中文", cls: "ap-btn is-outline polyglot-to-chinese" });
+        quickZhBtn.addEventListener("click", () => this.handleQuickProcess());
 
         // 记录按钮引用，便于切换高亮
-        this.modeButtons = { japBtn, engBtn, quickJpBtn, quickZhBtn } as any;
+        this.modeButtons = { japBtn, engBtn, quickJpBtn };
 
         // 设置初始模式（从设置中读取上次选择）
-        const savedMode = this.plugin.settings.lastSelectedMode || 'quick_to_japanese';
+        // 旧版本把“译中文”也存成模式；现在它是按钮，回到英语
+        const lastMode = this.plugin.settings.lastSelectedMode || 'quick_to_japanese';
+        const savedMode = lastMode === 'quick_english' ? 'english' : lastMode;
         this.setActiveMode(savedMode);
 
         // 输入框回车：执行当前模式
@@ -315,13 +310,7 @@ export class PolyglotHelperView extends ItemView {
 
         // 移除紧凑行中的"快捷翻译设置"按钮（已放到→日旁）
 
-        // 跳转到上一次输出位置按钮
-        const jumpToOutputBtn = optionsContainer.createEl('button', {
-            cls: 'polyglot-icon-button',
-            title: '跳转到上一次输出位置'
-        });
-        setIcon(jumpToOutputBtn, 'external-link');
-        jumpToOutputBtn.addEventListener('click', () => this.jumpToLastOutputLocation());
+
 
 
         // 初始化时记录当前活动文件
@@ -383,24 +372,152 @@ export class PolyglotHelperView extends ItemView {
         this.displayContainer.empty();
         this.displayContainer.addClass('polyglot-results-active');
 
-        // 创建操作按钮栏
+        const cards = parseWordCards(result);
+        if (cards.length) {
+            cards.forEach((card, i) => this.renderWordCard(card, result, historyItem, cards.length > 1 && i > 0));
+            const last = this.displayContainer.lastElementChild as HTMLElement | null;
+            if (last) {
+                this.renderVocabFooter(last, cards.length === 1 ? cards[0].headword : '', historyItem);
+                // 词典来源始终是卡片最后一行
+                const source = last.querySelector('.polyglot-word-source');
+                if (source) last.appendChild(source);
+            }
+            return;
+        }
+
+        // 认不出词头的结果（自由文本、旧格式）仍按 Markdown 显示
         const actionBar = this.displayContainer.createDiv({ cls: 'polyglot-results-action-bar' });
-
-        // 创建内容容器
         const contentDiv = this.displayContainer.createDiv('polyglot-result-content');
-
-        // 渲染Markdown内容
         await MarkdownRenderer.render(this.app, result, contentDiv, '', this);
-
-        // 处理渲染后的内容，应用卡片布局和折叠区域
         this.applyCardLayout(contentDiv);
         this.applyCollapsibleSections(contentDiv);
         this.foldSecondarySections(contentDiv);
         this.applyPOSTagging(contentDiv);
-        this.renderVocabFooter(contentDiv, result, historyItem);
-
-        // 添加增强的操作按钮
+        this.renderVocabFooter(contentDiv, result.match(/^##\s+(.+?)(?:\s+-\s+.*)?\s*$/m)?.[1]?.trim() || '', historyItem);
         this.createEnhancedActionButtons(actionBar, result, contentDiv, historyItem);
+    }
+
+    /**
+     * 一张词卡：大字词头；音标、发音、收进生词本同一行；词性胶囊；
+     * 义项按词性分组，例句译文用次级文字；词典来源一行灰字注在底部。
+     */
+    private renderWordCard(card: WordCard, result: string, historyItem: HistoryItem | undefined, compact: boolean) {
+        const el = this.displayContainer.createDiv({ cls: 'polyglot-word ap-card' });
+        if (compact) el.addClass('is-compact');
+
+        const top = el.createDiv({ cls: 'polyglot-word-top' });
+        top.createDiv({ cls: 'polyglot-word-head', text: card.headword });
+        const more = top.createEl('button', { cls: 'polyglot-word-more clickable-icon', attr: { 'aria-label': '更多操作' } });
+        setIcon(more, 'more-horizontal');
+        more.addEventListener('click', (event) => this.showResultMenu(event, result, historyItem, card));
+
+        const meta = el.createDiv({ cls: 'polyglot-word-meta' });
+        if (card.phonetic) meta.createSpan({ cls: 'polyglot-word-phonetic', text: card.phonetic });
+        const audio = card.audio || (historyItem?.type !== 'japanese' && /^[A-Za-z][A-Za-z' -]*$/.test(card.headword) ? getAudioUrl(card.headword) : '');
+        if (audio) {
+            const play = meta.createEl('button', { cls: 'polyglot-word-play', attr: { 'aria-label': '发音' } });
+            setIcon(play, 'volume-2');
+            play.addEventListener('click', () => this.playSource(audio));
+        }
+        meta.createDiv({ cls: 'polyglot-word-spacer' });
+        const saved = this.findVocabItem(card.headword);
+        const add = meta.createEl('button', { cls: 'ap-btn is-tinted polyglot-word-add' });
+        const setAdded = (done: boolean) => {
+            add.empty();
+            setIcon(add.createSpan(), done ? 'check' : 'bookmark-plus');
+            add.createSpan({ text: done ? '已在生词本' : '加入生词本' });
+            add.toggleClass('is-done', done);
+        };
+        setAdded(!!saved);
+        add.addEventListener('click', async () => {
+            if (add.hasClass('is-done')) return;
+            await this.addToVocabulary(result, historyItem, card);
+            setAdded(true);
+        });
+
+        if (card.pos.length || card.gloss) {
+            const gloss = el.createDiv({ cls: 'polyglot-word-gloss' });
+            for (const pos of card.pos) gloss.createSpan({ cls: 'ap-pill is-accent', text: pos });
+            if (card.gloss) this.renderInline(gloss.createSpan(), card.gloss);
+        }
+
+        for (const section of card.sections) {
+            const block = el.createDiv({ cls: 'polyglot-word-section' });
+            let body = block;
+            if (section.folded) {
+                const toggle = block.createEl('button', { cls: 'polyglot-expand', attr: { 'aria-expanded': 'false' } });
+                toggle.createSpan({ text: section.title });
+                setIcon(toggle.createSpan({ cls: 'polyglot-expand-chevron' }), 'chevron-right');
+                body = block.createDiv({ cls: 'polyglot-expand-body' });
+                body.hide();
+                toggle.addEventListener('click', () => {
+                    const open = toggle.getAttribute('aria-expanded') !== 'true';
+                    toggle.setAttribute('aria-expanded', String(open));
+                    body.toggle(open);
+                });
+            } else {
+                block.createDiv({ cls: 'polyglot-word-section-title', text: section.title });
+            }
+            for (const group of section.groups) {
+                if (group.pos) body.createDiv({ cls: 'polyglot-word-group' }).createSpan({ cls: 'ap-pill', text: group.pos });
+                const list = body.createDiv({ cls: 'polyglot-word-lines' });
+                group.lines.forEach((line, i) => this.renderCardLine(list, line, group.numbered ? i + 1 : 0));
+            }
+        }
+
+        if (card.sources.length) el.createDiv({ cls: 'polyglot-word-source', text: `来源：${card.sources.join(' · ')}` });
+    }
+
+    private renderCardLine(list: HTMLElement, line: CardLine, index: number) {
+        const row = list.createDiv({ cls: 'polyglot-word-line' });
+        if (index) row.createSpan({ cls: 'polyglot-word-index', text: String(index) });
+        const main = row.createDiv({ cls: 'polyglot-word-line-main' });
+        if (line.label) this.renderInline(main.createDiv({ cls: 'polyglot-word-label' }), line.label);
+        this.renderInline(main.createDiv({ cls: 'polyglot-word-text' }), line.text);
+        if (line.sub) this.renderInline(main.createDiv({ cls: 'polyglot-word-sub' }), line.sub);
+        if (line.audio) {
+            const play = row.createEl('button', { cls: 'polyglot-word-play is-small', attr: { 'aria-label': '朗读这一句' } });
+            setIcon(play, 'volume-2');
+            const src = line.audio;
+            play.addEventListener('click', () => this.playSource(src));
+        }
+    }
+
+    /** 行内只保留加粗、斜体与 <ruby> 注音。 */
+    private renderInline(parent: HTMLElement, text: string) {
+        const html = text
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/(^|[\s(（])_([^_]+)_(?=[\s),.;:，。）]|$)/g, '$1<em>$2</em>')
+            .replace(/`([^`]+)`/g, '$1');
+        parent.append(sanitizeHTMLToDom(html));
+    }
+
+    private playSource(src: string) {
+        const url = /^(https?:|app:|data:|blob:)/.test(src) ? src : this.app.vault.adapter.getResourcePath(normalizePath(src));
+        new Audio(url).play().catch(() => new Notice('音频播放失败'));
+    }
+
+    private findVocabItem(word: string) {
+        const s = this.plugin.settings;
+        if (!word) return undefined;
+        return s.englishVocabItems[word.toLowerCase()] || s.englishVocabItems[word]
+            || Object.values(s.japaneseVocabItems).find(v => v.japaneseText === word || v.originalText === word);
+    }
+
+    /** 结果的次要操作都收进“…”菜单。 */
+    private showResultMenu(event: MouseEvent, result: string, historyItem?: HistoryItem, card?: WordCard) {
+        const menu = new Menu();
+        menu.addItem(item => item.setTitle('插入到当前笔记').setIcon('file-plus-2').onClick(() => this.insertToCurrentNote(result)));
+        menu.addItem(item => item.setTitle('复制').setIcon('copy').onClick(() => this.copyToClipboard(result)));
+        menu.addItem(item => item.setTitle('输出到新笔记').setIcon('file-plus').onClick(() => this.createNewNote(result, historyItem)));
+        menu.addItem(item => item.setTitle('输出到固定文件').setIcon('file-text').onClick(() => this.outputToFixedFile(result, historyItem)));
+        if (card?.image) {
+            const image = card.image;
+            menu.addItem(item => item.setTitle('查看图片').setIcon('image').onClick(() => window.open(image)));
+        }
+        menu.addSeparator();
+        menu.addItem(item => item.setTitle('清空结果').setIcon('x').onClick(() => this.clearResults()));
+        menu.showAtMouseEvent(event);
     }
 
     // 将内容转换为卡片式布局
@@ -494,13 +611,10 @@ export class PolyglotHelperView extends ItemView {
     }
 
     /** 词已在生词本里时，结果底部显示掌握程度、下次复习日和出处。 */
-    private renderVocabFooter(container: HTMLElement, result: string, historyItem?: HistoryItem) {
-        const heading = result.match(/^##\s+(.+?)(?:\s+-\s+.*)?\s*$/m)?.[1]?.trim();
+    private renderVocabFooter(container: HTMLElement, heading: string, historyItem?: HistoryItem) {
         const word = (historyItem?.query || heading || '').trim();
         if (!word || !this.plugin.settings.enableLearningTracker) return;
-        const s = this.plugin.settings;
-        const item = s.englishVocabItems[word.toLowerCase()] || s.englishVocabItems[word]
-            || Object.values(s.japaneseVocabItems).find(v => v.japaneseText === word || v.originalText === word);
+        const item = this.findVocabItem(word);
         if (!item) return;
 
         const foot = container.createDiv({ cls: 'polyglot-vocab-foot' });
@@ -1288,7 +1402,7 @@ export class PolyglotHelperView extends ItemView {
     /**
      * 添加到词汇库
      */
-    private async addToVocabulary(result: string, historyItem?: HistoryItem): Promise<void> {
+    private async addToVocabulary(result: string, historyItem?: HistoryItem, card?: WordCard): Promise<void> {
         const word = (historyItem?.query || this.lastQuery?.text || this.queryInput.getValue()).trim();
         if (!word) {
             new Notice('❌ 无法确定要添加的词汇');
@@ -1307,6 +1421,13 @@ export class PolyglotHelperView extends ItemView {
             .filter(Boolean)
             .slice(0, 3);
         const tracker = this.plugin.learningTracker;
+        if (card && !japanese) {
+            // 词卡已经拆好了词头、音标、词性与释义，直接用
+            const senses = card.sections.flatMap(section => section.groups.flatMap(group => group.lines.map(line => line.text))).slice(0, 3);
+            await tracker.addEnglishVocabularyItem(card.headword.toLowerCase(), card.gloss || senses[0] || '', card.phonetic, card.pos.join(', '), senses, '收自语言助手', [], ['查词']);
+            new Notice(`已把 "${card.headword}" 加入生词本`);
+            return;
+        }
         if (japanese) {
             await tracker.addJapaneseVocabularyItem(word, word, '', definitions[0] ?? '', '收自语言助手', [], ['查词']);
         } else {
