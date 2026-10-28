@@ -139,7 +139,7 @@ export class PolyglotHelperView extends ItemView {
     async onOpen() {
         const root = this.containerEl.children[1] as HTMLElement;
         root.empty();
-        root.addClass('polyglot-root', 'polyglot-helper-view-container');
+        root.addClass('polyglot-root', 'polyglot-helper-view-container', 'ap', 'ap-view');
 
         // --- 顶部：标题、设置、两页切换 ---
         const head = root.createDiv({ cls: 'polyglot-view-head' });
@@ -1441,7 +1441,7 @@ export class PolyglotHelperView extends ItemView {
 
         // 设置面板位置
         const rect = (event.target as HTMLElement).getBoundingClientRect();
-        panel.addClass('polyglot-floating-panel');
+        panel.addClasses(['polyglot-floating-panel', 'ap', 'ap-glass']);
         panel.setCssStyles({ left: `${rect.left}px`, top: `${rect.bottom + 5}px` });
 
         const sectionNames: Record<keyof typeof sections, string> = {
@@ -1519,7 +1519,7 @@ export class PolyglotHelperView extends ItemView {
 
         // 设置面板位置
         const rect = (event.target as HTMLElement).getBoundingClientRect();
-        panel.addClass('polyglot-floating-panel');
+        panel.addClasses(['polyglot-floating-panel', 'ap', 'ap-glass']);
         panel.setCssStyles({ left: `${rect.left}px`, top: `${rect.bottom + 5}px` });
 
         const sectionNames: Record<keyof typeof sections, string> = {
@@ -1578,7 +1578,7 @@ export class PolyglotHelperView extends ItemView {
 
         const panel = document.body.createDiv('polyglot-options-panel');
         const rect = (event.target as HTMLElement).getBoundingClientRect();
-        panel.addClass('polyglot-floating-panel');
+        panel.addClasses(['polyglot-floating-panel', 'ap', 'ap-glass']);
         panel.setCssStyles({ left: `${rect.left}px`, top: `${rect.bottom + 5}px` });
 
         const entries: Array<{ key: 'showRomaji' | 'playAudio'; label: string; }> = [
@@ -1672,7 +1672,7 @@ export class PolyglotHelperView extends ItemView {
 
         // 计算位置
         const rect = (event.target as HTMLElement).getBoundingClientRect();
-        panel.addClasses(['polyglot-floating-panel', 'polyglot-fade']);
+        panel.addClasses(['polyglot-floating-panel', 'polyglot-fade', 'ap', 'ap-glass']);
         panel.setCssStyles({ top: `${rect.bottom + 8}px`, left: `${Math.max(10, rect.left - 100)}px` }); // 防止超出屏幕
 
         // 添加面板标题

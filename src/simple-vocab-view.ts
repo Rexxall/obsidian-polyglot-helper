@@ -19,7 +19,7 @@ export class SimpleVocabView extends ItemView {
 
     async onOpen() {
         this.contentEl.empty();
-        this.contentEl.addClass('simple-vocab-container');
+        this.contentEl.addClass('simple-vocab-container', 'ap', 'ap-view');
         
         this.renderHeader();
         this.renderSearchBar();

@@ -58,9 +58,9 @@ Looking up one word while studying means five browser tabs: a dictionary for the
 
 ### Look
 
-- Follows your Obsidian theme and light/dark mode. Optional "Paper & ink style" in settings.
+- A clean glass look in the style of current macOS: grouped settings, capsule buttons and switches, a glass lookup card. It takes its accent colour and light/dark mode from Obsidian, and turns solid when the system asks for reduced transparency or more contrast.
 
-<img src="docs/screenshots/paper-review.jpg" width="860">
+<img src="docs/screenshots/review.jpg" width="860">
 
 ### Cache
 
@@ -133,7 +133,7 @@ npm test
 
 ## Changelog
 
-**1.6.0** — New plugin ID `polyglot-helper` with automatic import from the old folder; vocabulary export to Spaced Repetition flashcards and Anki; due count in the status bar; native settings headings; no HTML strings; mobile fixes. Full list in [CHANGELOG.md](CHANGELOG.md).
+**1.6.0** — New glass design; new plugin ID `polyglot-helper` with automatic import from the old folder; vocabulary export to Spaced Repetition flashcards and Anki; due count in the status bar; native settings headings; no HTML strings; mobile fixes. Full list in [CHANGELOG.md](CHANGELOG.md).
 
 **1.5.0** — New look that follows your theme, optional paper & ink style; lookup popover next to the selected word; 查词 / 学习 pages in the side panel with a three-answer review; reviews now reschedule English and Japanese words correctly.
 

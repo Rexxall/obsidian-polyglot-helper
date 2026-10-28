@@ -21,7 +21,7 @@ export class PolyglotReviewView extends ItemView {
 
     async onOpen() {
         this.contentEl.empty();
-        this.contentEl.addClass('polyglot-root', 'polyglot-review-page');
+        this.contentEl.addClass('polyglot-root', 'polyglot-review-page', 'ap', 'ap-view');
         this.session = new ReviewSession(this.plugin, this.contentEl.createDiv());
         this.session.renderHome();
     }

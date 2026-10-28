@@ -59,7 +59,6 @@ const DEFAULT_SETTINGS: PolyglotHelperSettings = {
 	wordSelectionMode: false, // 选词模式：默认关闭
 	showDueInStatusBar: true,
 	vocabExportFolder: 'Polyglot',
-	paperStyle: false, // 纸墨风格：默认关闭，跟随 Obsidian 主题
 
 	// Audio Settings
 	enableTTS: true,
@@ -278,7 +277,6 @@ export default class PolyglotHelper extends Plugin {
 			return;
 		}
 
-		this.applyPaperStyle();
 
 		// 注册主视图
         this.registerView(POLYGLOT_REVIEW_VIEW_TYPE, leaf => new PolyglotReviewView(leaf, this, this.learningTracker));
@@ -531,7 +529,6 @@ export default class PolyglotHelper extends Plugin {
 		});
 
 		this.addSettingTab(new PolyglotSettingTab(this.app, this));
-		new Notice('Polyglot Helper is now active!');
 	}
 
 	/**
@@ -577,14 +574,8 @@ export default class PolyglotHelper extends Plugin {
 		}
 	}
 
-	/** 纸墨风格：给 body 加一个类，样式表里只在这个类下叠加 B 版细节。 */
-	applyPaperStyle() {
-		document.body.toggleClass('polyglot-paper', !!this.settings.paperStyle);
-	}
-
 	onunload() {
 		LookupPopover.close();
-		document.body.removeClass('polyglot-paper');
 
 		// 清理性能优化器资源
 		if (this.performanceOptimizer) {
@@ -1787,7 +1778,6 @@ Input text: "${inputText}"`;
 	async saveSettings() {
 		const storageCopy = await this.encryptSensitiveFields();
 		await this.saveData(storageCopy);
-		this.applyPaperStyle();
 		this.updateDueStatus();
 		this.app.workspace.trigger('polyglot-settings-change');
 	}

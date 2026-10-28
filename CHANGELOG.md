@@ -2,6 +2,8 @@
 
 ## 1.6.0
 
+- **New glass design.** Every panel, dialog and the settings page were redone in the style of current macOS: content on solid grouped lists and cards, the lookup card and option panels on glass, one accent colour (yours from Obsidian), capsule buttons and switches. It follows light/dark mode and falls back to solid surfaces under the system's reduce-transparency and increase-contrast settings. The "Paper & ink style" option is gone.
+- No more "Polyglot Helper is now active!" notice on every start.
 - **Plugin ID is now `polyglot-helper`.** The Obsidian community directory does not allow "obsidian" in an ID. On first start the new version imports settings, API keys and both vocabulary lists from the old `obsidian-polyglot-helper` folder. See [Upgrading from 1.5 or earlier](#upgrading-from-15-or-earlier).
 - **Export your vocabulary.** "导出词库为闪卡笔记" writes a `#flashcards/polyglot` note that the Spaced Repetition plugin can review (`word::reading · meaning`); exporting again keeps its review schedule. "导出词库为 Anki 导入文件" writes a tab-separated file with tags for Anki's File → Import. Folder in Settings → 学习与界面.
 - **Due words in the status bar.** "待复习 N" appears when words are due; click it to start reviewing. Can be turned off.

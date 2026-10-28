@@ -58,7 +58,7 @@ export class LookupPopover {
         LookupPopover.close();
         LookupPopover.current = this;
 
-        this.el = document.body.createDiv({ cls: 'polyglot-root polyglot-popover' });
+        this.el = document.body.createDiv({ cls: 'polyglot-root polyglot-popover ap ap-glass' });
         this.el.setAttr('role', 'dialog');
         this.el.setAttr('aria-label', `查词：${this.word}`);
 

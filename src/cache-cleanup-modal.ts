@@ -19,6 +19,8 @@ export class CacheCleanupModal extends Modal {
     }
 
     async onOpen() {
+
+        this.modalEl.addClass('ap', 'ap-modal');
         const { contentEl } = this;
         contentEl.empty();
         contentEl.addClass('polyglot-cache-cleanup-modal');

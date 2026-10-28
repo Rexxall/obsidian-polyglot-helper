@@ -38,7 +38,7 @@ export class ManagementPanelView extends ItemView {
     async onOpen() {
         const container = this.containerEl.children[1];
         container.empty();
-        container.addClass('polyglot-management-panel');
+        container.addClass('polyglot-management-panel', 'ap', 'ap-view');
 
         this.renderPanel();
     }
@@ -932,6 +932,8 @@ class AddVocabularyModal extends Modal {
     }
 
     onOpen() {
+
+        this.modalEl.addClass('ap', 'ap-modal');
         const { contentEl } = this;
         contentEl.createEl('h2', { text: '添加新单词' });
 
@@ -1016,6 +1018,8 @@ class SingleWordReviewModal extends Modal {
     }
 
     onOpen() {
+
+        this.modalEl.addClass('ap', 'ap-modal');
         const { contentEl } = this;
         contentEl.createEl('h2', { text: '单词复习' });
 
@@ -1090,6 +1094,8 @@ class ImportVocabularyModal extends Modal {
     }
 
     onOpen() {
+
+        this.modalEl.addClass('ap', 'ap-modal');
         const { contentEl } = this;
         contentEl.createEl('h2', { text: '导入词汇库' });
         contentEl.createEl('p', { text: '请选择要导入的JSON文件' });
@@ -1142,6 +1148,8 @@ class EditVocabularyModal extends Modal {
     }
 
     onOpen() {
+
+        this.modalEl.addClass('ap', 'ap-modal');
         const { contentEl } = this;
         contentEl.createEl('h2', { text: '编辑单词' });
 
@@ -1226,6 +1234,8 @@ class AddJapaneseVocabularyModal extends Modal {
     }
 
     onOpen() {
+
+        this.modalEl.addClass('ap', 'ap-modal');
         const { contentEl } = this;
         contentEl.createEl('h2', { text: '添加日语词汇' });
 
@@ -1331,6 +1341,8 @@ class AddEnglishVocabularyModal extends Modal {
     }
 
     onOpen() {
+
+        this.modalEl.addClass('ap', 'ap-modal');
         const { contentEl } = this;
         contentEl.createEl('h2', { text: '添加英语词汇' });
 
@@ -1438,6 +1450,8 @@ class JapaneseReviewModal extends Modal {
     }
 
     onOpen() {
+
+        this.modalEl.addClass('ap', 'ap-modal');
         const { contentEl } = this;
         contentEl.createEl('h2', { text: '日语词汇复习' });
 
@@ -1522,6 +1536,8 @@ class EnglishReviewModal extends Modal {
     }
 
     onOpen() {
+
+        this.modalEl.addClass('ap', 'ap-modal');
         const { contentEl } = this;
         contentEl.createEl('h2', { text: '英语词汇复习' });
 

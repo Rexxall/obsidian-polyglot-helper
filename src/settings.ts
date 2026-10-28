@@ -16,6 +16,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	display(): void {
 		const {containerEl} = this;
 		containerEl.empty();
+		containerEl.addClass('ap', 'ap-settings', 'polyglot-settings');
 
 		// 创建标签页导航
 		this.createTabNavigation(containerEl);
@@ -504,16 +505,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 	private displayUISettings(containerEl: HTMLElement) {
 		new Setting(containerEl).setName('学习与界面').setHeading();
-
-		new Setting(containerEl)
-			.setName('Paper & ink style')
-			.setDesc('纸墨风格：纸感底纹、细墨线、衬线标题。关闭时完全跟随当前 Obsidian 主题。')
-			.addToggle(toggle => toggle
-				.setValue(!!this.plugin.settings.paperStyle)
-				.onChange(async (value) => {
-					this.plugin.settings.paperStyle = value;
-					await this.plugin.saveSettings();
-				}));
 
 		new Setting(containerEl)
 			.setName('状态栏显示待复习数')
