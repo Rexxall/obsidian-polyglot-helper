@@ -845,6 +845,8 @@ button.polyglot-action-btn.danger { margin-left: auto; }
 button.polyglot-action-btn.danger:hover { color: var(--pg-err); }
 
 .polyglot-result-content {
+    /* 长链接、无空格长词在窄侧栏里折行，不撑出横向滚动 */
+    overflow-wrap: anywhere;
     background: var(--pg-surface);
     border: 1px solid var(--pg-line);
     border-radius: var(--pg-radius-l);
