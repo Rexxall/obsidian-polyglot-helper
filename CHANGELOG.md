@@ -9,6 +9,8 @@
 - **Word list keeps where a word came from.** Adding a word records the note it came from and the date (`收自 [[note]] · date`) and, when the cursor is on a line, that sentence as an example. Adding a word that is already in the list merges instead of overwriting: your meaning stays, empty fields are filled, examples, tags and sources are combined without duplicates. Flash-card exports show the sentence and source on the back of the card; the front is unchanged, so Spaced Repetition keeps its schedule.
 - Debug logs no longer contain API keys or the text you looked up.
 - Long unbroken words and links wrap in results instead of widening the side panel.
+- Settings line up on one left and one right edge: group text, headings, notes and dividers start at the same place, and the setup card in the side panel lines up with the input above it.
+- Switches keep the knob 2px from every edge when off and on; pressing one shows Obsidian's own pressed state.
 
 ## 1.6.0
 
