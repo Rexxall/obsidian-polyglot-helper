@@ -14,6 +14,8 @@
 - Security: no HTML strings are inserted into the page any more; all panels are built with Obsidian's DOM helpers.
 - Mobile: removed a Node.js `path` import that is not available on phones, and a regular expression that older iOS versions cannot run.
 - Closing the plugin no longer closes its panes, so they reopen in place after an update.
+- Passes the Obsidian community directory's automated review (eslint-plugin-obsidianmd recommended set) with no errors. Two bugs found on the way are fixed: the cache cleaner's "清理选中项" deleted nothing, and importing a vocabulary JSON file always failed.
+- Phones and touch screens: the recent-lookup buttons stay visible and larger, dialogs keep their inner margins. With "increase contrast" on, cards and the input box get a solid outline.
 - Requires Obsidian 1.8.7 or later.
 
 ## 1.5.0

@@ -787,7 +787,13 @@ button.polyglot-history-item-delete {
     flex: none;
 }
 .polyglot-history-item svg { width: 12px; height: 12px; }
-.polyglot-history-item:hover button { opacity: 1; }
+.polyglot-history-item:hover button,
+.polyglot-history-item:focus-within button { opacity: 1; }
+/* 触屏没有悬停：行内按钮一直显示，点击区放大到 32px */
+@media (hover: none) {
+    button:is(.polyglot-history-play-btn, .polyglot-history-item-jump, .polyglot-history-item-delete) { opacity: 1; }
+}
+.is-mobile button:is(.polyglot-history-play-btn, .polyglot-history-item-jump, .polyglot-history-item-delete) { opacity: 1; width: 32px; height: 32px; }
 button.polyglot-history-item-delete:hover { color: var(--pg-err); background: none; }
 button.polyglot-history-play-btn:hover,
 button.polyglot-history-item-jump:hover { color: var(--pg-accent); background: none; }
@@ -1604,3 +1610,13 @@ button.polyglot-page-btn:hover { background: var(--pg-hover); }
 /* 输入框底栏：左边是结果显示位置，右边是选词与查询 */
 .polyglot-output-picker { position: absolute; left: 6px; bottom: 8px; }
 .ap .polyglot-output-picker button.ap-picker { padding-block: 4px; font-size: 11px; }
+
+/* 手机：Obsidian 去掉了弹窗自带的内边距，给玻璃弹窗的内容留 16px */
+.is-phone .modal.ap-modal > .modal-content { padding: var(--ap-s4); }
+
+/* 增强对比度：卡片和输入框改用实线描边，不靠柔影分层 */
+@media (prefers-contrast: more) {
+    .ap :is(.polyglot-word, .polyglot-today, .polyglot-flash, .polyglot-stat-card, .polyglot-vocab-item) { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-normal) 40%, transparent); }
+    .ap .polyglot-input-container textarea.polyglot-query-input { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-normal) 40%, transparent); }
+    .polyglot-word-sub, .polyglot-word-source, .polyglot-word-group-source { color: var(--ap-label-2); }
+}
