@@ -1,9 +1,9 @@
 {
   "id": "polyglot-helper",
   "name": "Polyglot Helper",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "minAppVersion": "1.8.7",
-  "description": "Look up English and Japanese words, translate, hear pronunciation and review your vocabulary in a side panel.",
+  "description": "Look up English and Japanese words in your notes and get a study card with meaning, reading, examples and audio, kept in a word list you review.",
   "author": "Rexxall",
   "authorUrl": "https://github.com/Rexxall",
   "isDesktopOnly": false

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.7.0
+
+- **AI settings in four fields.** Each AI configuration is now provider, API key, endpoint and model, filled in separately. Pick a provider and the endpoint and default model are filled in: DeepSeek (the default), Qwen (通义千问), SiliconFlow (硅基流动), Kimi, Zhipu GLM (智谱), OpenRouter, OpenAI, or any OpenAI-compatible service. A base URL ending in `/v1` is accepted; the rest of the path is added. Existing configurations keep working and get their provider recognised from the endpoint.
+- **Test connection.** One button per configuration sends a request of a few words (it costs a tiny fraction of a cent, which the button says beforehand) and tells apart a missing key, a rejected key (401/403), no balance or quota, an unknown model name, a timeout and an unreachable endpoint, each with what to do. SiliconFlow refuses even its free models at a zero balance; the quota message says so. Lookups that fail show the same message with Retry and, for configuration problems, Open settings.
+- **A result on first open.** "Load example" writes a short note with an English and a Japanese sentence, marked as a demo and safe to delete, and puts "postpone" in the lookup box. The side panel tells apart "no AI service yet", ready, looking up (with Cancel), nothing found and failed.
+- **Follows Obsidian's language.** With Obsidian set to Chinese the plugin stays in Chinese; any other language gets English, for commands, settings, errors, empty states and hints. Lookup results stay in Chinese, as before.
+- **Word list keeps where a word came from.** Adding a word records the note it came from and the date (`收自 [[note]] · date`) and, when the cursor is on a line, that sentence as an example. Adding a word that is already in the list merges instead of overwriting: your meaning stays, empty fields are filled, examples, tags and sources are combined without duplicates. Flash-card exports show the sentence and source on the back of the card; the front is unchanged, so Spaced Repetition keeps its schedule.
+- Debug logs no longer contain API keys or the text you looked up.
+- Long unbroken words and links wrap in results instead of widening the side panel.
+
 ## 1.6.0
 
 - **New glass design.** Every panel, dialog and the settings page were redone in the style of current macOS: content on solid grouped lists and cards, the lookup card and option panels on glass, one accent colour (yours from Obsidian), capsule buttons and switches. It follows light/dark mode and falls back to solid surfaces under the system's reduce-transparency and increase-contrast settings. The "Paper & ink style" option is gone.

@@ -2,18 +2,50 @@
 
 # Polyglot Helper
 
-**Select a word in your note, get a full study entry back — meaning, reading, examples, etymology and audio — and keep it for review.**
+**Look up an English or Japanese word in your note and get back a study card — meaning, reading, examples and audio — that goes into a word list you review.**
 
-在笔记里选中一个英文或日文词，一个命令拿回释义、读音、例句、词源和语音，写进笔记并收进复习词库。
+English · [中文](README.zh.md)
 
-[Features](#features) · [Quick start](#quick-start) · [API setup](#api-setup) · [Privacy](#privacy) · [中文说明](#中文说明) · [日本語](#日本語)
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/lookup-dark.jpg">
-  <img src="docs/screenshots/lookup.jpg" width="860">
-</picture>
+<img src="docs/screenshots/hero.png" width="860" alt="An example note on the left; on the right the side panel shows the word card for “postpone”">
 
 </div>
+
+## Start here
+
+1. Install and enable Polyglot Helper, then click the book icon in the left ribbon to open the side panel.
+2. Press **Load example**. It writes a short note marked as a demo (delete it whenever you like) and puts “postpone” in the lookup box.
+3. Paste one AI key: **Settings → Polyglot Helper → Translation and models**. DeepSeek is preset; press **Test** to check it.
+4. Press **Look up**. Next time, select any word in a note and look it up the same way; **Add to word list** keeps it for review.
+
+## What you need and what it costs
+
+| | |
+|---|---|
+| The plugin | Free, no account. Works on desktop and mobile. |
+| An AI service | One OpenAI-compatible key. Presets: DeepSeek (default), Qwen (通义千问), SiliconFlow (硅基流动), Kimi, Zhipu GLM (智谱), OpenRouter, OpenAI, or any compatible endpoint. Billed by that provider per use; one word lookup is a short request. **Test** costs a tiny fraction of a cent. SiliconFlow refuses even its free models while the account balance is zero. |
+| Dictionaries and pronunciation | Free public sources, no key. Optional keys: Merriam-Webster (thesaurus and medical sections) and OpenAI, Gemini or Youdao for Japanese speech. |
+
+## What is sent where
+
+| What | Goes to | Stored |
+|---|---|---|
+| The word or sentence you look up | The dictionaries you enable and your AI service | Lookup cache in the plugin folder |
+| Your API keys | Only to the service they belong to | Encrypted in the plugin's `data.json`. The decryption key stays in this device's local storage for this vault, so a synced or copied `data.json` does not expose your keys, and on another device or in a copied vault you enter them once more. |
+| Vocabulary list and review history | Nowhere | `data.json` in the plugin folder |
+| Debug log | Nowhere | Written only when debug mode is on; keys and looked-up text are left out |
+
+## Screens
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/first-open.png" alt="Side panel before any AI service is set up"><br>Before setup, the panel says what is missing and offers the AI settings or an example.</td>
+<td width="50%"><img src="docs/screenshots/ai-settings.png" alt="AI configuration with provider, key, endpoint, model and a successful connection test"><br>Provider, key, endpoint and model are separate fields; <b>Test</b> says exactly what is wrong.</td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/screenshots/learn.png" alt="Learn page with today's due words"><br>Words you add come back on the Learn page when they are due.</td>
+<td width="50%"><img src="docs/screenshots/review.jpg" alt="Review card"><br>Review one card at a time and grade how well you knew it.</td>
+</tr>
+</table>
 
 ## Why
 
@@ -70,8 +102,8 @@ Looking up one word while studying means five browser tabs: a dictionary for the
 
 1. Download `main.js`, `manifest.json` and `styles.css` from the [latest release](https://github.com/Rexxall/obsidian-polyglot-helper/releases/latest) into `<your vault>/.obsidian/plugins/polyglot-helper/`. (Once the plugin is listed, install it from **Settings → Community plugins → Browse** instead.)
 2. In Obsidian, open **Settings → Community plugins** and enable **Polyglot Helper**.
-3. Open the plugin settings and add one API key (see below).
-4. Select a word and run **英语分析** or **日语分析** from the command palette. Assign hotkeys if you use it often.
+3. In the plugin settings, pick a provider, paste its key and press **Test** (see below).
+4. Select a word and look it up in the side panel, or run **英语分析** or **日语分析** from the command palette. Assign hotkeys if you use it often.
 
 ## Upgrading from 1.5 or earlier
 
@@ -86,13 +118,20 @@ Not carried over: the lookup cache (the first lookup of each word is fetched aga
 
 ## API setup
 
-The plugin talks to any OpenAI-compatible chat API.
+The plugin talks to any OpenAI-compatible chat API. Pick a provider in **Settings → Translation and models** and the endpoint and model are filled in; you paste the key. A base URL ending in `/v1` is fine; the plugin adds `/chat/completions`.
 
-| Service | What to enter |
-|---|---|
-| OpenRouter (default) | A key from openrouter.ai. Endpoint `https://openrouter.ai/api/v1/chat/completions`, model `google/gemini-2.5-flash` |
-| OpenAI | A key from platform.openai.com. Model `gpt-4o-mini` or any chat model |
-| Other | Any endpoint that accepts the OpenAI chat format |
+| Provider | Endpoint | Default model | Key |
+|---|---|---|---|
+| DeepSeek (default) | `https://api.deepseek.com/chat/completions` | `deepseek-flash` | [platform.deepseek.com](https://platform.deepseek.com/api_keys) |
+| Qwen (通义千问) | `https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions` | `qwen-plus` | [Bailian console](https://bailian.console.aliyun.com/?apiKey=1) |
+| SiliconFlow (硅基流动) | `https://api.siliconflow.cn/v1/chat/completions` | `deepseek-ai/DeepSeek-V4.1-Flash` | [cloud.siliconflow.cn](https://cloud.siliconflow.cn/account/ak) |
+| Kimi | `https://api.moonshot.cn/v1/chat/completions` | `kimi-k3` | [platform.kimi.com](https://platform.kimi.com/console/api-keys) |
+| Zhipu GLM (智谱) | `https://open.bigmodel.cn/api/paas/v4/chat/completions` | `glm-5.3` | [bigmodel.cn](https://bigmodel.cn/usercenter/proj-mgmt/apikeys) |
+| OpenRouter | `https://openrouter.ai/api/v1/chat/completions` | `google/gemini-2.5-flash` | [openrouter.ai](https://openrouter.ai/keys) |
+| OpenAI | `https://api.openai.com/v1/chat/completions` | `gpt-4o-mini` | [platform.openai.com](https://platform.openai.com/api-keys) |
+| Custom | Any endpoint that accepts the OpenAI chat format | | |
+
+**Test** tells these apart, each with what to do: no key yet; key rejected (401/403); no balance or quota; unknown model name; no answer in time; endpoint unreachable.
 
 Optional: a Merriam-Webster key for the thesaurus and medical sections, and an OpenAI, Gemini or Youdao key for Japanese speech.
 
@@ -106,7 +145,7 @@ Optional: a Merriam-Webster key for the thesaurus and medical sections, and an O
 | The word or sentence you look up | Sent to the dictionaries and the AI service you enabled |
 | Log file | Written only when **Debug mode** is on |
 
-Network use: lookups go to the AI service you configure (OpenRouter, OpenAI or a custom OpenAI-compatible endpoint) and, depending on the sections you enable, to dictionaryapi.dev, Cambridge Dictionary, Etymonline, Merriam-Webster (with your key), Jisho, Tatoeba, YourDictionary, WordHippo, The Free Dictionary idioms and an unofficial Urban Dictionary API. Speech uses the OpenAI, Gemini or Youdao TTS service you pick. All requests use Obsidian's `requestUrl`. Some of these services need your own API key and may charge for use.
+Network use: lookups go to the AI service you configure (one of the providers above or a custom OpenAI-compatible endpoint) and, depending on the sections you enable, to dictionaryapi.dev, Cambridge Dictionary, Etymonline, Merriam-Webster (with your key), Jisho, Tatoeba, YourDictionary, WordHippo, The Free Dictionary idioms and an unofficial Urban Dictionary API. Speech uses the OpenAI, Gemini or Youdao TTS service you pick. All requests use Obsidian's `requestUrl`. Some of these services need your own API key and may charge for use.
 
 There is no account and no server of our own. Because the decryption key stays on the device, a synced or committed `data.json` does not expose your API keys; on a new device you enter them once more.
 
@@ -133,6 +172,8 @@ npm test
 
 ## Changelog
 
+**1.7.0** — AI settings as provider, key, endpoint and model with DeepSeek, Qwen, SiliconFlow, Kimi and Zhipu presets; Test connection with plain-language errors; an example note and clear empty states on first open; English interface when Obsidian is not in Chinese; words keep their source note and sentence and merge instead of overwriting. Full list in [CHANGELOG.md](CHANGELOG.md).
+
 **1.6.0** — New glass design; new plugin ID `polyglot-helper` with automatic import from the old folder; vocabulary export to Spaced Repetition flashcards and Anki; due count in the status bar; native settings headings; no HTML strings; mobile fixes. Full list in [CHANGELOG.md](CHANGELOG.md).
 
 **1.5.0** — New look that follows your theme, optional paper & ink style; lookup popover next to the selected word; 查词 / 学习 pages in the side panel with a three-answer review; reviews now reschedule English and Japanese words correctly.
@@ -154,14 +195,7 @@ npm test
 
 ## 中文说明
 
-**是什么：** 学英语、日语时用的 Obsidian 插件。选中一个词，一个命令同时查多个词典，再由 AI 整理成一条格式统一的学习记录，写到你指定的位置，并收进可以复习的词库。
-
-**怎么用：**
-1. 从 Releases 下载 `main.js`、`manifest.json`、`styles.css`，放进 `<库>/.obsidian/plugins/polyglot-helper/`，在“第三方插件”里启用。**从 1.5 及更早版本升级：** 插件 ID 改为 `polyglot-helper`，先停用旧版再启用新版，新版首次启动会自动导入旧目录里的设置、API key 和两个词库；确认后删除旧版，快捷键需重设一次。
-2. 在插件设置里填一个 API key（默认 OpenRouter，也可以用 OpenAI 或任何兼容接口）。
-3. 选中词，在命令面板运行“英语分析”或“日语分析”。词库可用“导出词库为闪卡笔记”交给 Spaced Repetition 插件复习，或导出为 Anki 导入文件。
-
-**隐私：** 设置和词库在插件文件夹的 `data.json`。API key 加密保存，解密用的钥匙只存在本机，所以同步或提交 `data.json` 不会泄露 key；换设备时要重新填一次。查询的词会发给你启用的词典和 AI 服务。日志只在调试模式下写。
+见 [README.zh.md](README.zh.md)。
 
 ## 日本語
 
