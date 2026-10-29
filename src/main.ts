@@ -1,4 +1,21 @@
-import { Editor, MarkdownView, Notice, Plugin, TFile, normalizePath, requestUrl } from 'obsidian';
+import { inferProvider } from './ai/providers';
+
+/** How a lookup ended; the side panel turns this into its status card. */
+export type ProcessOutcome =
+	| { status: 'done' }
+	| { status: 'empty' }
+	| { status: 'cancelled' }
+	| { status: 'failed'; error: unknown };
+
+export interface ProcessOptions {
+	forceSidebar?: boolean;
+	/** The panel shows its own failure card instead of a notice. */
+	quiet?: boolean;
+	/** Checked before anything is written; a cancelled lookup leaves notes untouched. */
+	isCancelled?: () => boolean;
+}
+import { Editor, MarkdownView, Notice, Plugin, TFile, getLanguage, normalizePath, requestUrl } from 'obsidian';
+import { setInterfaceLanguage } from './shared/i18n';
 import { PolyglotHelperSettings, HistoryItem, SimpleVocabularyItem } from './types';
 import { runEnglishProcess } from './english-processor';
 import { chatContent, getChineseTranslationTS } from './apis/llm';
@@ -73,33 +90,20 @@ const DEFAULT_SETTINGS: PolyglotHelperSettings = {
 	// API配置管理
 	apiConfigs: [
 		{
-			name: 'OpenRouter',
+			name: 'DeepSeek',
+			provider: 'deepseek',
 			apiKey: '',
-			baseUrl: 'https://openrouter.ai/api/v1/chat/completions',
-			model: 'google/gemini-2.5-flash',
+			baseUrl: 'https://api.deepseek.com/chat/completions',
+			model: 'deepseek-flash',
 			enabled: true,
-		},
-		{
-			name: 'OpenAI',
-			apiKey: '',
-			baseUrl: 'https://api.openai.com/v1/chat/completions',
-			model: '例如 GPT-4o-mini',
-			enabled: false,
-		},
-		{
-			name: 'Custom API',
-			apiKey: '',
-			baseUrl: '',
-			model: '',
-			enabled: false,
 		},
 	],
 
 	// 功能API选择器
 	apiSelectors: {
-		quickTranslation: 'OpenRouter',
-		englishAnalysis: 'OpenRouter',
-		japaneseAnalysis: 'OpenRouter',
+		quickTranslation: 'DeepSeek',
+		englishAnalysis: 'DeepSeek',
+		japaneseAnalysis: 'DeepSeek',
 	},
 
 	// English Processor Settings
@@ -210,6 +214,7 @@ export default class PolyglotHelper extends Plugin {
 	cacheManager: CacheManager;
 
 	async onload() {
+		setInterfaceLanguage(getLanguage());
 		this.secureSettings = new EncryptedSettings({ namespace: 'polyglot-helper', passphrase: this.getDeviceKey() });
 		this.legacySecureSettings = new EncryptedSettings({ namespace: 'polyglot-helper' });
 		await this.loadSettings();
@@ -658,17 +663,19 @@ export default class PolyglotHelper extends Plugin {
 
 	// 统一面板功能已移除
 
-	async processEnglish(query: string, force: boolean, file: TFile | null, selection?: { from: { line: number, ch: number }, to: { line: number, ch: number } }, opts: { forceSidebar?: boolean } = {}) {
+	async processEnglish(query: string, force: boolean, file: TFile | null, selection?: { from: { line: number, ch: number }, to: { line: number, ch: number } }, opts: ProcessOptions = {}): Promise<ProcessOutcome> {
 		try {
 			if (!this.manifest.dir) {
 				new Notice("致命错误：找不到插件目录。");
-				return;
+				return { status: 'failed', error: new Error('plugin folder missing') };
 			}
 
 			// 获取英语分析的API配置
 			const apiConfig = this.getApiConfig('englishAnalysis');
 			const result = await runEnglishProcess(query, force, this.settings, this.logger, this.app, this.manifest.dir, this.saveSettings.bind(this), apiConfig);
-			if (result) {
+			if (opts.isCancelled?.()) return { status: 'cancelled' };
+			if (!result) return { status: 'empty' };
+			{
 				// 使用优先级输出处理：侧边栏选择优先，固定文件和新文件时使用语言特定路径
 				const outputInfo = await handlePriorityOutput(
 					this.app,
@@ -697,32 +704,36 @@ export default class PolyglotHelper extends Plugin {
 				if (this.settings.enableLearningTracker && this.settings.autoAddToVocab) {
 					await this.extractAndAddEnglishVocab(query, result);
 				}
+				return { status: 'done' };
 			}
 		} catch (e) {
-			new Notice(`处理失败: ${errorMessage(e)}`);
+			if (!opts.quiet) new Notice(`处理失败: ${errorMessage(e)}`);
 			this.logger.error("Error in processEnglish", e);
+			return { status: 'failed', error: e };
 		}
 	}
 
-	async processJapanese(query: string, force: boolean, file: TFile | null, selection?: { from: { line: number, ch: number }, to: { line: number, ch: number } }, opts: { forceSidebar?: boolean } = {}) {
+	async processJapanese(query: string, force: boolean, file: TFile | null, selection?: { from: { line: number, ch: number }, to: { line: number, ch: number } }, opts: ProcessOptions = {}): Promise<ProcessOutcome> {
 		if (!this.manifest.dir) {
 			this.logger.error("插件目录未定义，无法处理日语。");
 			new Notice("致命错误：插件目录未找到。");
-			return;
+			return { status: 'failed', error: new Error('plugin folder missing') };
 		}
 		
 		try {
 			// 获取日语分析的API配置
 			const apiConfig = this.getApiConfig('japaneseAnalysis');
 			const resultObj = await this.japaneseProcessor.runJapaneseProcess(query, force, apiConfig, this.saveSettings.bind(this), file?.path);
+			if (opts.isCancelled?.()) return { status: 'cancelled' };
+			if (!resultObj) return { status: 'empty' };
 
-			if (resultObj) {
+			{
 				const { original, colloquial, markdown } = resultObj;
 				
 				// 检查是否是批量处理的结果（批量处理时每个单词/短语都已经单独处理了）
 				if (markdown.includes('已处理') && markdown.includes('个日语单词/短语')) {
 					// 批量处理完成，不需要再输出或添加查询历史
-					return;
+					return { status: 'done' };
 				}
 				
 				// 单行处理的情况
@@ -782,10 +793,12 @@ export default class PolyglotHelper extends Plugin {
 						this.logger.warn('播放日语语音失败', error);
 					}
 				}
+				return { status: 'done' };
 			}
 		} catch (e) {
 			this.logger.error("处理日语时出错", e);
-			new Notice(`处理失败: ${errorMessage(e)}`);
+			if (!opts.quiet) new Notice(`处理失败: ${errorMessage(e)}`);
+			return { status: 'failed', error: e };
 		}
 	}
 
@@ -1706,6 +1719,13 @@ Input text: "${inputText}"`;
 		if (this.settings.englishLlmBaseUrl?.startsWith(brokenHost)) {
 			this.settings.englishLlmBaseUrl = this.settings.englishLlmBaseUrl.replace(brokenHost, 'https://openrouter.ai/');
 			repaired = true;
+		}
+		// 1.7: every configuration names its provider preset, inferred from the endpoint.
+		for (const config of this.settings.apiConfigs) {
+			if (!config.provider) {
+				config.provider = inferProvider(config.baseUrl || '');
+				repaired = true;
+			}
 		}
 		if (repaired) this.settingsNeedSave = true;
 

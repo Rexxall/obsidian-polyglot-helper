@@ -10,6 +10,8 @@ import { createObsidianPicker } from './ui/obsidian-picker';
 import { fire } from './shared/fire';
 import { errorMessage } from './shared/errors';
 import { asTFile } from './file-utils';
+import { classifyAiFailure } from './ai/providers';
+import { tr } from './shared/i18n';
 export const POLYGLOT_HELPER_VIEW_TYPE = "polyglot-helper-view";
 
 export class PolyglotHelperView extends ItemView {
@@ -334,6 +336,7 @@ export class PolyglotHelperView extends ItemView {
         // 注册选词模式监听器
         this.setupWordSelectionMode();
 
+        this.showIdleState();
         this.showPane('look');
     }
 
@@ -876,13 +879,144 @@ export class PolyglotHelperView extends ItemView {
         const force = this.plugin.settings.forceRefresh;
 
         this.lastQuery = { text: query, type };
-        if (type === "english") {
-            void this.plugin.processEnglish(query, force, targetFile);
-        } else {
-            void this.plugin.processJapanese(query, force, targetFile);
-        }
-
         this.queryInput.setValue('');
+        await this.runLookup(query, type, force, targetFile);
+    }
+
+    /** 查一个词：结果区显示进行到哪一步，可取消；失败时说清原因并能重试。 */
+    private async runLookup(query: string, type: 'english' | 'japanese', force: boolean, targetFile: TFile | null) {
+        const run = ++this.lookupRun;
+        const cancelled = () => run !== this.lookupRun;
+        this.showStatus({
+            kind: 'working',
+            title: type === 'english'
+                ? tr(`正在查“${query}”…`, `Looking up "${query}"…`)
+                : tr(`正在分析“${query}”…`, `Analysing "${query}"…`),
+            detail: tr('先查词典，再请 AI 分析，通常 5–20 秒。', 'Dictionaries first, then the AI; usually 5–20 seconds.'),
+            action: {
+                label: tr('取消', 'Cancel'),
+                run: () => {
+                    this.lookupRun++;
+                    this.showIdleState();
+                },
+            },
+        });
+        const options = { quiet: true, isCancelled: cancelled };
+        const outcome = type === 'english'
+            ? await this.plugin.processEnglish(query, force, targetFile, undefined, options)
+            : await this.plugin.processJapanese(query, force, targetFile, undefined, options);
+        if (cancelled() || outcome.status === 'cancelled') return;
+        if (outcome.status === 'done') {
+            // 侧栏输出时 renderResult 已经画好结果；写进笔记时这里收起状态卡片
+            if (this.displayContainer.querySelector('.polyglot-status')) this.showIdleState();
+            return;
+        }
+        if (outcome.status === 'empty') {
+            this.showStatus({
+                kind: 'empty',
+                title: tr(`没有查到“${query}”`, `Nothing found for "${query}"`),
+                detail: tr('换个拼写或词形再试，或者把它当句子翻译成中文。', 'Try another spelling or form, or translate it as a sentence.'),
+                action: { label: tr('翻译成中文', 'Translate to Chinese'), run: () => { this.queryInput.setValue(query); void this.handleQuickProcess(); } },
+            });
+            return;
+        }
+        this.showFailure(outcome.error, () => { void this.runLookup(query, type, true, targetFile); });
+    }
+
+    private lookupRun = 0;
+
+    /** 失败卡片：按 AI 错误分类说原因和改法，给“重试”；配置类问题再给“打开设置”。 */
+    private showFailure(error: unknown, retry: () => void) {
+        const message = errorMessage(error);
+        const status = Number(/status (\d{3})/.exec(message)?.[1] ?? /\((\d{3})\)/.exec(message)?.[1] ?? 0) || undefined;
+        const noConfig = /没有可用的API配置|配置不完整/.test(message);
+        const failure = classifyAiFailure({ status, error, hasKey: !noConfig });
+        const configProblem = ['no-key', 'auth', 'quota', 'model'].includes(failure.kind);
+        this.showStatus({
+            kind: 'failed',
+            title: failure.message,
+            detail: failure.fix,
+            action: { label: tr('重试', 'Retry'), run: retry },
+            secondary: configProblem ? { label: tr('打开设置', 'Open settings'), run: () => this.openSettings() } : undefined,
+        });
+    }
+
+    private openSettings() {
+        const settings = (this.app as typeof this.app & { setting?: { open(): void; openTabById(id: string): void } }).setting;
+        settings?.open();
+        settings?.openTabById(this.plugin.manifest.id);
+    }
+
+    private hasAiService(): boolean {
+        return this.plugin.settings.apiConfigs.some((config) => config.enabled && !!config.apiKey);
+    }
+
+    /** 结果区没有内容时：先看有没有配 AI，再提示怎么开始。 */
+    private showIdleState() {
+        if (!this.hasAiService()) {
+            this.showStatus({
+                kind: 'setup',
+                title: tr('还没有配置 AI 服务', 'No AI service yet'),
+                detail: tr(
+                    '翻译和日语、英语分析要用 AI。默认用 DeepSeek，填一个密钥就行；只查词典和读音不需要。',
+                    'Translation and the Japanese and English analyses need an AI service. DeepSeek is preset: paste one key. Dictionaries and pronunciation work without it.',
+                ),
+                action: { label: tr('打开 AI 设置', 'Open AI settings'), run: () => this.openSettings() },
+                secondary: { label: tr('先看示例', 'See an example'), run: () => { void this.loadSample(); } },
+            });
+            return;
+        }
+        this.showStatus({
+            kind: 'idle',
+            title: tr('选中一个词，或在上面输入', 'Select a word, or type one above'),
+            detail: tr('英语、日语都可以，按回车或“查询”。第一次用？载入一段示例试试。', 'English or Japanese; press Enter or Look up. New here? Load a short example.'),
+            action: { label: tr('载入示例', 'Load example'), run: () => { void this.loadSample(); } },
+        });
+    }
+
+    private showStatus(options: {
+        kind: 'setup' | 'idle' | 'working' | 'empty' | 'failed';
+        title: string;
+        detail?: string;
+        action?: { label: string; run: () => void };
+        secondary?: { label: string; run: () => void };
+    }) {
+        this.displayContainer.empty();
+        this.displayContainer.removeClass('polyglot-results-active');
+        const card = this.displayContainer.createDiv({ cls: `polyglot-status is-${options.kind}` });
+        const icon = card.createDiv({ cls: 'polyglot-status-icon' });
+        setIcon(icon, { setup: 'key-round', idle: 'search', working: 'loader', empty: 'search-x', failed: 'alert-circle' }[options.kind]);
+        card.createDiv({ cls: 'polyglot-status-title', text: options.title });
+        if (options.detail) card.createDiv({ cls: 'polyglot-status-detail', text: options.detail });
+        const row = card.createDiv({ cls: 'polyglot-status-actions' });
+        if (options.action) {
+            const button = row.createEl('button', { cls: 'mod-cta', text: options.action.label });
+            button.addEventListener('click', options.action.run);
+        }
+        if (options.secondary) {
+            const button = row.createEl('button', { text: options.secondary.label });
+            button.addEventListener('click', options.secondary.run);
+        }
+    }
+
+    /** 新建一篇标明“演示”的笔记，放一小段英文和日文，并把一个词填进查询框。 */
+    private async loadSample() {
+        const path = normalizePath(tr('语言助手示例（演示，可删除）.md', 'Polyglot Helper example (demo, safe to delete).md'));
+        let file = this.app.vault.getAbstractFileByPath(path);
+        if (!(file instanceof TFile)) file = await this.app.vault.create(path, sampleNote());
+        if (file instanceof TFile) await this.app.workspace.getLeaf(false).openFile(file);
+        this.setActiveMode('english');
+        this.queryInput.setValue('postpone');
+        this.queryInput.inputEl.focus();
+        this.showStatus({
+            kind: 'idle',
+            title: tr('示例已载入', 'Example loaded'),
+            detail: tr(
+                '已把 postpone 填进查询框，点“查询”看词卡。也可以在笔记里选中别的词或那句日语。',
+                'postpone is in the search box: press Look up to see its card. You can also select another word or the Japanese sentence in the note.',
+            ),
+            action: { label: tr('查询', 'Look up'), run: () => this.runActiveMode() },
+        });
     }
 
     private async handleQuickToJapanese() {
@@ -1018,12 +1152,12 @@ export class PolyglotHelperView extends ItemView {
                 }
             } else {
                 processingNotice.hide();
-                new Notice("❌ 翻译失败，请检查API配置或网络连接。");
+                this.showFailure(new Error(tr('没有拿到翻译结果', 'No translation came back')), () => { this.queryInput.setValue(query); void this.handleQuickToJapanese(); });
             }
         } catch (error) {
             console.error('Quick to Japanese translation error:', error);
             processingNotice.hide();
-            new Notice(`❌ 翻译过程中出现错误：${errorMessage(error) || '未知错误'}`);
+            this.showFailure(error, () => { this.queryInput.setValue(query); void this.handleQuickToJapanese(); });
         }
 
         this.queryInput.setValue('');
@@ -1183,12 +1317,12 @@ export class PolyglotHelperView extends ItemView {
                 }
             } else {
                 processingNotice.hide();
-                new Notice("❌ 翻译失败，请检查API配置或网络连接。");
+                this.showFailure(new Error(tr('没有拿到翻译结果', 'No translation came back')), () => { this.queryInput.setValue(query); void this.handleQuickProcess(); });
             }
         } catch (error) {
             console.error('Quick English translation error:', error);
             processingNotice.hide();
-            new Notice(`❌ 翻译过程中出现错误：${errorMessage(error) || '未知错误'}`);
+            this.showFailure(error, () => { this.queryInput.setValue(query); void this.handleQuickProcess(); });
         }
 
         this.queryInput.setValue('');
@@ -2299,3 +2433,22 @@ export class PolyglotHelperView extends ItemView {
 }
 
 
+
+function sampleNote(): string {
+    return [
+        '---',
+        'polyglot_demo: true',
+        '---',
+        tr('> [!info] 这是语言助手的演示笔记，可以直接删除。', '> [!info] This is a Polyglot Helper demo note. Delete it whenever you like.'),
+        tr('> 选中下面任意一个词或句子，再点侧栏的“查询”。', '> Select any word or sentence below, then press Look up in the side panel.'),
+        '',
+        '## English',
+        '',
+        'The committee decided to postpone the vote until the figures are reliable.',
+        '',
+        '## 日本語',
+        '',
+        '雨が降りそうなので、傘を持っていきます。',
+        '',
+    ].join('\n');
+}

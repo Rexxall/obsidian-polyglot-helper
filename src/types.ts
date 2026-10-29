@@ -19,6 +19,8 @@ export interface JapaneseSections {
 
 export interface ApiConfig {
     name: string;
+    /** Preset the endpoint came from; 'custom' for anything typed by hand. */
+    provider?: import('./ai/providers').ProviderId;
     apiKey: string;
     baseUrl: string;
     model: string;

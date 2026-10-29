@@ -1,8 +1,10 @@
 import { App, PluginSettingTab, Setting, type SettingDefinitionItem } from "obsidian";
 import PolyglotHelper from "./main";
 // clearCache已移除
-import { Notice } from 'obsidian';
-import { EnglishSections, PolyglotHelperSettings } from "./types";
+import { Notice, requestUrl } from 'obsidian';
+import { ApiConfig, EnglishSections, PolyglotHelperSettings } from "./types";
+import { PROVIDERS, normalizeEndpoint, presetFor, testConnection } from './ai/providers';
+import { tr } from './shared/i18n';
 
 import { fire } from './shared/fire';
 import { errorMessage } from './shared/errors';
@@ -286,109 +288,191 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		this.createLanguagePathSettings(containerEl, '快捷翻译', 'quickTranslationOutputSettings');
 	}
 
-	private displayTranslationSettings(containerEl: HTMLElement) {
-		new Setting(containerEl).setName('翻译API配置').setHeading();
+	/** 一套 AI 配置：服务商、密钥、接口地址、模型分开填，可以单独测试。 */
+	private renderApiConfigCard(containerEl: HTMLElement, config: ApiConfig, index: number) {
+		const card = containerEl.createDiv({ cls: 'api-config-container' });
+		const save = () => this.plugin.saveSettings();
+		const preset = presetFor(config.provider);
 
-		// API配置列表
-		this.plugin.settings.apiConfigs.forEach((config, index) => {
-			const configContainer = containerEl.createDiv({ cls: 'api-config-container' });
-
-			// 配置标题和删除按钮
-			const headerContainer = configContainer.createDiv({ cls: 'api-config-header' });
-			new Setting(headerContainer).setName(`${config.name} API配置`).setHeading();
-
-			// 只有超过1个配置时才显示删除按钮
-			if (this.plugin.settings.apiConfigs.length > 1) {
-				const deleteButton = headerContainer.createEl('button', {
-					text: '删除',
-					cls: 'api-config-delete-btn'
-				});
-				deleteButton.addEventListener('click', fire(async () => {
-					// 确认删除
-					const confirmed = await confirmAction(this.app, `确定要删除 "${config.name}" API配置吗？`);
-					if (confirmed) {
-						this.plugin.settings.apiConfigs.splice(index, 1);
-						await this.plugin.saveSettings();
-						this.redraw(); // 重新渲染设置页面
-					}
-				}));
-			}
-
-			new Setting(configContainer)
-				.setName('启用')
-				.setDesc(`启用 ${config.name} API配置`)
-				.addToggle(toggle => toggle
+		const head = new Setting(card)
+			.setName(config.name)
+			.setDesc(
+				config.apiKey
+					? tr(`${preset.label} · ${config.model || '未填模型'} · 已填密钥`, `${preset.label} · ${config.model || 'no model'} · key set`)
+					: tr(`${preset.label} · 还没有密钥`, `${preset.label} · no key yet`),
+			)
+			.setHeading()
+			.addToggle((toggle) =>
+				toggle
+					.setTooltip(tr('启用这套配置', 'Use this configuration'))
 					.setValue(config.enabled)
 					.onChange(async (value) => {
-						this.plugin.settings.apiConfigs[index].enabled = value;
-						await this.plugin.saveSettings();
-					}));
+						config.enabled = value;
+						await save();
+						this.redraw();
+					}),
+			);
+		if (this.plugin.settings.apiConfigs.length > 1) {
+			head.addExtraButton((button) =>
+				button
+					.setIcon('trash')
+					.setTooltip(tr('删除这套配置', 'Delete this configuration'))
+					.onClick(async () => {
+						const confirmed = await confirmAction(
+							this.app,
+							tr(`确定要删除“${config.name}”吗？`, `Delete "${config.name}"?`),
+							tr('删除', 'Delete'),
+						);
+						if (!confirmed) return;
+						this.plugin.settings.apiConfigs.splice(index, 1);
+						await save();
+						this.redraw();
+					}),
+			);
+		}
 
-			new Setting(configContainer)
-				.setName('配置名称')
-				.setDesc('API配置的显示名称')
-				.addText(text => text
-					.setPlaceholder('例如：主力模型')
-					.setValue(config.name)
-					.onChange(async (value) => {
-						this.plugin.settings.apiConfigs[index].name = value;
-						await this.plugin.saveSettings();
-					}));
-
-			new Setting(configContainer)
-				.setName('API密钥')
-				.setDesc('API访问密钥')
-				.addText(text => {
-					text.inputEl.type = 'password';
-					return text
-						.setPlaceholder('以 sk- 开头的密钥')
-						.setValue(config.apiKey)
-						.onChange(async (value) => {
-							this.plugin.settings.apiConfigs[index].apiKey = value;
-							await this.plugin.saveSettings();
-						});
+		new Setting(card)
+			.setName(tr('服务商', 'Provider'))
+			.setDesc(tr('选好后自动填接口地址和默认模型。', 'Fills in the endpoint and default model.'))
+			.addDropdown((dropdown) => {
+				for (const option of PROVIDERS) dropdown.addOption(option.id, option.label);
+				dropdown.setValue(preset.id).onChange(async (value) => {
+					const next = presetFor(value);
+					config.provider = next.id;
+					if (next.id !== 'custom') {
+						config.baseUrl = next.endpoint;
+						config.model = next.model;
+					}
+					await save();
+					this.redraw();
 				});
+			});
 
-			new Setting(configContainer)
-				.setName('Base URL')
-				.setDesc('API的基础URL地址')
-				.addText(text => text
-					.setPlaceholder('OpenAI 兼容的完整接口地址')
+		const keySetting = new Setting(card)
+			.setName(tr('密钥', 'API key'))
+			.addText((text) => {
+				text.inputEl.type = 'password';
+				text.inputEl.autocomplete = 'off';
+				text.setPlaceholder(tr('粘贴服务商给的密钥', "Paste the provider's key"))
+					.setValue(config.apiKey)
+					.onChange(async (value) => {
+						config.apiKey = value.trim();
+						await save();
+					});
+			});
+		if (preset.keyUrl) {
+			const desc = keySetting.descEl;
+			desc.appendText(tr('在这里申请：', 'Get one here: '));
+			desc.createEl('a', { text: preset.label, href: preset.keyUrl });
+		}
+
+		new Setting(card)
+			.setName(tr('接口地址', 'Endpoint'))
+			.setDesc(tr('只填到 /v1 也可以，会自动补全。', 'A base URL ending in /v1 is fine; the rest is added.'))
+			.addText((text) =>
+				text
+					.setPlaceholder(tr('例如 https://api.deepseek.com', 'For example https://api.deepseek.com'))
 					.setValue(config.baseUrl)
 					.onChange(async (value) => {
-						this.plugin.settings.apiConfigs[index].baseUrl = value;
-						await this.plugin.saveSettings();
-					}));
+						config.baseUrl = normalizeEndpoint(value);
+						await save();
+					}),
+			);
 
-			new Setting(configContainer)
-				.setName('模型名称')
-				.setDesc('使用的模型名称')
-				.addText(text => text
-					.setPlaceholder('例如 GPT-4o-mini')
+		new Setting(card)
+			.setName(tr('模型', 'Model'))
+			.addText((text) =>
+				text
+					.setPlaceholder(preset.model || 'model-name')
 					.setValue(config.model)
 					.onChange(async (value) => {
-						this.plugin.settings.apiConfigs[index].model = value;
-						await this.plugin.saveSettings();
-					}));
+						config.model = value.trim();
+						await save();
+					}),
+			);
+
+		const result = card.createDiv({ cls: 'ph-test-result' });
+		new Setting(card)
+			.setName(tr('测试连接', 'Test connection'))
+			.setDesc(
+				tr(
+					'发一次只有几个字的请求，确认密钥、地址和模型都能用。会产生不到一分钱的费用。',
+					'Sends one request of a few words to check the key, endpoint and model. It costs a tiny fraction of a cent.',
+				),
+			)
+			.addButton((button) =>
+				button.setButtonText(tr('测试', 'Test')).onClick(async () => {
+					button.setDisabled(true);
+					result.empty();
+					result.removeClass('is-ok', 'is-error');
+					result.setText(tr('测试中…', 'Testing…'));
+					const outcome = await testConnection(config, async (request) => {
+						const response = await requestUrl({ ...request, throw: false });
+						return { status: response.status, text: response.text };
+					});
+					result.empty();
+					if (outcome.ok) {
+						result.addClass('is-ok');
+						result.setText(tr(`能用，用时 ${outcome.ms} 毫秒。`, `Works, ${outcome.ms} ms.`));
+					} else {
+						result.addClass('is-error');
+						result.createEl('strong', { text: outcome.message });
+						result.createSpan({ text: ` ${outcome.fix}` });
+					}
+					button.setDisabled(false);
+				}),
+			);
+
+		new Setting(card)
+			.setName(tr('配置名称', 'Name'))
+			.setDesc(tr('下面“各功能用哪套”按这个名字选。', 'Used when choosing a configuration for each feature below.'))
+			.addText((text) =>
+				text.setValue(config.name).onChange(async (value) => {
+					const name = value.trim();
+					if (!name) return;
+					for (const key of Object.keys(this.plugin.settings.apiSelectors) as (keyof PolyglotHelperSettings['apiSelectors'])[]) {
+						if (this.plugin.settings.apiSelectors[key] === config.name) {
+							this.plugin.settings.apiSelectors[key] = name;
+						}
+					}
+					config.name = name;
+					await save();
+				}),
+			);
+	}
+
+	private displayTranslationSettings(containerEl: HTMLElement) {
+		new Setting(containerEl).setName(tr('AI 服务', 'AI services')).setHeading();
+		containerEl.createEl('p', {
+			cls: 'setting-item-description',
+			text: tr(
+				'查词典和读音不需要 AI。翻译、英语和日语分析要用一个兼容 OpenAI 接口的 AI 服务：选服务商、填密钥，就可以测试。密钥只存在这台设备的插件设置里（加密保存）；换设备或同步库时要重新填。',
+				'Dictionary lookups and pronunciation need no AI. Translation and the English and Japanese analyses use an OpenAI-compatible AI service: pick a provider, paste its key, then test. The key is stored encrypted in this device\'s plugin settings; enter it again on another device.',
+			),
 		});
 
-		// 添加新API配置按钮
+		this.plugin.settings.apiConfigs.forEach((config, index) => {
+			this.renderApiConfigCard(containerEl, config, index);
+		});
+
 		new Setting(containerEl)
-			.setName('添加新API配置')
-			.setDesc('添加一个新的API配置')
-			.addButton(button => button
-				.setButtonText('添加配置')
-				.onClick(async () => {
+			.setName(tr('添加一套 AI 配置', 'Add an AI configuration'))
+			.setDesc(tr('比如给翻译和分析用不同的服务商。', 'For example, a different provider for translation and analysis.'))
+			.addButton((button) =>
+				button.setButtonText(tr('添加', 'Add')).onClick(async () => {
+					const preset = presetFor('deepseek');
 					this.plugin.settings.apiConfigs.push({
-						name: `API配置 ${this.plugin.settings.apiConfigs.length + 1}`,
+						name: uniqueConfigName(this.plugin.settings.apiConfigs, preset.label),
+						provider: preset.id,
 						apiKey: '',
-						baseUrl: '',
-						model: '',
-						enabled: false,
+						baseUrl: preset.endpoint,
+						model: preset.model,
+						enabled: true,
 					});
 					await this.plugin.saveSettings();
 					this.redraw();
-				}));
+				}),
+			);
 
 		// --- 功能API选择器 ---
 		new Setting(containerEl).setName('功能API选择').setHeading();
@@ -1295,4 +1379,12 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		selectAllCheckbox.checked = filteredItems.length > 0 && selectedItems.size === filteredItems.length;
 		selectAllCheckbox.indeterminate = selectedItems.size > 0 && selectedItems.size < filteredItems.length;
 	}
+}
+
+function uniqueConfigName(configs: ApiConfig[], base: string): string {
+	const names = new Set(configs.map((config) => config.name));
+	if (!names.has(base)) return base;
+	let index = 2;
+	while (names.has(`${base} ${index}`)) index += 1;
+	return `${base} ${index}`;
 }

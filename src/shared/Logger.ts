@@ -259,21 +259,23 @@ export class Logger {
 			parts.push(`[${this.options.namespace}]`);
 		}
 
-		parts.push(message);
+		parts.push(redactText(message));
 
 		if (details !== undefined && details !== null) {
 			if (details instanceof Error) {
-				parts.push(`\n  Error: ${details.message}`);
+				parts.push(`\n  Error: ${redactText(details.message)}`);
 				if (details.stack) {
 					parts.push(`\n  Stack: ${details.stack}`);
 				}
 			} else if (typeof details === 'object') {
 				try {
-					parts.push(`\n  ${JSON.stringify(details, null, 2)}`);
+					parts.push(`\n  ${JSON.stringify(details, redactField, 2)}`);
 				} catch {
 					parts.push('\n  [对象无法序列化]');
 				}
-			} else if (typeof details === 'string' || typeof details === 'number' || typeof details === 'boolean') {
+			} else if (typeof details === 'string') {
+				parts.push(` ${redactText(details)}`);
+			} else if (typeof details === 'number' || typeof details === 'boolean') {
 				parts.push(` ${details}`);
 			}
 		}
@@ -379,4 +381,21 @@ export class Logger {
 		// 最后刷新一次
 		this.flushSync();
 	}
+}
+
+// Logs can be written to a file in the vault and shared for support: never include keys, and
+// keep only the length of what the user looked up or the AI answered.
+const SECRET_FIELD = /key|token|secret|authorization|password|cookie/i;
+const TEXT_FIELD = /^(text|original|translation|query|content|input|prompt|response|body|result|markdown|sentence|colloquial)$/i;
+
+export function redactField(this: unknown, field: string, value: unknown): unknown {
+	if (field && SECRET_FIELD.test(field)) return value ? '[hidden]' : value;
+	if (field && TEXT_FIELD.test(field) && typeof value === 'string') return `[${value.length} chars]`;
+	return value;
+}
+
+export function redactText(text: string): string {
+	return text
+		.replace(/\b(sk|pk|rk)-[A-Za-z0-9_-]{8,}/g, '$1-[hidden]')
+		.replace(/(Bearer\s+)[A-Za-z0-9._~+/=-]{8,}/gi, '$1[hidden]');
 }

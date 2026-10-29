@@ -1620,3 +1620,68 @@ button.polyglot-page-btn:hover { background: var(--pg-hover); }
     .ap .polyglot-input-container textarea.polyglot-query-input { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-normal) 40%, transparent); }
     .polyglot-word-sub, .polyglot-word-source, .polyglot-word-group-source { color: var(--ap-label-2); }
 }
+
+/* Status card in the result area: not configured, idle, working, nothing found, failed */
+.polyglot-helper-view-container .polyglot-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--ap-s2, 8px);
+  margin: var(--ap-s3);
+  padding: var(--ap-s4);
+  border-radius: var(--ap-r-group);
+  background: var(--background-secondary);
+}
+.polyglot-helper-view-container .polyglot-status-icon {
+  color: var(--text-muted);
+}
+.polyglot-helper-view-container .polyglot-status.is-failed .polyglot-status-icon {
+  color: var(--text-error);
+}
+.polyglot-helper-view-container .polyglot-status.is-working .polyglot-status-icon svg {
+  animation: polyglot-spin 1.2s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .polyglot-helper-view-container .polyglot-status.is-working .polyglot-status-icon svg {
+    animation: none;
+  }
+}
+@keyframes polyglot-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.polyglot-helper-view-container .polyglot-status-title {
+  font-weight: var(--font-semibold);
+  color: var(--text-normal);
+}
+.polyglot-helper-view-container .polyglot-status-detail {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  line-height: 1.5;
+}
+.polyglot-helper-view-container .polyglot-status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ap-s2, 8px);
+  margin-top: 2px;
+}
+
+/* AI settings: result line under "Test connection" */
+.ph-test-result:empty {
+  display: none;
+}
+.ph-test-result {
+  margin: 0 0 var(--ap-s3) 0;
+  padding: 8px 12px;
+  border-radius: var(--ap-r-field);
+  background: var(--background-secondary);
+  font-size: var(--font-ui-small);
+  line-height: 1.5;
+}
+.ph-test-result.is-ok {
+  color: var(--text-success);
+}
+.ph-test-result.is-error strong {
+  color: var(--text-error);
+}
