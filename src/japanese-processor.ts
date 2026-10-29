@@ -184,7 +184,7 @@ export class JapaneseProcessor {
                 const line = lines[i];
                 
                 // 更新进度
-                progressNotice.setMessage(`正在处理: ${line} (${i + 1}/${total})`);
+                progressNotice.setMessage(tr(`正在处理: ${line} (${i + 1}/${total})`, `Processing: ${line} (${i + 1}/${total})`));
                 
                 // 处理单个单词/短语
                 const singleResult = await this.runSingleLineJapaneseProcess(line, force, apiConfig);
@@ -222,7 +222,7 @@ export class JapaneseProcessor {
             return {
                 original: lines.join('\n'),
                 colloquial: '',
-                markdown: `已处理 ${total} 个日语单词/短语，每个结果都已单独输出。`
+                markdown: tr(`已处理 ${total} 个日语单词/短语，每个结果都已单独输出。`, `Processed ${total} Japanese words or phrases; each result was written separately.`)
             };
             
         } catch (error) {

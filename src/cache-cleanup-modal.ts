@@ -294,9 +294,9 @@ export class CacheCleanupModal extends Modal {
         const stats = this.cacheManager.getCacheStats(selectedItems);
 
         const confirmed = await confirmAction(this.app, 
-            `确定要删除 ${selectedItems.length} 个缓存文件吗？\n` +
-            `总大小: ${this.cacheManager.formatSize(stats.totalSize)}\n` +
-            `此操作不可撤销！`
+            tr(`确定要删除 ${selectedItems.length} 个缓存文件吗？\n`, `Delete ${selectedItems.length} cache files?\n`) +
+            tr(`总大小: ${this.cacheManager.formatSize(stats.totalSize)}\n`, `Total size: ${this.cacheManager.formatSize(stats.totalSize)}\n`) +
+            tr(`此操作不可撤销！`, `This cannot be undone.`)
         );
 
         if (!confirmed) return;

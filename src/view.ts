@@ -603,7 +603,7 @@ export class PolyglotHelperView extends ItemView {
         const filled = 4 - Math.min(4, Math.max(0, item.difficulty));
         for (let i = 0; i < 4; i++) level.createEl('i', { cls: i < filled ? 'is-on' : '' });
         const next = item.nextReview && item.nextReview > Date.now()
-            ? `下次复习：${new Date(item.nextReview).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })}`
+            ? tr(`下次复习：${new Date(item.nextReview).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })}`, `Next review: ${new Date(item.nextReview).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}`)
             : tr('今天可以复习', 'Ready to review today');
         row.createSpan({ text: next });
     }
@@ -1737,13 +1737,13 @@ export class PolyglotHelperView extends ItemView {
         panel.setCssStyles({ left: `${rect.left}px`, top: `${rect.bottom + 5}px` });
 
         const sectionNames: Record<keyof typeof sections, string> = {
-            definitions: '词典释义',
-            example: '例句',
-            usage: '用法助记',
+            definitions: tr('词典释义', 'Dictionary'),
+            example: tr('例句', 'Examples'),
+            usage: tr('用法助记', 'Usage and memory aid'),
             etymology: tr('词源', 'Etymology'),
             medical: tr('医学专用', 'Medical'),
-            slang: '俚语',
-            tatoeba: 'Tatoeba 例句',
+            slang: tr('俚语', 'Slang'),
+            tatoeba: tr('Tatoeba 例句', 'Tatoeba examples'),
             idioms: tr('相关习语', 'Related idioms')
         };
 

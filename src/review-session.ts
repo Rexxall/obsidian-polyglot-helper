@@ -89,9 +89,9 @@ export class ReviewSession {
             const v = cell.createDiv({ cls: 'ap-stat-value', text: String(value) });
             v.createSpan({ cls: 'ap-unit', text: unit });
         };
-        stat('到期', due.total, '个');
-        stat('英语', due.english, '个');
-        stat('日语', due.japanese, '个');
+        stat(tr('到期', 'Due'), due.total, tr('个', ' '));
+        stat(tr('英语', 'English'), due.english, tr('个', ' '));
+        stat(tr('日语', 'Japanese'), due.japanese, tr('个', ' '));
 
         if (due.total > 0) {
             const start = card.createEl('button', { text: tr('开始复习', 'Start review'), cls: 'ap-btn is-primary polyglot-due-start' });
@@ -176,13 +176,13 @@ export class ReviewSession {
         const left2 = foot.createDiv({ cls: 'polyglot-quiet-links' });
         if (kind !== 'legacy') {
             const fav = (item as EnglishVocabularyItem).isFavorite;
-            this.quietLink(left2, fav ? '已收藏' : '收藏', fire(async () => {
+            this.quietLink(left2, fav ? tr('已收藏', 'Saved') : tr('收藏', 'Save'), fire(async () => {
                 await this.toggleFavorite(item, kind);
                 this.renderCard();
             }));
         }
-        this.quietLink(left2, '跳过', () => { this.index++; this.renderCard(); });
-        this.quietLink(foot, '结束', () => this.renderHome());
+        this.quietLink(left2, tr('跳过', 'Skip'), () => { this.index++; this.renderCard(); });
+        this.quietLink(foot, tr('结束', 'End'), () => this.renderHome());
     }
 
     private reveal(answer: HTMLElement, item: AnyItem, kind: 'japanese' | 'english' | 'legacy') {
@@ -209,7 +209,7 @@ export class ReviewSession {
             const btn = grades.createEl('button', { cls: `polyglot-grade ${g.cls}` });
             btn.createSpan({ text: g.label });
             btn.createEl('small', { text: describeNext(this.tracker.previewNextReview(item, g.performance)) });
-            btn.setAttr('title', `快捷键 ${g.key}`);
+            btn.setAttr('title', tr(`快捷键 ${g.key}`, `Shortcut ${g.key}`));
             btn.addEventListener('click', () => this.grade(item, g.performance));
         }
     }
@@ -234,7 +234,7 @@ export class ReviewSession {
             const again = done.createEl('button', { text: tr(`还有 ${due.total} 个到期，继续`, `${due.total} more are due; continue`), cls: 'mod-cta polyglot-primary' });
             again.addEventListener('click', () => this.start(this.scope));
         }
-        this.quietLink(this.host.createDiv({ cls: 'polyglot-review-foot' }), '回到开始', () => this.renderHome());
+        this.quietLink(this.host.createDiv({ cls: 'polyglot-review-foot' }), tr('回到开始', 'Back to start'), () => this.renderHome());
     }
 
     private handleKey(e: KeyboardEvent) {

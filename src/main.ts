@@ -307,12 +307,12 @@ export default class PolyglotHelper extends Plugin {
 		);
 
 		// 添加主视图按钮
-		this.addRibbonIcon('book-a', 'Polyglot 助手', () => {
+		this.addRibbonIcon('book-a', tr('Polyglot 助手', 'Polyglot Helper'), () => {
 			void this.activateView();
 		});
 
 		// 添加管理面板侧边栏按钮
-		this.addRibbonIcon('library-big', '打开语言助手管理面板', () => {
+		this.addRibbonIcon('library-big', tr('打开语言助手管理面板', 'Open the language helper panel'), () => {
 			void this.activateManagementPanel();
 		});
 
@@ -473,7 +473,7 @@ export default class PolyglotHelper extends Plugin {
 								new Notice(tr("无法获取翻译，请手动添加。", "Could not get a translation; add it by hand."));
 							}
 						} catch (e) {
-							new Notice("添加单词失败：" + errorMessage(e));
+							new Notice(tr("添加单词失败：", "Could not add the word: ") + errorMessage(e));
 							this.logger.error("添加单词失败", e);
 						}
 					}
@@ -1813,7 +1813,7 @@ Input text: "${inputText}"`;
 	private setupDueStatus() {
 		this.dueStatusEl = this.addStatusBarItem();
 		this.dueStatusEl.addClass('polyglot-due-status', 'mod-clickable');
-		this.dueStatusEl.setAttr('aria-label', '打开 Polyglot 复习');
+		this.dueStatusEl.setAttr('aria-label', tr('打开 Polyglot 复习', 'Open Polyglot review'));
 		this.dueStatusEl.setAttr('data-tooltip-position', 'top');
 		this.registerDomEvent(this.dueStatusEl, 'click', () => void this.activateReviewView());
 		this.registerInterval(window.setInterval(() => this.updateDueStatus(), 10 * 60 * 1000));

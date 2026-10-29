@@ -458,16 +458,16 @@ export class ManagementPanelView extends ItemView {
 
         if (item.reviewCount === 0) {
             statusClass = 'status-new';
-            statusText = '新';
+            statusText = tr('新', 'New');
         } else if (item.difficulty === 0) {
             statusClass = 'status-mastered';
-            statusText = '掌握';
+            statusText = tr('掌握', 'Mastered');
         } else if (item.nextReview && item.nextReview <= now) {
             statusClass = 'status-due';
-            statusText = '待复习';
+            statusText = tr('待复习', 'Due');
         } else {
             statusClass = 'status-learning';
-            statusText = '学习中';
+            statusText = tr('学习中', 'Learning');
         }
 
         statusIndicator.className = `polyglot-vocab-status ${statusClass}`;
@@ -813,7 +813,7 @@ export class ManagementPanelView extends ItemView {
                 const typeItems = allItems.filter(item => item.type === type);
                 const typeSize = typeItems.reduce((sum, item) => sum + item.size, 0);
                 const icon = type === 'translation' ? '📝' : '🎵';
-                const label = type === 'translation' ? '翻译缓存' : '音频缓存';
+                const label = type === 'translation' ? tr('翻译缓存', 'Translation cache') : tr('音频缓存', 'Audio cache');
 
                 {
                     const host = typeGrid.createDiv({ cls: 'polyglot-stat-card' });

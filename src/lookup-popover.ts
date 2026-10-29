@@ -63,7 +63,7 @@ export class LookupPopover {
 
         this.el = document.body.createDiv({ cls: 'polyglot-root polyglot-popover ap ap-glass' });
         this.el.setAttr('role', 'dialog');
-        this.el.setAttr('aria-label', `查词：${this.word}`);
+        this.el.setAttr('aria-label', tr(`查词：${this.word}`, `Look up: ${this.word}`));
 
         const head = this.el.createDiv({ cls: 'polyglot-pop-head' });
         head.createSpan({ cls: 'polyglot-pop-word', text: this.word });
@@ -180,7 +180,7 @@ export class LookupPopover {
         ]);
         const sources: string[] = [];
         if (dict.meanings?.length) sources.push('Free Dictionary');
-        if (llm) sources.push('模型');
+        if (llm) sources.push(tr('模型', 'Model'));
         const firstDef = (dict.meanings?.[0] || '').replace(/^_([^_]+)_:\s*/, '');
         const dictPos = (dict.meanings?.[0] || '').match(/^_([^_]+)_/)?.[1] || '';
         return {
@@ -204,7 +204,7 @@ export class LookupPopover {
         ]);
         const sources: string[] = [];
         if (jisho) sources.push('Jisho');
-        if (llm) sources.push('模型');
+        if (llm) sources.push(tr('模型', 'Model'));
         return {
             reading: llm?.reading || jisho?.reading || '',
             pos: llm?.pos || '',

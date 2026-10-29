@@ -4,6 +4,7 @@ import { Logger } from './shared/Logger';
 import { getTtsAudioTS } from './apis/tts';
 import { cleanFileName } from './file-utils';
 
+import { tr } from './shared/i18n';
 /**
  * 统一的音频缓存管理器
  * 避免重复生成相同文本的音频文件
@@ -89,7 +90,7 @@ export class AudioCacheManager {
 
         // 3. 生成新的音频
         try {
-            const logPrefix = forceRefresh ? '🔄 强制重新生成音频' : '🎵 生成新音频';
+            const logPrefix = forceRefresh ? tr('🔄 强制重新生成音频', '🔄 Regenerate audio') : tr('🎵 生成新音频', '🎵 Generate new audio');
             this.logger.info(`${logPrefix}: "${cleanedText}"`);
             const audioContent = await getTtsAudioTS(cleanedText, this.settings, this.logger);
 
