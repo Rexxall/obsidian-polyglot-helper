@@ -94,7 +94,7 @@ async function getYoudaoTtsAudioTS(
 ): Promise<ArrayBuffer | null> {
     if (!settings.youdaoAppKey || !settings.youdaoAppSecret) {
         logger.info("有道 TTS AppKey 或 AppSecret 未提供。");
-        new Notice("有道 TTS 配置不完整，请检查 AppKey 和 AppSecret");
+        new Notice("有道语音合成配置不完整，请检查应用 ID 和应用密钥");
         return null;
     }
 
@@ -102,7 +102,7 @@ async function getYoudaoTtsAudioTS(
     const textBytes = new TextEncoder().encode(text).length;
     if (textBytes > 2048) {
         logger.error(`有道 TTS 文本UTF-8编码长度超过限制 (${textBytes}/2048字节)`);
-        new Notice("文本过长，有道TTS限制为2048字节");
+        new Notice("文本过长，有道语音合成最多 2048 字节");
         return null;
     }
 
@@ -263,7 +263,6 @@ async function getGeminiTtsAudioTS(
     }
 
     const maxRetries = 3;
-    let lastError: unknown = null;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
@@ -294,7 +293,6 @@ async function getGeminiTtsAudioTS(
             return buffer;
 
         } catch (error) {
-            lastError = error;
             logger.warn(`Gemini TTS生成失败 (尝试 ${attempt}/${maxRetries})`, error);
 
             // 如果是最后一次尝试，记录错误并返回null

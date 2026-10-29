@@ -15,6 +15,8 @@
 - Mobile: removed a Node.js `path` import that is not available on phones, and a regular expression that older iOS versions cannot run.
 - Closing the plugin no longer closes its panes, so they reopen in place after an update.
 - Passes the Obsidian community directory's automated review (eslint-plugin-obsidianmd recommended set) with no errors. Two bugs found on the way are fixed: the cache cleaner's "清理选中项" deleted nothing, and importing a vocabulary JSON file always failed.
+- Upgrading from a manual install whose folder is not `obsidian-polyglot-helper` (for example `obsidian-polyglot-helper-release`): the old version is now found by its manifest id, so settings, both vocabulary lists and every review schedule move over.
+- No lint warnings in the plugin source: delete and clear actions ask in an Obsidian dialog instead of the browser's confirm(); settings appear in Obsidian 1.13's settings search; speech settings are named 语音合成 instead of TTS.
 - Phones and touch screens: the recent-lookup buttons stay visible and larger, dialogs keep their inner margins. With "increase contrast" on, cards and the input box get a solid outline.
 - Requires Obsidian 1.8.7 or later.
 

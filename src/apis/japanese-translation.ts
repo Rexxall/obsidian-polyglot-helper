@@ -22,7 +22,7 @@ export async function getJapaneseTranslationTS(
         apiKey = apiConfig.apiKey;
         model = apiConfig.model;
         if (!apiKey || !apiUrl) {
-            return "错误：API配置不完整，请检查API密钥和Base URL。";
+            return "错误：API 配置不完整，请检查 API 密钥和接口地址。";
         }
     } else {
         // 回退到旧的设置方式
@@ -35,7 +35,7 @@ export async function getJapaneseTranslationTS(
             }
         } else if (settings.llmProvider === 'ollama') {
             if (!settings.ollamaUrl || !settings.ollamaModel) {
-                return "错误：请在设置中提供 Ollama 服务器地址和模型名称。";
+                return "错误：请在设置中填写本地模型服务的地址和模型名称。";
             }
             apiUrl = settings.ollamaUrl.replace(/\/$/, '') + '/api/chat';
             model = settings.ollamaModel;
@@ -164,7 +164,7 @@ export async function getJapaneseSimpleTranslationTS(
         apiKey = apiConfig.apiKey;
         model = apiConfig.model;
         if (!apiKey || !apiUrl) {
-            new Notice("错误：API配置不完整，请检查API密钥和Base URL。");
+            new Notice("错误：API 配置不完整，请检查 API 密钥和接口地址。");
             return null;
         }
     } else {
@@ -179,7 +179,7 @@ export async function getJapaneseSimpleTranslationTS(
             }
         } else if (settings.llmProvider === 'ollama') {
             if (!settings.ollamaUrl || !settings.ollamaModel) {
-                new Notice("错误：请在设置中提供 Ollama 服务器地址和模型名称。");
+                new Notice("错误：请在设置中填写本地模型服务的地址和模型名称。");
                 return null;
             }
             apiUrl = settings.ollamaUrl.replace(/\/$/, '') + '/api/chat';

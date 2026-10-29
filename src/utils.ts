@@ -4,6 +4,7 @@ import { Logger } from './shared/Logger';
 import { MarkdownView } from 'obsidian';
 
 import { errorMessage } from './shared/errors';
+import { asTFile } from './file-utils';
 export function sleep(ms: number) {
     return new Promise(resolve => window.setTimeout(resolve, ms));
 }
@@ -141,8 +142,8 @@ async function createNewFileWithResult(
 
     try {
         const existingFile = app.vault.getAbstractFileByPath(fullPath);
-        if (existingFile) {
-            await app.vault.append(existingFile as TFile, `\n\n---\n${result}`);
+        if (existingFile instanceof TFile) {
+            await app.vault.append(existingFile, `\n\n---\n${result}`);
             new Notice(`结果已追加到现有文件: ${fullPath}`);
         } else {
             const newFile = await app.vault.create(fullPath, result);
@@ -205,14 +206,14 @@ export async function handleSpecificOutput(
 
     if (destination === 'sidebar') {
         app.workspace.trigger('polyglot-query-success', finalResult);
-        new Notice("结果已在 Polyglot Helper 侧边栏显示。");
+        new Notice("结果已在语言助手侧栏显示。");
         return;
     }
 
     // 对于新文件和固定文件模式，不需要当前文件路径
     if (!filePath && (destination === 'replace' || destination === 'appendCurrent')) {
         app.workspace.trigger('polyglot-query-success', finalResult);
-        new Notice("当前没有打开的文件，结果已在 Polyglot Helper 侧边栏显示。\n💡 提示：请打开一个文件，或在设置中更改输出位置。");
+        new Notice("当前没有打开的文件，结果已在语言助手侧栏显示。\n💡 提示：请打开一个文件，或在设置中更改输出位置。");
         return;
     }
 
@@ -315,7 +316,7 @@ export async function handlePriorityOutput(
 
     if (destination === 'sidebar') {
         app.workspace.trigger('polyglot-query-success', finalResult);
-        new Notice("结果已在 Polyglot Helper 侧边栏显示。");
+        new Notice("结果已在语言助手侧栏显示。");
         return { destination: 'sidebar' };
     }
 
@@ -326,14 +327,14 @@ export async function handlePriorityOutput(
     // 对于新文件和固定文件模式，不需要当前文件路径
     if (!filePath && (destination === 'replace' || destination === 'appendCurrent')) {
         app.workspace.trigger('polyglot-query-success', finalResult);
-        new Notice("当前没有打开的文件，结果已在 Polyglot Helper 侧边栏显示。\n💡 提示：请打开一个文件，或在设置中更改输出位置。");
+        new Notice("当前没有打开的文件，结果已在语言助手侧栏显示。\n💡 提示：请打开一个文件，或在设置中更改输出位置。");
         return { destination: 'sidebar' };
     }
 
     // 只有在需要当前文件的模式下才检查文件是否存在
     let file: TFile | null = null;
     if (filePath && (destination === 'replace' || destination === 'appendCurrent')) {
-        file = app.vault.getAbstractFileByPath(filePath) as TFile;
+        file = asTFile(app.vault.getAbstractFileByPath(filePath));
         if (!file || !(file instanceof TFile)) {
             new Notice(`错误：找不到原始文件 ${filePath}。`);
             logger.error(`handlePriorityOutput failed: Could not find original file at path ${filePath}`);
@@ -369,7 +370,7 @@ export async function handlePriorityOutput(
             case 'fixedFile': {
                 // 对于固定文件，使用语言特定的路径（如果是 newFile 或 fixedFile 模式）
                 const fixedFilePath = languageSettings.fixedOutputFile || globalSettings.fixedOutputFile;
-                const fixedFile = app.vault.getAbstractFileByPath(fixedFilePath) as TFile;
+                const fixedFile = asTFile(app.vault.getAbstractFileByPath(fixedFilePath));
 
                 if (fixedFile) {
                     const timestamp = new Date().toLocaleString('zh-CN');
@@ -432,21 +433,21 @@ export async function handleOutput(
 
     if (destination === 'sidebar') {
         app.workspace.trigger('polyglot-query-success', finalResult);
-        new Notice("结果已在 Polyglot Helper 侧边栏显示。");
+        new Notice("结果已在语言助手侧栏显示。");
         return;
     }
 
     // 对于新文件和固定文件模式，不需要当前文件路径
     if (!filePath && (destination === 'replace' || destination === 'appendCurrent')) {
         app.workspace.trigger('polyglot-query-success', finalResult);
-        new Notice("当前没有打开的文件，结果已在 Polyglot Helper 侧边栏显示。\n💡 提示：请打开一个文件，或在设置中更改输出位置。");
+        new Notice("当前没有打开的文件，结果已在语言助手侧栏显示。\n💡 提示：请打开一个文件，或在设置中更改输出位置。");
         return;
     }
 
     // 只有在需要当前文件的模式下才检查文件是否存在
     let file: TFile | null = null;
     if (filePath && (destination === 'replace' || destination === 'appendCurrent')) {
-        file = app.vault.getAbstractFileByPath(filePath) as TFile;
+        file = asTFile(app.vault.getAbstractFileByPath(filePath));
         if (!file || !(file instanceof TFile)) {
             new Notice(`错误：找不到原始文件 ${filePath}。`);
             logger.error(`handleOutput failed: Could not find original file at path ${filePath}`);

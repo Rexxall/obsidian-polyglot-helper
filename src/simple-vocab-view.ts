@@ -3,6 +3,7 @@ import { ItemView, WorkspaceLeaf, Notice, ButtonComponent, TextComponent } from 
 import PolyglotHelper from "./main";
 
 import { fire } from "./shared/fire";
+import { confirmAction } from "./shared/confirm-modal";
 export const SIMPLE_VOCAB_VIEW_TYPE = "simple-vocab-view";
 
 export class SimpleVocabView extends ItemView {
@@ -49,7 +50,7 @@ export class SimpleVocabView extends ItemView {
             .setPlaceholder('搜索词汇...')
             .onChange((value) => this.filterVocab(value));
         
-        const addButton = new ButtonComponent(searchContainer)
+        new ButtonComponent(searchContainer)
             .setButtonText('➕ 添加词汇')
             .setCta()
             .onClick(() => this.showAddVocabModal());
@@ -102,7 +103,7 @@ export class SimpleVocabView extends ItemView {
         const footer = card.createDiv({ cls: 'vocab-card-footer' });
         
         // 收藏按钮
-        const favoriteBtn = new ButtonComponent(footer)
+        new ButtonComponent(footer)
             .setButtonText(item.isFavorite ? '⭐' : '☆')
             .setClass(item.isFavorite ? 'favorite active' : 'favorite')
             .onClick(async () => {
@@ -112,11 +113,11 @@ export class SimpleVocabView extends ItemView {
             });
         
         // 删除按钮
-        const deleteBtn = new ButtonComponent(footer)
+        new ButtonComponent(footer)
             .setButtonText('🗑️')
             .setClass('delete-btn')
             .onClick(async () => {
-                if (confirm(`确定要删除词汇 "${word}" 吗？`)) {
+                if (await confirmAction(this.app, `确定要删除词汇 "${word}" 吗？`)) {
                     await this.plugin.removeSimpleVocabularyItem(word);
                     this.updateVocabList(this.searchInput.getValue());
                     new Notice(`已删除词汇 "${word}"`);
@@ -124,7 +125,7 @@ export class SimpleVocabView extends ItemView {
             });
         
         // 复习按钮
-        const reviewBtn = new ButtonComponent(footer)
+        new ButtonComponent(footer)
             .setButtonText('🔄')
             .setClass('review-btn')
             .onClick(async () => {

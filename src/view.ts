@@ -9,6 +9,7 @@ import { createObsidianPicker } from './ui/obsidian-picker';
 
 import { fire } from './shared/fire';
 import { errorMessage } from './shared/errors';
+import { asTFile } from './file-utils';
 export const POLYGLOT_HELPER_VIEW_TYPE = "polyglot-helper-view";
 
 export class PolyglotHelperView extends ItemView {
@@ -106,7 +107,7 @@ export class PolyglotHelperView extends ItemView {
                     await this.app.vault.createFolder(base.replace(/\/$/, ''));
                 }
                 await this.app.vault.create(full, content);
-                const file = this.app.vault.getAbstractFileByPath(full) as TFile;
+                const file = asTFile(this.app.vault.getAbstractFileByPath(full));
                 if (file) await this.app.workspace.getLeaf().openFile(file);
                 new Notice(`已创建新文件: ${fileName}`);
                 return { destination: 'newFile', filePath: full, fileName, heading: headingText };
@@ -136,7 +137,7 @@ export class PolyglotHelperView extends ItemView {
         }
     }
     getViewType() { return POLYGLOT_HELPER_VIEW_TYPE; }
-    getDisplayText() { return "Polyglot Helper"; }
+    getDisplayText() { return "语言助手"; }
     getIcon() { return "book-open"; }
 
     async onOpen() {
@@ -243,7 +244,7 @@ export class PolyglotHelperView extends ItemView {
         // 确认按钮（执行当前模式）
         const confirmButton = rightButtonsContainer.createEl('button', {
             cls: 'polyglot-confirm-button',
-            title: '执行当前模式（或按 Enter）'
+            title: '执行当前模式（或按回车）'
         });
         confirmButton.setText('查询');
         confirmButton.setAttribute('aria-label', '查询当前文本');
@@ -899,7 +900,7 @@ export class PolyglotHelperView extends ItemView {
             const { englishLlmApiKey, englishLlmBaseUrl, ttsEngine } = this.plugin.settings;
             if (!englishLlmApiKey || !englishLlmBaseUrl) {
                 processingNotice.hide();
-                new Notice("❌ 请先在设置中配置LLM API密钥和Base URL");
+                new Notice("❌ 请先在设置中配置 LLM 的 API 密钥和接口地址");
                 return;
             }
 
@@ -1127,7 +1128,7 @@ export class PolyglotHelperView extends ItemView {
             const { englishLlmApiKey, englishLlmBaseUrl } = this.plugin.settings;
             if (!englishLlmApiKey || !englishLlmBaseUrl) {
                 processingNotice.hide();
-                new Notice("❌ 请先在设置中配置LLM API密钥和Base URL");
+                new Notice("❌ 请先在设置中配置 LLM 的 API 密钥和接口地址");
                 return;
             }
 
@@ -1300,51 +1301,10 @@ export class PolyglotHelperView extends ItemView {
      * 复制到剪贴板
      */
     private copyToClipboard(result: string): void {
-        // 优先使用现代 Clipboard API
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(result).then(() => {
-                new Notice('✅ 结果已复制到剪贴板');
-            }).catch(() => {
-                // 降级到传统方法
-                this.fallbackCopyToClipboard(result);
-            });
-        } else {
-            // 降级到传统方法
-            this.fallbackCopyToClipboard(result);
-        }
-    }
-
-    /**
-     * 降级复制方法（兼容移动端和旧浏览器）
-     */
-    private fallbackCopyToClipboard(text: string): void {
-        try {
-            const textArea = createEl('textarea');
-            textArea.value = text;
-            textArea.addClass('polyglot-offscreen');
-            document.body.appendChild(textArea);
-            
-            // 移动端兼容性处理
-            if ('ontouchstart' in window) {
-                // 移动端：直接选择文本
-                textArea.select();
-            } else {
-                // 桌面端：先聚焦再选择
-                textArea.focus();
-                textArea.select();
-            }
-            
-            const successful = document.execCommand('copy');
-            document.body.removeChild(textArea);
-            
-            if (successful) {
-                new Notice('✅ 结果已复制到剪贴板');
-            } else {
-                new Notice('❌ 复制失败，请手动复制');
-            }
-        } catch {
-            new Notice('❌ 复制失败，请手动复制');
-        }
+        // Obsidian 桌面端和手机端都提供 Clipboard API
+        navigator.clipboard.writeText(result)
+            .then(() => new Notice('✅ 结果已复制到剪贴板'))
+            .catch(() => new Notice('❌ 复制失败，请手动复制'));
     }
 
     /**
@@ -1910,7 +1870,7 @@ export class PolyglotHelperView extends ItemView {
         document.body.appendChild(panel);
 
         // 添加动画效果：.polyglot-fade 默认透明，加 is-open 后淡入
-        requestAnimationFrame(() => panel.addClass('is-open'));
+        window.requestAnimationFrame(() => panel.addClass('is-open'));
 
         // 点击外部关闭面板
         const closePanel = (e: MouseEvent) => {
@@ -2052,7 +2012,7 @@ export class PolyglotHelperView extends ItemView {
             return;
         }
 
-        const { destination, filePath, fileName, heading } = item.outputLocation;
+        const { destination, filePath, heading } = item.outputLocation;
         let targetFile: TFile | null = null;
 
         if (destination === 'sidebar') {
@@ -2060,7 +2020,7 @@ export class PolyglotHelperView extends ItemView {
             return;
         } else if (destination === 'replace' || destination === 'appendCurrent') {
             if (filePath) {
-                targetFile = this.app.vault.getAbstractFileByPath(filePath) as TFile;
+                targetFile = asTFile(this.app.vault.getAbstractFileByPath(filePath));
                 if (!targetFile) {
                     new Notice('❌ 找不到文件');
                     return;
@@ -2071,7 +2031,7 @@ export class PolyglotHelperView extends ItemView {
             }
         } else if (destination === 'newFile') {
             if (filePath) {
-                targetFile = this.app.vault.getAbstractFileByPath(filePath) as TFile;
+                targetFile = asTFile(this.app.vault.getAbstractFileByPath(filePath));
                 if (!targetFile) {
                     new Notice('❌ 找不到新文件');
                     return;
@@ -2082,7 +2042,7 @@ export class PolyglotHelperView extends ItemView {
             }
         } else if (destination === 'fixedFile') {
             if (filePath) {
-                targetFile = this.app.vault.getAbstractFileByPath(filePath) as TFile;
+                targetFile = asTFile(this.app.vault.getAbstractFileByPath(filePath));
                 if (!targetFile) {
                     new Notice('❌ 找不到固定文件');
                     return;
@@ -2257,9 +2217,6 @@ export class PolyglotHelperView extends ItemView {
                 // 如果剪贴板内容发生变化且不为空
                 if (clipboardText && clipboardText.trim().length > 0 && clipboardText !== lastClipboardText) {
                     // 检查是否是用户主动复制的（通过检查是否有选中的文本）
-                    const selectionText = window.getSelection()?.toString() || '';
-                    selectionText.trim().length > 0;
-                    
                     // 如果剪贴板内容与当前选择不同，可能是用户复制的新内容
                     const currentSelection = window.getSelection()?.toString() || '';
                     if (clipboardText !== currentSelection) {

@@ -1,3 +1,4 @@
+import { TAbstractFile, TFile } from 'obsidian';
 export function cleanFileName(text: string, maxLength = 30): string {
     // 移除HTML标签
     const withoutHtml = text.replace(/<[^>]*>/g, '');
@@ -24,4 +25,9 @@ export function generateConsistentFileName(text: string): string {
     // 使用文本内容的哈希值作为唯一标识，而不是时间戳
     const hash = Array.from(text).reduce((acc, char) => (acc * 31 + char.charCodeAt(0)) | 0, 0).toString(16);
     return `${baseName}_${hash}.mp3`;
+}
+
+/** 路径对应的是文件就返回它；文件夹或不存在时返回 null。 */
+export function asTFile(file: TAbstractFile | null): TFile | null {
+	return file instanceof TFile ? file : null;
 }

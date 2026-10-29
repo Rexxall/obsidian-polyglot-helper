@@ -5,6 +5,7 @@ import { CacheCleanupModal } from "./cache-cleanup-modal";
 
 import { fire } from "./shared/fire";
 import { errorMessage } from "./shared/errors";
+import { confirmAction } from "./shared/confirm-modal";
 // 复习视图类型常量
 export const POLYGLOT_REVIEW_VIEW_TYPE = "polyglot-review-view";
 
@@ -569,7 +570,7 @@ export class ManagementPanelView extends ItemView {
     }
 
     private async clearVocabulary() {
-        const confirmed = confirm('确定要清空所有词汇库数据吗？此操作不可恢复！');
+        const confirmed = await confirmAction(this.app, '确定要清空所有词汇库数据吗？此操作不可恢复！');
         if (confirmed) {
             await this.plugin.learningTracker.resetLearningData();
             this.renderPanel();
@@ -583,7 +584,7 @@ export class ManagementPanelView extends ItemView {
     }
 
     private async deleteVocabularyItem(word: string) {
-        const confirmed = confirm(`确定要删除单词 "${word}" 吗？`);
+        const confirmed = await confirmAction(this.app, `确定要删除单词 "${word}" 吗？`);
         if (confirmed) {
             await this.plugin.learningTracker.removeVocabularyItem(word);
             this.renderPanel();
@@ -676,7 +677,7 @@ export class ManagementPanelView extends ItemView {
 
         const resetBtn = actions.createEl('button', { text: '🔄 重置学习数据', cls: 'danger' });
         resetBtn.addEventListener('click', fire(async () => {
-            const confirmed = confirm('确定要重置所有学习数据吗？此操作不可恢复！');
+            const confirmed = await confirmAction(this.app, '确定要重置所有学习数据吗？此操作不可恢复！');
             if (confirmed) {
                 await this.plugin.learningTracker.resetLearningData();
                 this.renderPanel();
@@ -1381,7 +1382,7 @@ class AddEnglishVocabularyModal extends Modal {
             .setDesc('单词的词性')
             .addText(text => {
                 partOfSpeechInput = text;
-                text.setPlaceholder('如: n. v. adj...');
+                text.setPlaceholder('如：名词、动词、形容词');
             });
 
         new Setting(contentEl)
@@ -1711,7 +1712,7 @@ ManagementPanelView.prototype.renderJapaneseVocabulary = function(this: Manageme
 
         const deleteBtn = actionsDiv.createEl('button', { text: '🗑️', cls: 'polyglot-btn-icon danger' });
         deleteBtn.addEventListener('click', fire(async () => {
-            const confirmed = confirm(`确定要删除日语词汇 "${item.originalText}" 吗？`);
+            const confirmed = await confirmAction(this.app, `确定要删除日语词汇 "${item.originalText}" 吗？`);
             if (confirmed) {
                 await this.plugin.learningTracker.removeJapaneseVocabularyItem(item.originalText, item.japaneseText);
                 this.renderJapaneseVocabulary(container);
@@ -1828,7 +1829,7 @@ ManagementPanelView.prototype.renderEnglishVocabulary = function(this: Managemen
 
         const deleteBtn = actionsDiv.createEl('button', { text: '🗑️', cls: 'polyglot-btn-icon danger' });
         deleteBtn.addEventListener('click', fire(async () => {
-            const confirmed = confirm(`确定要删除英语单词 "${item.word}" 吗？`);
+            const confirmed = await confirmAction(this.app, `确定要删除英语单词 "${item.word}" 吗？`);
             if (confirmed) {
                 await this.plugin.learningTracker.removeEnglishVocabularyItem(item.word);
                 this.renderEnglishVocabulary(container);

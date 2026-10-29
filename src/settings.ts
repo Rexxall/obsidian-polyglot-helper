@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, PluginSettingTab, Setting, type SettingDefinitionItem } from "obsidian";
 import PolyglotHelper from "./main";
 // clearCache已移除
 import { Notice } from 'obsidian';
@@ -8,6 +8,8 @@ import { fire } from './shared/fire';
 import { errorMessage } from './shared/errors';
 import type { CacheItem, CacheManager } from './cache-manager';
 
+import { confirmAction } from './shared/confirm-modal';
+import { SETTINGS_SEARCH_TERMS } from './settings-search';
 /** 智能缓存清理面板在几个方法之间共用的状态。 */
 interface CleanupState {
 	allItems: CacheItem[];
@@ -29,8 +31,36 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		this.plugin = plugin;
 	}
 
+	/** 上次画到哪里：1.13 以前是 containerEl，1.13 起是设置清单里的那一行 */
+	private host: HTMLElement | null = null;
+
+	/**
+	 * Obsidian 1.13 起按这份清单画设置页并建立搜索索引。设置页沿用自己的分页布局：
+	 * 一行画整页，所有设置名作为搜索别名。
+	 */
+	getSettingDefinitions(): SettingDefinitionItem[] {
+		return [{
+			name: '语言助手设置',
+			desc: '输出、翻译与模型、语音、学习、缓存和高级选项',
+			aliases: SETTINGS_SEARCH_TERMS,
+			render: (setting) => {
+				const host = setting.settingEl;
+				host.className = 'polyglot-settings-host';
+				this.renderPage(host);
+			},
+		}];
+	}
+
 	display(): void {
-		const {containerEl} = this;
+		this.renderPage(this.containerEl);
+	}
+
+	private redraw() {
+		if (this.host) this.renderPage(this.host);
+	}
+
+	private renderPage(containerEl: HTMLElement): void {
+		this.host = containerEl;
 		containerEl.empty();
 		containerEl.addClass('ap', 'ap-settings', 'polyglot-settings');
 
@@ -168,7 +198,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				.onChange(async (value: 'sidebar' | 'newFile' | 'appendCurrent' | 'replace' | 'fixedFile') => {
 					this.plugin.settings.outputDestination = value;
 					await this.plugin.saveSettings();
-					this.display();
+					this.redraw();
 				}));
 
 		if (this.plugin.settings.outputDestination === 'newFile') {
@@ -275,11 +305,11 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				});
 				deleteButton.addEventListener('click', fire(async () => {
 					// 确认删除
-					const confirmed = confirm(`确定要删除 "${config.name}" API配置吗？`);
+					const confirmed = await confirmAction(this.app, `确定要删除 "${config.name}" API配置吗？`);
 					if (confirmed) {
 						this.plugin.settings.apiConfigs.splice(index, 1);
 						await this.plugin.saveSettings();
-						this.display(); // 重新渲染设置页面
+						this.redraw(); // 重新渲染设置页面
 					}
 				}));
 			}
@@ -298,7 +328,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				.setName('配置名称')
 				.setDesc('API配置的显示名称')
 				.addText(text => text
-					.setPlaceholder('例如：OpenRouter')
+					.setPlaceholder('例如：主力模型')
 					.setValue(config.name)
 					.onChange(async (value) => {
 						this.plugin.settings.apiConfigs[index].name = value;
@@ -311,7 +341,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				.addText(text => {
 					text.inputEl.type = 'password';
 					return text
-						.setPlaceholder('sk-...')
+						.setPlaceholder('以 sk- 开头的密钥')
 						.setValue(config.apiKey)
 						.onChange(async (value) => {
 							this.plugin.settings.apiConfigs[index].apiKey = value;
@@ -323,7 +353,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				.setName('Base URL')
 				.setDesc('API的基础URL地址')
 				.addText(text => text
-					.setPlaceholder('https://api.example.com/v1/chat/completions')
+					.setPlaceholder('OpenAI 兼容的完整接口地址')
 					.setValue(config.baseUrl)
 					.onChange(async (value) => {
 						this.plugin.settings.apiConfigs[index].baseUrl = value;
@@ -334,7 +364,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				.setName('模型名称')
 				.setDesc('使用的模型名称')
 				.addText(text => text
-					.setPlaceholder('gpt-4o-mini')
+					.setPlaceholder('例如 GPT-4o-mini')
 					.setValue(config.model)
 					.onChange(async (value) => {
 						this.plugin.settings.apiConfigs[index].model = value;
@@ -357,7 +387,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 						enabled: false,
 					});
 					await this.plugin.saveSettings();
-					this.display();
+					this.redraw();
 				}));
 
 		// --- 功能API选择器 ---
@@ -470,7 +500,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 			.setName('日语音频文件存储路径')
 			.setDesc('用于保存日语单词或句子音频文件的基本路径。')
 			.addText(text => text
-				.setPlaceholder('例如: Polyglot/Audio/Japanese')
+				.setPlaceholder('库内文件夹路径')
 				.setValue(this.plugin.settings.japaneseAudioPath || 'Audio/Japanese')
 				.onChange(async (value) => {
 					this.plugin.settings.japaneseAudioPath = value;
@@ -479,7 +509,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('自动保存音频文件')
-			.setDesc('启用后，TTS生成的音频文件会自动保存到指定路径。')
+			.setDesc('启用后，语音合成的音频文件会自动保存到指定路径。')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.autoSaveAudio || false)
 				.onChange(async (value) => {
@@ -488,18 +518,18 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		// TTS Engine for Japanese
-		new Setting(containerEl).setName('TTS 音频生成').setHeading();
+		new Setting(containerEl).setName('语音合成').setHeading();
 		new Setting(containerEl)
-			.setName('TTS 引擎选择')
+			.setName('语音合成引擎')
 			.addDropdown(dropdown => dropdown
-				.addOption('openai', 'OpenAI TTS')
-				.addOption('youdao', '有道 TTS')
-				.addOption('gemini', 'Gemini TTS')
+				.addOption('openai', 'OpenAI 语音合成')
+				.addOption('youdao', '有道语音合成')
+				.addOption('gemini', 'Gemini 语音合成')
 				.setValue(this.plugin.settings.ttsEngine)
 				.onChange(async (value: 'openai' | 'youdao' | 'gemini') => {
 					this.plugin.settings.ttsEngine = value;
 					await this.plugin.saveSettings();
-					this.display();
+					this.redraw();
 				}));
 
 		// Conditional TTS settings
@@ -514,7 +544,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		// 音频格式信息
 		const audioFormatDiv = containerEl.createDiv({ cls: 'polyglot-info-section' });
 		new Setting(audioFormatDiv).setName('音频格式信息').setHeading();
-		audioFormatDiv.createEl('p', { text: '• 支持格式: MP3, WAV, M4A' });
+		audioFormatDiv.createEl('p', { text: '• 支持格式：mp3、wav、m4a' });
 		audioFormatDiv.createEl('p', { text: '• 默认格式: MP3 (兼容性最佳)' });
 		audioFormatDiv.createEl('p', { text: '• 音频文件会自动嵌入到翻译结果中' });
 	}
@@ -524,7 +554,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('状态栏显示待复习数')
-			.setDesc('有到期单词时在状态栏显示“待复习 N”，点一下打开复习页。仅桌面端有状态栏。')
+			.setDesc('有到期单词时在状态栏显示“待复习”和数量，点一下打开复习页。仅桌面端有状态栏。')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.showDueInStatusBar !== false)
 				.onChange(async (value) => {
@@ -534,7 +564,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('词库导出文件夹')
-			.setDesc('命令“导出词库为闪卡笔记”“导出词库为 Anki 导入文件”写到这里。闪卡笔记可直接被 Spaced Repetition 插件复习，重新导出会保留它的复习排程。')
+			.setDesc('命令“导出词库为闪卡笔记”“导出词库为 Anki 导入文件”写到这里。闪卡笔记可直接用间隔重复插件复习，重新导出会保留它的复习排程。')
 			.addText(text => text
 				.setPlaceholder('Polyglot')
 				.setValue(this.plugin.settings.vocabExportFolder || 'Polyglot')
@@ -553,7 +583,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.enableLearningTracker = value;
 					await this.plugin.saveSettings();
-					this.display();
+					this.redraw();
 				}));
 		
 		if (this.plugin.settings.enableLearningTracker) {
@@ -622,9 +652,9 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				.setDesc('警告：此操作将清除所有学习进度和统计数据，无法恢复。')
 				.addButton(button => button
 					.setButtonText('重置数据')
-					.setWarning()
+					.setClass('mod-warning')
 					.onClick(async () => {
-						const confirmed = confirm('确定要重置所有学习数据吗？此操作无法撤销。');
+						const confirmed = await confirmAction(this.app, '确定要重置所有学习数据吗？此操作无法撤销。');
 						if (confirmed) {
 							this.plugin.settings.learningStats = {
 								dailyStats: {},
@@ -635,7 +665,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 							};
 							this.plugin.settings.vocabItems = {};
 							await this.plugin.saveSettings();
-							this.display();
+							this.redraw();
 							new Notice('学习数据已重置。');
 						}
 					}));
@@ -694,9 +724,9 @@ export class PolyglotSettingTab extends PluginSettingTab {
 			.addButton(button => {
 				button
 					.setButtonText('🗑️ 清理所有缓存')
-					.setWarning()
+					.setClass('mod-warning')
 					.onClick(async () => {
-						const confirmed = confirm('确定要清理所有缓存吗？此操作不可撤销！');
+						const confirmed = await confirmAction(this.app, '确定要清理所有缓存吗？此操作不可撤销！');
 						if (confirmed) {
 							try {
 								await this.plugin.clearAllCache();
@@ -768,17 +798,17 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	}
 
 	private displayOpenAITTSSettings(containerEl: HTMLElement) {
-		new Setting(containerEl).setName('OpenAI TTS').setHeading();
-		new Setting(containerEl).setName('TTS 接口地址 (Base URL)').addText(text => text.setValue(this.plugin.settings.openaiTtsBaseUrl || '').onChange(async (value) => { this.plugin.settings.openaiTtsBaseUrl = value; await this.plugin.saveSettings(); }));
-		new Setting(containerEl).setName('TTS API Key').setDesc("如果留空，将使用上面的 OpenAI API Key").addText(text => { text.inputEl.type = 'password'; text.setValue(this.plugin.settings.openaiTtsApiKey || '').onChange(async (value) => { this.plugin.settings.openaiTtsApiKey = value; await this.plugin.saveSettings(); }); });
-		new Setting(containerEl).setName('TTS 模型名称').setDesc('例如: tts-1, tts-1-hd').addText(text => text.setValue(this.plugin.settings.openaiTtsModel || '').onChange(async (value) => { this.plugin.settings.openaiTtsModel = value; await this.plugin.saveSettings(); }));
-		new Setting(containerEl).setName('TTS 声音').setDesc('例如: alloy, echo, fable, onyx, nova, shimmer').addText(text => text.setValue(this.plugin.settings.openaiTtsVoice || '').onChange(async (value) => { this.plugin.settings.openaiTtsVoice = value; await this.plugin.saveSettings(); }));
-		new Setting(containerEl).setName('TTS 语速').setDesc('范围: 0.25 - 4.0 (默认: 1.0)').addText(text => text.setValue(String(this.plugin.settings.openaiTtsSpeed || 1.0)).onChange(async (value) => { const speed = parseFloat(value); if (!isNaN(speed)) { this.plugin.settings.openaiTtsSpeed = speed; await this.plugin.saveSettings(); } }));
+		new Setting(containerEl).setName('OpenAI 语音合成').setHeading();
+		new Setting(containerEl).setName('语音合成接口地址').addText(text => text.setValue(this.plugin.settings.openaiTtsBaseUrl || '').onChange(async (value) => { this.plugin.settings.openaiTtsBaseUrl = value; await this.plugin.saveSettings(); }));
+		new Setting(containerEl).setName('语音合成 API 密钥').setDesc("留空时使用上面的 OpenAI API 密钥").addText(text => { text.inputEl.type = 'password'; text.setValue(this.plugin.settings.openaiTtsApiKey || '').onChange(async (value) => { this.plugin.settings.openaiTtsApiKey = value; await this.plugin.saveSettings(); }); });
+		new Setting(containerEl).setName('语音合成模型名称').setDesc('例如：tts-1、tts-1-hd').addText(text => text.setValue(this.plugin.settings.openaiTtsModel || '').onChange(async (value) => { this.plugin.settings.openaiTtsModel = value; await this.plugin.saveSettings(); }));
+		new Setting(containerEl).setName('语音合成声音').setDesc('例如：alloy、echo、fable、onyx、nova、shimmer').addText(text => text.setValue(this.plugin.settings.openaiTtsVoice || '').onChange(async (value) => { this.plugin.settings.openaiTtsVoice = value; await this.plugin.saveSettings(); }));
+		new Setting(containerEl).setName('语音合成语速').setDesc('范围：0.25 - 4.0（默认 1.0）').addText(text => text.setValue(String(this.plugin.settings.openaiTtsSpeed || 1.0)).onChange(async (value) => { const speed = parseFloat(value); if (!isNaN(speed)) { this.plugin.settings.openaiTtsSpeed = speed; await this.plugin.saveSettings(); } }));
 
 		// 添加测试按钮
 		new Setting(containerEl)
-			.setName('测试 OpenAI TTS')
-			.setDesc('测试 OpenAI TTS 配置是否正确')
+			.setName('测试 OpenAI 语音合成')
+			.setDesc('测试 OpenAI 语音合成 配置是否正确')
 			.addButton(button => button
 				.setButtonText('测试')
 				.onClick(async () => {
@@ -790,13 +820,13 @@ export class PolyglotSettingTab extends PluginSettingTab {
 						const audioBuffer = await this.plugin.testTtsAudio(testText);
 
 						if (audioBuffer) {
-							new Notice('OpenAI TTS 测试成功！');
+							new Notice('OpenAI 语音合成测试成功！');
 						} else {
-							new Notice('OpenAI TTS 测试失败，请检查配置和网络连接');
+							new Notice('OpenAI 语音合成测试失败，请检查配置和网络连接');
 						}
 					} catch (error) {
-						new Notice(`OpenAI TTS 测试失败: ${errorMessage(error)}`);
-						this.plugin.logger.error('OpenAI TTS 测试失败', error);
+						new Notice(`OpenAI 语音合成测试失败: ${errorMessage(error)}`);
+						this.plugin.logger.error('OpenAI 语音合成测试失败', error);
 					} finally {
 						button.setButtonText('测试');
 						button.setDisabled(false);
@@ -805,14 +835,14 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	}
 
 	private displayYoudaoTTSSettings(containerEl: HTMLElement) {
-		new Setting(containerEl).setName('有道 TTS').setHeading();
-		new Setting(containerEl).setName('有道应用 AppKey').addText(text => { text.inputEl.type = 'password'; text.setValue(this.plugin.settings.youdaoAppKey || '').onChange(async (value) => { this.plugin.settings.youdaoAppKey = value; await this.plugin.saveSettings(); }); });
-		new Setting(containerEl).setName('有道应用 AppSecret').addText(text => { text.inputEl.type = 'password'; text.setValue(this.plugin.settings.youdaoAppSecret || '').onChange(async (value) => { this.plugin.settings.youdaoAppSecret = value; await this.plugin.saveSettings(); }); });
+		new Setting(containerEl).setName('有道语音合成').setHeading();
+		new Setting(containerEl).setName('有道应用 ID').addText(text => { text.inputEl.type = 'password'; text.setValue(this.plugin.settings.youdaoAppKey || '').onChange(async (value) => { this.plugin.settings.youdaoAppKey = value; await this.plugin.saveSettings(); }); });
+		new Setting(containerEl).setName('有道应用密钥').addText(text => { text.inputEl.type = 'password'; text.setValue(this.plugin.settings.youdaoAppSecret || '').onChange(async (value) => { this.plugin.settings.youdaoAppSecret = value; await this.plugin.saveSettings(); }); });
 
 		// 添加测试按钮
 		new Setting(containerEl)
-			.setName('测试有道 TTS')
-			.setDesc('测试有道 TTS 配置是否正确')
+			.setName('测试有道语音合成')
+			.setDesc('测试有道语音合成 配置是否正确')
 			.addButton(button => button
 				.setButtonText('测试')
 				.onClick(async () => {
@@ -824,13 +854,13 @@ export class PolyglotSettingTab extends PluginSettingTab {
 						const audioBuffer = await this.plugin.testTtsAudio(testText);
 
 						if (audioBuffer) {
-							new Notice('有道 TTS 测试成功！');
+							new Notice('有道语音合成测试成功！');
 						} else {
-							new Notice('有道 TTS 测试失败，请检查配置和网络连接');
+							new Notice('有道语音合成测试失败，请检查配置和网络连接');
 						}
 					} catch (error) {
-						new Notice(`有道 TTS 测试失败: ${errorMessage(error)}`);
-						this.plugin.logger.error('有道 TTS 测试失败', error);
+						new Notice(`有道语音合成测试失败: ${errorMessage(error)}`);
+						this.plugin.logger.error('有道语音合成测试失败', error);
 					} finally {
 						button.setButtonText('测试');
 						button.setDisabled(false);
@@ -839,11 +869,11 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	}
 
 	private displayGeminiTTSSettings(containerEl: HTMLElement) {
-		new Setting(containerEl).setName('Gemini TTS').setHeading();
+		new Setting(containerEl).setName('Gemini 语音合成').setHeading();
 
 		new Setting(containerEl)
-			.setName('Gemini TTS Base URL')
-			.setDesc('Gemini TTS API 的基础URL')
+			.setName('Gemini 语音合成接口地址')
+			.setDesc('Gemini 语音合成 API 的基础地址')
 			.addText(text => text
 				.setValue(this.plugin.settings.geminiTtsBaseUrl || '')
 				.onChange(async (value) => {
@@ -852,8 +882,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('Gemini TTS API Key')
-			.setDesc('输入你的 Gemini API Key')
+			.setName('Gemini 语音合成 API 密钥')
+			.setDesc('输入你的 Gemini API 密钥')
 			.addText(text => {
 				text.inputEl.type = 'password';
 				text.setValue(this.plugin.settings.geminiTtsApiKey || '')
@@ -864,8 +894,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName('Gemini TTS 模型名称')
-			.setDesc('例如: tts-1, tts-1-hd')
+			.setName('Gemini 语音合成模型名称')
+			.setDesc('例如：tts-1、tts-1-hd')
 			.addText(text => text
 				.setValue(this.plugin.settings.geminiTtsModel || '')
 				.onChange(async (value) => {
@@ -874,8 +904,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('Gemini TTS 语音')
-			.setDesc('选择 Gemini TTS 的语音类型')
+			.setName('Gemini 语音合成声音')
+			.setDesc('选择 Gemini 语音合成的声音')
 			.addDropdown(dropdown => {
 				// 添加图中显示的所有语音选项
 				const voices = [
@@ -923,8 +953,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName('Gemini TTS 语速')
-			.setDesc('范围: 0.25 - 4.0 (默认: 1.0)')
+			.setName('Gemini 语音合成语速')
+			.setDesc('范围：0.25 - 4.0（默认 1.0）')
 			.addText(text => text
 				.setValue(String(this.plugin.settings.geminiTtsSpeed || 1.0))
 				.onChange(async (value) => {
@@ -937,8 +967,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		// 添加测试按钮
 		new Setting(containerEl)
-			.setName('测试 Gemini TTS')
-			.setDesc('测试 Gemini TTS 配置是否正确')
+			.setName('测试 Gemini 语音合成')
+			.setDesc('测试 Gemini 语音合成 配置是否正确')
 			.addButton(button => button
 				.setButtonText('测试')
 				.onClick(async () => {
@@ -950,13 +980,13 @@ export class PolyglotSettingTab extends PluginSettingTab {
 						const audioBuffer = await this.plugin.testTtsAudio(testText);
 
 						if (audioBuffer) {
-							new Notice('Gemini TTS 测试成功！');
+							new Notice('Gemini 语音合成测试成功！');
 						} else {
-							new Notice('Gemini TTS 测试失败，请检查配置和网络连接');
+							new Notice('Gemini 语音合成测试失败，请检查配置和网络连接');
 						}
 					} catch (error) {
-						new Notice(`Gemini TTS 测试失败: ${errorMessage(error)}`);
-						this.plugin.logger.error('Gemini TTS 测试失败', error);
+						new Notice(`Gemini 语音合成测试失败: ${errorMessage(error)}`);
+						this.plugin.logger.error('Gemini 语音合成测试失败', error);
 					} finally {
 						button.setButtonText('测试');
 						button.setDisabled(false);
@@ -1071,10 +1101,10 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		// 大小筛选
 		const sizeSelect = filterRow.createEl('select', { cls: 'polyglot-filter-select' });
 		sizeSelect.createEl('option', { value: '', text: '📦 所有大小' });
-		sizeSelect.createEl('option', { value: '1024', text: '> 1KB' });
-		sizeSelect.createEl('option', { value: '10240', text: '> 10KB' });
-		sizeSelect.createEl('option', { value: '102400', text: '> 100KB' });
-		sizeSelect.createEl('option', { value: '1048576', text: '> 1MB' });
+		sizeSelect.createEl('option', { value: '1024', text: '大于 1 千字节' });
+		sizeSelect.createEl('option', { value: '10240', text: '大于 10 千字节' });
+		sizeSelect.createEl('option', { value: '102400', text: '大于 100 千字节' });
+		sizeSelect.createEl('option', { value: '1048576', text: '大于 1 兆字节' });
 
 		// 应用筛选
 		const applyFilter = () => {
@@ -1138,7 +1168,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				return;
 			}
 
-			const confirmed = confirm(`确定要删除 ${data.selectedItems.size} 个缓存文件吗？此操作不可撤销！`);
+			const confirmed = await confirmAction(this.app, `确定要删除 ${data.selectedItems.size} 个缓存文件吗？此操作不可撤销！`);
 			if (!confirmed) return;
 
 			try {

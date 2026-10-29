@@ -3,6 +3,7 @@ import { CacheManager, CacheItem, CacheFilter } from './cache-manager';
 import { Logger } from './shared/Logger';
 
 import { fire } from './shared/fire';
+import { confirmAction } from './shared/confirm-modal';
 export class CacheCleanupModal extends Modal {
     private cacheManager: CacheManager;
     private allItems: CacheItem[] = [];
@@ -115,10 +116,10 @@ export class CacheCleanupModal extends Modal {
             .addDropdown(dropdown => {
                 dropdown
                     .addOption('', '📦 所有大小')
-                    .addOption('1024', '> 1KB')
-                    .addOption('10240', '> 10KB')
-                    .addOption('102400', '> 100KB')
-                    .addOption('1048576', '> 1MB')
+                    .addOption('1024', '大于 1 千字节')
+                    .addOption('10240', '大于 10 千字节')
+                    .addOption('102400', '大于 100 千字节')
+                    .addOption('1048576', '大于 1 兆字节')
                     .setValue('')
                     .onChange(value => {
                         this.filter.largerThan = value ? parseInt(value) : undefined;
@@ -291,7 +292,7 @@ export class CacheCleanupModal extends Modal {
         const selectedItems = this.filteredItems.filter(item => this.selectedItems.has(item.path));
         const stats = this.cacheManager.getCacheStats(selectedItems);
 
-        const confirmed = confirm(
+        const confirmed = await confirmAction(this.app, 
             `确定要删除 ${selectedItems.length} 个缓存文件吗？\n` +
             `总大小: ${this.cacheManager.formatSize(stats.totalSize)}\n` +
             `此操作不可撤销！`

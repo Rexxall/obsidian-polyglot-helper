@@ -83,7 +83,7 @@ const DEFAULT_SETTINGS: PolyglotHelperSettings = {
 			name: 'OpenAI',
 			apiKey: '',
 			baseUrl: 'https://api.openai.com/v1/chat/completions',
-			model: 'gpt-4o-mini',
+			model: '例如 GPT-4o-mini',
 			enabled: false,
 		},
 		{
@@ -306,7 +306,7 @@ export default class PolyglotHelper extends Plugin {
 		});
 
 		// 添加管理面板侧边栏按钮
-		this.addRibbonIcon('library-big', '打开 Polyglot 管理面板', () => {
+		this.addRibbonIcon('library-big', '打开语言助手管理面板', () => {
 			void this.activateManagementPanel();
 		});
 
@@ -499,7 +499,7 @@ export default class PolyglotHelper extends Plugin {
 		// === 系统工具 ===
 		this.addCommand({
 			id: 'export-vocab-flashcards',
-			name: '导出词库为闪卡笔记（Spaced Repetition 格式）',
+			name: '导出词库为闪卡笔记（间隔重复插件格式）',
 			callback: () => void this.exportVocabulary('flashcards'),
 		});
 
@@ -903,7 +903,7 @@ export default class PolyglotHelper extends Plugin {
 			const { englishLlmApiKey, englishLlmBaseUrl, ttsEngine } = this.settings;
 			if (!englishLlmApiKey || !englishLlmBaseUrl) {
 				processingNotice.hide();
-				new Notice("❌ 请先在设置中配置LLM API密钥和Base URL");
+				new Notice("❌ 请先在设置中配置 LLM 的 API 密钥和接口地址");
 				return;
 			}
 
@@ -940,8 +940,6 @@ export default class PolyglotHelper extends Plugin {
 			}
 
 			if (japaneseTranslation) {
-				// 译文
-				const finalText = japaneseTranslation;
 				// 预先计算罗马音（若开启）：优先用 LLM 输出的 romaji
 				let precomputedRomaji: string | undefined;
 				if (this.settings.quickTranslationOptions?.showRomaji) {
@@ -1207,7 +1205,7 @@ export default class PolyglotHelper extends Plugin {
 	 * 通用翻译方法（供性能优化器调用）
 	 */
 	async translateText(text: string, options: { type?: string; force?: boolean } = {}): Promise<string | null> {
-		const { type = 'auto', force = false } = options;
+		const { type = 'auto' } = options;
 
 		try {
 			// 使用新的API配置系统
@@ -1861,7 +1859,7 @@ Input text: "${inputText}"`;
 				return plain;
 			} catch {
 				this.settingsNeedSave = true;
-				new Notice('Polyglot Helper: a saved API key could not be read on this device. Please enter it again in settings.');
+				new Notice('语言助手：本设备读不出已保存的 API 密钥，请在设置中重新填写。');
 				return '';
 			}
 		}
