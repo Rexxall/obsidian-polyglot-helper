@@ -1,3 +1,4 @@
+import { mergeVocabEntry } from './vocab-merge';
 import { App, Notice } from "obsidian";
 import { PolyglotHelperSettings, VocabularyItem, JapaneseVocabularyItem, EnglishVocabularyItem, ReviewRecord } from "./types";
 
@@ -713,12 +714,9 @@ export class LearningTracker {
 
         // 如果词汇已存在，只更新部分字段
         if (this.settings.japaneseVocabItems[key]) {
-            const existingItem = this.settings.japaneseVocabItems[key];
-            existingItem.translation = translation;
-            if (notes) existingItem.notes = notes;
-            if (examples.length > 0) existingItem.examples = examples;
-            if (tags.length > 0) existingItem.tags = tags;
-            if (reading) existingItem.reading = reading;
+            const existingItem = mergeVocabEntry(this.settings.japaneseVocabItems[key], { translation, notes, examples, tags });
+            if (reading && !existingItem.reading) existingItem.reading = reading;
+            this.settings.japaneseVocabItems[key] = existingItem;
             new Notice(tr(`已更新日语词汇 "${originalText}"`, `Updated Japanese entry "${originalText}"`));
         } else {
             // 创建新词汇条目
@@ -764,14 +762,11 @@ export class LearningTracker {
 
         // 如果词汇已存在，只更新部分字段
         if (this.settings.englishVocabItems[word]) {
-            const existingItem = this.settings.englishVocabItems[word];
-            existingItem.translation = translation;
-            if (notes) existingItem.notes = notes;
-            if (examples.length > 0) existingItem.examples = examples;
-            if (tags.length > 0) existingItem.tags = tags;
-            if (phonetics) existingItem.phonetics = phonetics;
-            if (partOfSpeech) existingItem.partOfSpeech = partOfSpeech;
-            if (definitions.length > 0) existingItem.definitions = definitions;
+            const existingItem = mergeVocabEntry(this.settings.englishVocabItems[word], { translation, notes, examples, tags });
+            if (phonetics && !existingItem.phonetics) existingItem.phonetics = phonetics;
+            if (partOfSpeech && !existingItem.partOfSpeech) existingItem.partOfSpeech = partOfSpeech;
+            if (definitions.length > 0 && !existingItem.definitions?.length) existingItem.definitions = definitions;
+            this.settings.englishVocabItems[word] = existingItem;
             new Notice(tr(`已更新英语单词 "${word}"`, `Updated English word "${word}"`));
         } else {
             // 创建新词汇条目

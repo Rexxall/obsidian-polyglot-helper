@@ -18,6 +18,14 @@ function oneLine(value: string | undefined): string {
 	return (value || '').replace(/\s*\n\s*/g, ' ').replace(/::/g, '：：').trim();
 }
 
+/** The first collected sentence and where it came from, so a card keeps its original context. */
+function context(item: { examples?: string[]; notes?: string }): string {
+	const sentence = oneLine(item.examples?.[0]);
+	const source = oneLine((item.notes || '').split('\n').find((line) => line.trim().startsWith('收自'))?.replace(/\s*·\s*\d{4}-\d{2}-\d{2}\s*$/, ''));
+	if (!sentence && !source) return '';
+	return [sentence ? `“${sentence}”` : '', source ? `（${source}）` : ''].join('');
+}
+
 export function collectCards(
 	english: Record<string, EnglishVocabularyItem>,
 	japanese: Record<string, JapaneseVocabularyItem>,
@@ -29,7 +37,7 @@ export function collectCards(
 		const lead = [item.phonetics, item.partOfSpeech].map(oneLine).filter(Boolean).join(' ');
 		cards.push({
 			front,
-			back: [lead, oneLine(item.translation)].filter(Boolean).join(' · '),
+			back: [lead, oneLine(item.translation), context(item)].filter(Boolean).join(' · '),
 			tags: ['english', ...(item.tags || [])],
 		});
 	}
@@ -38,7 +46,7 @@ export function collectCards(
 		if (!front) continue;
 		cards.push({
 			front,
-			back: [oneLine(item.reading), oneLine(item.translation)].filter(Boolean).join(' · '),
+			back: [oneLine(item.reading), oneLine(item.translation), context(item)].filter(Boolean).join(' · '),
 			tags: ['japanese', ...(item.tags || [])],
 		});
 	}

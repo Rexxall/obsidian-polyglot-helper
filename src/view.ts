@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, Notice, TextAreaComponent, Editor, MarkdownRenderer, MarkdownView, TextComponent, setIcon, TFile, Menu, normalizePath, sanitizeHTMLToDom } from "obsidian";
+import { ItemView, WorkspaceLeaf, Notice, TextAreaComponent, Editor, MarkdownRenderer, MarkdownView, TextComponent, setIcon, TFile, Menu, normalizePath, sanitizeHTMLToDom, moment } from "obsidian";
 import PolyglotHelper from "./main";
 import { HistoryItem } from "./types";
 import { getFromCache, saveToCache } from './cache';
@@ -923,6 +923,29 @@ export class PolyglotHelperView extends ItemView {
         this.showFailure(outcome.error, () => { void this.runLookup(query, type, true, targetFile); });
     }
 
+    /**
+     * 收词时记下出处：查词前所在的笔记，以及那篇笔记里光标所在、含这个词的那一句。
+     * 和查词小卡写的“收自 [[笔记]] · 日期”同一格式，复习时会显示出来。
+     */
+    private collectionContext(word: string): { note: string; examples: string[] } {
+        const today = moment().format('YYYY-MM-DD');
+        const view = this.lastActiveLeaf;
+        const file = view?.file;
+        let sentence = '';
+        const editor = view?.editor;
+        if (editor && word) {
+            const line = editor.getLine(editor.getCursor().line) || '';
+            if (line.toLowerCase().includes(word.toLowerCase())) {
+                const parts = line.match(/[^.!?。！？]+[.!?。！？]*/g) ?? [line];
+                sentence = (parts.find((part) => part.toLowerCase().includes(word.toLowerCase())) || line).replace(/^[#>\-*\s]+/, '').trim().slice(0, 300);
+            }
+        }
+        return {
+            note: `收自 ${file ? `[[${file.basename}]]` : '语言助手'} · ${today}`,
+            examples: sentence ? [sentence] : [],
+        };
+    }
+
     private lookupRun = 0;
 
     /** 失败卡片：按 AI 错误分类说原因和改法，给“重试”；配置类问题再给“打开设置”。 */
@@ -1490,17 +1513,18 @@ export class PolyglotHelperView extends ItemView {
             .filter(Boolean)
             .slice(0, 3);
         const tracker = this.plugin.learningTracker;
+        const { note, examples } = this.collectionContext(card?.headword || word);
         if (card && !japanese) {
             // 词卡已经拆好了词头、音标、词性与释义，直接用
             const senses = card.sections.flatMap(section => section.groups.flatMap(group => group.lines.map(line => line.text))).slice(0, 3);
-            await tracker.addEnglishVocabularyItem(card.headword.toLowerCase(), card.gloss || senses[0] || '', card.phonetic, card.pos.join(', '), senses, '收自语言助手', [], ['查词']);
+            await tracker.addEnglishVocabularyItem(card.headword.toLowerCase(), card.gloss || senses[0] || '', card.phonetic, card.pos.join(', '), senses, note, examples, ['查词']);
             new Notice(tr(`已把 "${card.headword}" 加入生词本`, `Added "${card.headword}" to the word list`));
             return;
         }
         if (japanese) {
-            await tracker.addJapaneseVocabularyItem(word, word, '', definitions[0] ?? '', '收自语言助手', [], ['查词']);
+            await tracker.addJapaneseVocabularyItem(word, word, '', definitions[0] ?? '', note, examples, ['查词']);
         } else {
-            await tracker.addEnglishVocabularyItem(word.toLowerCase(), definitions[0] ?? '', '', '', definitions, '收自语言助手', [], ['查词']);
+            await tracker.addEnglishVocabularyItem(word.toLowerCase(), definitions[0] ?? '', '', '', definitions, note, examples, ['查词']);
         }
         new Notice(tr(`✅ "${word}" 已添加到词汇库`, `✅ "${word}" added to the word list`));
     }
