@@ -422,6 +422,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 					button.setDisabled(false);
 				}),
 			);
+		// 结果显示在按钮那一行下面
+		card.appendChild(result);
 
 		new Setting(card)
 			.setName(tr('配置名称', 'Name'))
