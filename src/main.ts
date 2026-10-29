@@ -20,7 +20,7 @@ import { PolyglotReviewView, POLYGLOT_REVIEW_VIEW_TYPE } from './review-view';
 import { ManagementPanelView, MANAGEMENT_PANEL_VIEW_TYPE } from './management-panel';
 import { CacheCleanupModal } from './cache-cleanup-modal';
 import { LookupPopover, sentenceAround } from './lookup-popover';
-import { LEGACY_PLUGIN_ID, readLegacyPluginData } from './legacy-migration';
+import { readLegacyPluginData } from './legacy-migration';
 import { collectCards, toAnkiText, toFlashcardNote } from './vocab-export';
 
 import { fire } from './shared/fire';
@@ -1686,9 +1686,9 @@ Input text: "${inputText}"`;
 		if (!stored) {
 			const legacy = await readLegacyPluginData(this.app.vault.adapter, this.app.vault.configDir, this.manifest.dir);
 			if (legacy) {
-				stored = legacy;
-				await this.saveData(legacy);
-				new Notice(`Polyglot Helper：已从旧版插件目录（${LEGACY_PLUGIN_ID}）导入设置和词库。确认无误后可在第三方插件里停用并删除旧版。`, 12000);
+				stored = legacy.data;
+				await this.saveData(legacy.data);
+				new Notice(`Polyglot Helper：已从旧版插件目录（${legacy.dir}）导入设置和词库。确认无误后可在第三方插件里停用并删除旧版。`, 12000);
 			}
 		}
 		this.settings = Object.assign(freshDefaultSettings(), stored);
