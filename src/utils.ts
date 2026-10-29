@@ -1,15 +1,16 @@
-import { App, Editor, Notice, TFolder, TFile } from 'obsidian';
+import { App, Notice, TFile } from 'obsidian';
 import { PolyglotHelperSettings, HistoryItem } from './types';
 import { Logger } from './shared/Logger';
 import { MarkdownView } from 'obsidian';
 
+import { errorMessage } from './shared/errors';
 export function sleep(ms: number) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise(resolve => window.setTimeout(resolve, ms));
 }
 
 export function getSanitizedTitle(text: string): string {
     // Take the first 50 chars, remove characters invalid for filenames
-    return text.substring(0, 50).replace(/[\\/:?*<>"|#^\[\]]/g, '').trim() || 'Untitled';
+    return text.substring(0, 50).replace(/[\\/:?*<>"|#^[\]]/g, '').trim() || 'Untitled';
 }
 
 export function getAudioUrl(word: string): string {
@@ -31,7 +32,7 @@ export function kanaToRomaji(input: string): string {
 
     const hira = ['あ','い','う','え','お','か','き','く','け','こ','さ','し','す','せ','そ','た','ち','つ','て','と','な','に','ぬ','ね','の','は','ひ','ふ','へ','ほ','ま','み','む','め','も','や','ゆ','よ','ら','り','る','れ','ろ','わ','を','ん','が','ぎ','ぐ','げ','ご','ざ','じ','ず','ぜ','ぞ','だ','ぢ','づ','で','ど','ば','び','ぶ','べ','ぼ','ぱ','ぴ','ぷ','ぺ','ぽ','きゃ','きゅ','きょ','しゃ','しゅ','しょ','ちゃ','ちゅ','ちょ','にゃ','にゅ','にょ','ひゃ','ひゅ','ひょ','みゃ','みゅ','みょ','りゃ','りゅ','りょ','ぎゃ','ぎゅ','ぎょ','じゃ','じゅ','じょ','びゃ','びゅ','びょ','ぴゃ','ぴゅ','ぴょ','っ'];
     const roma = ['a','i','u','e','o','ka','ki','ku','ke','ko','sa','shi','su','se','so','ta','chi','tsu','te','to','na','ni','nu','ne','no','ha','hi','fu','he','ho','ma','mi','mu','me','mo','ya','yu','yo','ra','ri','ru','re','ro','wa','o','n','ga','gi','gu','ge','go','za','ji','zu','ze','zo','da','ji','zu','de','do','ba','bi','bu','be','bo','pa','pi','pu','pe','po','kya','kyu','kyo','sha','shu','sho','cha','chu','cho','nya','nyu','nyo','hya','hyu','hyo','mya','myu','myo','rya','ryu','ryo','gya','gyu','gyo','ja','ju','jo','bya','byu','byo','pya','pyu','pyo',''];
-    const kata = hira.map(ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
+    hira.map(ch => String.fromCharCode(ch.charCodeAt(0) + 0x60));
 
     // 先处理拗音与促音等组合
     const combos = ['きゃ','きゅ','きょ','しゃ','しゅ','しょ','ちゃ','ちゅ','ちょ','にゃ','にゅ','にょ','ひゃ','ひゅ','ひょ','みゃ','みゅ','みょ','りゃ','りゅ','りょ','ぎゃ','ぎゅ','ぎょ','じゃ','じゅ','じょ','びゃ','びゅ','びょ','ぴゃ','ぴゅ','ぴょ'];
@@ -148,7 +149,7 @@ async function createNewFileWithResult(
             new Notice(`结果已保存到新文件: ${newFile.path}`);
         }
     } catch (e) {
-        new Notice(`创建或写入文件失败: ${e.message}`);
+        new Notice(`创建或写入文件失败: ${errorMessage(e)}`);
         logger.error(`Failed to create/write file: ${fullPath}`, e);
     }
 }
@@ -239,15 +240,16 @@ export async function handleSpecificOutput(
                 }
                 break;
 
-            case 'appendCurrent':
+            case 'appendCurrent': {
                 const currentFile = app.vault.getAbstractFileByPath(filePath);
                 if (currentFile instanceof TFile) {
                     await app.vault.append(currentFile, finalResult);
                     new Notice(`结果已追加到当前文件: ${currentFile.name}`);
                 }
                 break;
+            }
 
-            case 'fixedFile':
+            case 'fixedFile': {
                 const fixedFile = app.vault.getAbstractFileByPath(outputSettings.fixedOutputFile);
                 if (fixedFile instanceof TFile) {
                     // 文件存在，追加内容
@@ -270,20 +272,22 @@ export async function handleSpecificOutput(
                         const newFile = await app.vault.create(outputSettings.fixedOutputFile, content);
                         new Notice(`固定文件已创建并保存结果: ${newFile.name}`);
                     } catch (e) {
-                        new Notice(`创建固定文件失败: ${e.message}`);
+                        new Notice(`创建固定文件失败: ${errorMessage(e)}`);
                         logger.error(`Failed to create fixed output file: ${outputSettings.fixedOutputFile}`, e);
                     }
                 }
                 break;
+            }
 
-            case 'newFile':
+            case 'newFile': {
                 const newFileName = `${getSanitizedTitle(query)}.md`;
                 await createNewFileWithResult(app, outputSettings.newFileLocation, newFileName, finalResult, logger);
                 break;
+            }
         }
     } catch (error) {
         logger.error('输出处理失败', error);
-        new Notice(`输出失败: ${error.message}`);
+        new Notice(`输出失败: ${errorMessage(error)}`);
         // 失败时回退到侧边栏
         app.workspace.trigger('polyglot-query-success', finalResult);
     }
@@ -362,7 +366,7 @@ export async function handlePriorityOutput(
                 }
                 return { destination: 'appendCurrent', filePath: file?.path, heading };
 
-            case 'fixedFile':
+            case 'fixedFile': {
                 // 对于固定文件，使用语言特定的路径（如果是 newFile 或 fixedFile 模式）
                 const fixedFilePath = languageSettings.fixedOutputFile || globalSettings.fixedOutputFile;
                 const fixedFile = app.vault.getAbstractFileByPath(fixedFilePath) as TFile;
@@ -386,23 +390,25 @@ export async function handlePriorityOutput(
                         const newFile = await app.vault.create(fixedFilePath, content);
                         new Notice(`固定文件已创建并保存结果: ${newFile.name}`);
                     } catch (e) {
-                        new Notice(`创建固定文件失败: ${e.message}`);
+                        new Notice(`创建固定文件失败: ${errorMessage(e)}`);
                         logger.error(`Failed to create fixed output file: ${fixedFilePath}`, e);
                     }
                 }
                 return { destination: 'fixedFile', filePath: fixedFilePath, heading };
+            }
 
-            case 'newFile':
+            case 'newFile': {
                 // 对于新文件，使用语言特定的路径（如果是 newFile 或 fixedFile 模式）
                 const newFileLocation = languageSettings.newFileLocation || globalSettings.newFileLocation;
                 const newFileName = `${getSanitizedTitle(query)}.md`;
                 const fullPath = newFileLocation ? `${newFileLocation}${newFileName}` : newFileName;
                 await createNewFileWithResult(app, newFileLocation, newFileName, finalResult, logger);
                 return { destination: 'newFile', fileName: newFileName, filePath: fullPath, heading };
+            }
         }
     } catch (error) {
         logger.error('优先级输出处理失败', error);
-        new Notice(`输出失败: ${error.message}`);
+        new Notice(`输出失败: ${errorMessage(error)}`);
         // 失败时回退到侧边栏
         app.workspace.trigger('polyglot-query-success', finalResult);
         return { destination: 'sidebar' };
@@ -481,7 +487,7 @@ export async function handleOutput(
             }
             break;
 
-        case 'fixedFile':
+        case 'fixedFile': {
             if (!settings.fixedOutputFile) {
                 new Notice("错误：未设置固定输出文件路径。请在设置中配置。");
                 logger.error("Fixed output file path not configured");
@@ -510,16 +516,18 @@ export async function handleOutput(
                     const newFile = await app.vault.create(settings.fixedOutputFile, content);
                     new Notice(`固定文件已创建并保存结果: ${newFile.name}`);
                 } catch (e) {
-                    new Notice(`创建固定文件失败: ${e.message}`);
+                    new Notice(`创建固定文件失败: ${errorMessage(e)}`);
                     logger.error(`Failed to create fixed output file: ${settings.fixedOutputFile}`, e);
                 }
             }
             break;
+        }
 
-        case 'newFile':
+        case 'newFile': {
             const newFileName = `${getSanitizedTitle(query)}.md`;
             await createNewFileWithResult(app, settings.newFileLocation, newFileName, finalResult, logger);
             break;
+        }
     }
 }
 

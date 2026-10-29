@@ -199,7 +199,7 @@ export interface HistoryItem {
 	query: string;
 	type: 'english' | 'japanese' | 'quick_english' | 'quick_to_japanese';
 	timestamp?: number;
-	sections: EnglishSections | JapaneseSections | {};
+	sections: EnglishSections | JapaneseSections | Record<string, never>;
 	translation?: string; // 用于存储翻译结果
 	romaji?: string; // 快速日语翻译的罗马音（可选）
 	outputLocation?: {

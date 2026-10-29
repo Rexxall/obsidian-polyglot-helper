@@ -1,9 +1,7 @@
-import { App, requestUrl } from 'obsidian';
+import { requestUrl } from 'obsidian';
 import { Logger } from '../logger';
 
-// We need a way to parse HTML. Obsidian doesn't have a built-in parser.
-// A common approach is to use the DOMParser available in the browser context.
-declare const DOMParser: any;
+// 用浏览器自带的 DOMParser 解析页面
 
 export interface CambridgeInfo {
     uk_phonetic: string;
@@ -44,25 +42,25 @@ export async function getCambridgeInfoTS(word: string, logger: Logger): Promise<
         // Get UK phonetic
         const uk_pron_el = doc.querySelector(".uk.dpron-i .pron");
         if (uk_pron_el) {
-            result.uk_phonetic = uk_pron_el.textContent.trim();
+            result.uk_phonetic = uk_pron_el.textContent?.trim() ?? '';
         }
 
         // Get US phonetic
         const us_pron_el = doc.querySelector(".us.dpron-i .pron");
         if (us_pron_el) {
-            result.us_phonetic = us_pron_el.textContent.trim();
+            result.us_phonetic = us_pron_el.textContent?.trim() ?? '';
         }
 
         // Get definitions and examples
-        doc.querySelectorAll(".def-block").forEach((def_block: any) => {
+        doc.querySelectorAll(".def-block").forEach((def_block) => {
             const definition_el = def_block.querySelector(".def");
             if (definition_el) {
-                result.definitions.push(definition_el.textContent.trim());
+                result.definitions.push(definition_el.textContent?.trim() ?? '');
             }
 
             const example_el = def_block.querySelector(".examp");
             if (example_el) {
-                result.examples.push(example_el.textContent.trim());
+                result.examples.push(example_el.textContent?.trim() ?? '');
             }
         });
         
@@ -73,7 +71,7 @@ export async function getCambridgeInfoTS(word: string, logger: Logger): Promise<
         // Get part of speech
         const pos_el = doc.querySelector(".pos.dpos");
         if (pos_el) {
-            result.pos = pos_el.textContent.trim();
+            result.pos = pos_el.textContent?.trim() ?? '';
         }
 
         if (!result.uk_phonetic && !result.us_phonetic && result.definitions.length === 0) {

@@ -108,19 +108,19 @@ export class EncryptedSettings {
 	 * @param key 设置键名
 	 * @param value 明文值
 	 */
-	async set<T extends Record<string, any>>(
+	async set<T extends Record<string, unknown>>(
 		storage: T,
 		key: keyof T & string,
 		value: string
 	): Promise<void> {
 		if (!value) {
 			// 空值直接存储，不加密
-			storage[key] = value as any;
+			storage[key] = value as T[typeof key];
 			return;
 		}
 		const encrypted = await this.encrypt(value);
 		const marker = this.wrapWithMarker(encrypted);
-		storage[key] = marker as any;
+		storage[key] = marker as T[typeof key];
 	}
 
 	/**
@@ -129,7 +129,7 @@ export class EncryptedSettings {
 	 * @param key 设置键名
 	 * @returns 解密后的明文值
 	 */
-	async get<T extends Record<string, any>>(
+	async get<T extends Record<string, unknown>>(
 		storage: T,
 		key: keyof T & string
 	): Promise<string> {
@@ -152,7 +152,7 @@ export class EncryptedSettings {
 	 * 批量加密存储对象中所有标记为敏感的值
 	 * 用于从旧版本（明文存储）迁移到加密存储
 	 */
-	async migrateSettings<T extends Record<string, any>>(
+	async migrateSettings<T extends Record<string, unknown>>(
 		storage: T,
 		sensitiveKeys: (keyof T & string)[]
 	): Promise<T> {
@@ -161,7 +161,7 @@ export class EncryptedSettings {
 			const value = migrated[key];
 			if (value && typeof value === 'string' && !this.isEncryptedValue(value)) {
 				const encrypted = await this.encrypt(value);
-				migrated[key] = this.wrapWithMarker(encrypted) as any;
+				migrated[key] = this.wrapWithMarker(encrypted) as T[typeof key];
 			}
 		}
 		return migrated;
@@ -237,7 +237,7 @@ export class EncryptedSettings {
 		const bytes = new Uint8Array(buffer);
 		let binary = '';
 		for (let i = 0; i < bytes.byteLength; i++) {
-			binary += String.fromCharCode(bytes[i]!);
+			binary += String.fromCharCode(bytes[i]);
 		}
 		return btoa(binary);
 	}

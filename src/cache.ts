@@ -1,6 +1,7 @@
 import { App } from 'obsidian';
 import { hashKey, legacyHash } from './crypto';
 
+import { errorMessage } from './shared/errors';
 const CACHE_BASE_PATH = '.cache';
 
 /**
@@ -34,7 +35,7 @@ async function getCachePath(app: App, pluginDir: string, subfolder: string, key:
         await app.vault.adapter.mkdir(cacheDir);
     } catch (e) {
         // Ignore errors if the directory already exists
-        if (e.message && !e.message.includes('file already exists')) {
+        if (errorMessage(e) && !errorMessage(e).includes('file already exists')) {
             console.error(`Failed to create cache directory: ${cacheDir}`, e);
         }
     }

@@ -1,12 +1,14 @@
+import { chatContent } from "./llm";
 import { requestUrl, Notice } from 'obsidian';
-import { PolyglotHelperSettings } from '../types';
+import { ApiConfig, PolyglotHelperSettings } from '../types';
 import { Logger } from '../logger';
 
+import { errorMessage } from '../shared/errors';
 export async function getJapaneseTranslationTS(
     text: string,
     settings: PolyglotHelperSettings,
     logger: Logger,
-    apiConfig?: any
+    apiConfig?: ApiConfig
 ): Promise<string> {
     logger.info("获取日语翻译 (TS)...");
 
@@ -123,24 +125,22 @@ export async function getJapaneseTranslationTS(
         });
 
         if (response.status === 200) {
-            const data = response.json;
-            let content: string | null = null;
-            if (data.choices && data.choices.length > 0 && data.choices[0].message) {
-                content = data.choices[0].message.content;
-            } else if (settings.llmProvider === 'ollama' && data.message) {
-                content = data.message.content;
+            let content: string | null = chatContent(response) || null;
+            const ollama = (response.json as { message?: { content?: unknown } } | null)?.message?.content;
+            if (!content && settings.llmProvider === 'ollama' && typeof ollama === 'string') {
+                content = ollama;
             }
             if (content) {
                 return content;
             }
         }
         
-        logger.error('获取日语分析时LLM API返回错误状态', { status: response.status, response: response.json });
+        logger.error('获取日语分析时LLM API返回错误状态', { status: response.status, response: response.text });
         return "从LLM获取分析失败。";
 
     } catch (error) {
         logger.error("调用LLM进行日语分析时出错", error);
-        return `调用LLM API时出错: ${error.message}`;
+        return `调用LLM API时出错: ${errorMessage(error)}`;
     }
 }
 
@@ -148,7 +148,7 @@ export async function getJapaneseSimpleTranslationTS(
     query: string,
     settings: PolyglotHelperSettings,
     logger: Logger,
-    apiConfig?: any
+    apiConfig?: ApiConfig
 ): Promise<{ translation: string; reading: string; } | null> {
     const prompt = `あなたはプロの日本語翻訳家です。以下の日本語の単語やフレーズを、最も一般的で口語的な中国語に翻訳してください。結果は純粋なJSONオブジェクト（\`\`\`json\`のようなマークダウンなし）で、{"translation": "翻译结果", "reading": "日文假名"}の形式で返してください。例：入力が「こんにちは」の場合、{"translation": "你好", "reading": "こんにちは"}を返します。
 
@@ -196,7 +196,7 @@ export async function getJapaneseSimpleTranslationTS(
         headers['Authorization'] = `Bearer ${apiKey}`;
     }
 
-    const body: any = {
+    const body: Record<string, unknown> = {
         model: model,
         messages: [
             { "role": "system", "content": "You are a translation assistant that only returns pure JSON objects." },
@@ -218,31 +218,30 @@ export async function getJapaneseSimpleTranslationTS(
         });
         
         if (response.status === 200) {
-            const data = response.json;
-            const content = data.choices[0].message.content;
-            
+            const content = chatContent(response);
+
             if (content) {
                 try {
                     const jsonRegex = /```json\n([\s\S]*?)\n```/;
                     const match = content.match(jsonRegex);
                     const jsonString = match ? match[1] : content;
                     
-                    const result = JSON.parse(jsonString);
+                    const result = JSON.parse(jsonString) as { translation: string; reading: string };
                     logger.info(`成功解析快捷日语翻译: ${query} -> ${result.translation}`);
-                    return result as { translation: string; reading: string };
+                    return result;
                 } catch (e) {
-                    logger.error("解析快捷日语翻译的JSON响应失败.", { error: e, content: content });
+                    logger.error("解析快捷日语翻译的JSON响应失败.", { error: errorMessage(e), content: content });
                     return null;
                 }
             }
         }
         
-        logger.error('获取日语快捷翻译时LLM API返回错误状态', { status: response.status, response: response.json });
+        logger.error('获取日语快捷翻译时LLM API返回错误状态', { status: response.status, response: response.text });
         return null;
 
     } catch (error) {
         logger.error("调用LLM进行快捷翻译时出错", error);
-        new Notice(`调用快捷翻译API时出错: ${error.message}`);
+        new Notice(`调用快捷翻译API时出错: ${errorMessage(error)}`);
         return null;
     }
 } 

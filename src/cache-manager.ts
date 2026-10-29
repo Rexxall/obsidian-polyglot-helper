@@ -1,4 +1,4 @@
-import { App, Notice } from 'obsidian';
+import { App } from 'obsidian';
 import { Logger } from './shared/Logger';
 
 export interface CacheItem {
@@ -8,7 +8,7 @@ export interface CacheItem {
     category: string;
     size: number;
     lastModified: number;
-    content?: any;
+    content?: unknown;
 }
 
 export interface CacheFilter {
@@ -168,8 +168,8 @@ export class CacheManager {
             if (type === 'translation' && filePath.endsWith('.json')) {
                 try {
                     const content = await this.app.vault.adapter.read(filePath);
-                    item.content = JSON.parse(content);
-                } catch (error) {
+                    item.content = JSON.parse(content) as unknown;
+                } catch {
                     // 忽略读取错误
                 }
             }

@@ -1,11 +1,18 @@
 import { requestUrl } from "obsidian";
 import { Logger } from "../logger";
 
-declare const DOMParser: any;
-
 export interface Example {
     eng: string;
     cmn: string;
+}
+
+interface TatoebaSentence {
+    text?: string;
+    lang?: string;
+}
+
+interface TatoebaResponse {
+    results?: (TatoebaSentence & { translations?: TatoebaSentence[][] })[];
 }
 
 async function getSimpleExamples(word: string, logger: Logger): Promise<Example[]> {
@@ -21,7 +28,7 @@ async function getSimpleExamples(word: string, logger: Logger): Promise<Example[
         if (response.status === 200) {
             const parser = new DOMParser();
             const doc = parser.parseFromString(response.text, 'text/html');
-            doc.querySelectorAll(".sentence-item").forEach((el: any) => {
+            doc.querySelectorAll(".sentence-item").forEach((el) => {
                 const sentence = el.textContent?.trim();
                 if (sentence) {
                     examples.push({ eng: sentence, cmn: "" });
@@ -32,7 +39,7 @@ async function getSimpleExamples(word: string, logger: Logger): Promise<Example[
                 return examples.slice(0, 3);
             }
         }
-    } catch (error) {
+    } catch {
         logger.info(`Failed to fetch from YourDictionary for "${word}", trying next fallback.`);
     }
 
@@ -46,7 +53,7 @@ async function getSimpleExamples(word: string, logger: Logger): Promise<Example[
         if (response.status === 200) {
             const parser = new DOMParser();
             const doc = parser.parseFromString(response.text, 'text/html');
-            doc.querySelectorAll("table.wordtab tr td div").forEach((el: any) => {
+            doc.querySelectorAll("table.wordtab tr td div").forEach((el) => {
                 const sentence = el.textContent?.trim();
                 if (sentence && sentence.length > 10 && !sentence.includes('•') && !sentence.includes('©')) {
                     examples.push({ eng: sentence, cmn: "" });
@@ -57,7 +64,7 @@ async function getSimpleExamples(word: string, logger: Logger): Promise<Example[
                 return examples.slice(0, 3);
             }
         }
-    } catch (error) {
+    } catch {
         logger.info(`Failed to fetch from WordHippo for "${word}".`);
     }
 
@@ -71,7 +78,7 @@ export async function getTatoebaExamplesTS(word: string, logger: Logger): Promis
     try {
         const response = await requestUrl({ url });
         if (response.status === 200) {
-            const data = response.json;
+            const data = response.json as TatoebaResponse;
             const results = data.results || [];
 
             for (const result of results) {
@@ -83,7 +90,7 @@ export async function getTatoebaExamplesTS(word: string, logger: Logger): Promis
                 if (result.translations && Array.isArray(result.translations)) {
                     for (const translationGroup of result.translations) {
                         if (Array.isArray(translationGroup)) {
-                            const cmnTranslation = translationGroup.find((t: any) => t.lang === 'cmn');
+                            const cmnTranslation = translationGroup.find((t) => t.lang === 'cmn');
                             if (cmnTranslation && cmnTranslation.text) {
                                 cmn = cmnTranslation.text;
                                 break; // Found translation, exit inner loop

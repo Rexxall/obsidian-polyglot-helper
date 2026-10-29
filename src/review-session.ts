@@ -2,6 +2,8 @@ import { Menu, Notice, setIcon } from "obsidian";
 import type PolyglotHelper from "./main";
 import { EnglishVocabularyItem, JapaneseVocabularyItem, VocabularyItem } from "./types";
 
+import { fire } from "./shared/fire";
+import { errorMessage } from "./shared/errors";
 type AnyItem = VocabularyItem | JapaneseVocabularyItem | EnglishVocabularyItem;
 type Scope = 'all' | 'english' | 'japanese';
 
@@ -49,11 +51,11 @@ export class ReviewSession {
             const empty = this.host.createDiv({ cls: 'polyglot-review-empty' });
             empty.createEl('p', { text: '生词本还没有开启。开启后，查词时收进的词会按间隔安排复习。' });
             const btn = empty.createEl('button', { text: '开启生词本', cls: 'mod-cta polyglot-primary' });
-            btn.addEventListener('click', async () => {
+            btn.addEventListener('click', fire(async () => {
                 this.plugin.settings.enableLearningTracker = true;
                 await this.plugin.saveSettings();
                 this.renderHome();
-            });
+            }));
             return;
         }
 
@@ -160,7 +162,7 @@ export class ReviewSession {
         if (kind !== 'legacy') {
             const play = wordRow.createEl('button', { cls: 'polyglot-play', attr: { 'aria-label': '朗读' } });
             setIcon(play, 'play');
-            play.addEventListener('click', () => this.play(item, kind));
+            play.addEventListener('click', fire(() => this.play(item, kind)));
         }
         if (reading) card.createDiv({ cls: 'polyglot-flash-reading', text: kind === 'japanese' ? reading : `/${reading.replace(/^\/|\/$/g, '')}/` });
 
@@ -172,10 +174,10 @@ export class ReviewSession {
         const left2 = foot.createDiv({ cls: 'polyglot-quiet-links' });
         if (kind !== 'legacy') {
             const fav = (item as EnglishVocabularyItem).isFavorite;
-            this.quietLink(left2, fav ? '已收藏' : '收藏', async () => {
+            this.quietLink(left2, fav ? '已收藏' : '收藏', fire(async () => {
                 await this.toggleFavorite(item, kind);
                 this.renderCard();
-            });
+            }));
         }
         this.quietLink(left2, '跳过', () => { this.index++; this.renderCard(); });
         this.quietLink(foot, '结束', () => this.renderHome());
@@ -218,7 +220,7 @@ export class ReviewSession {
         this.host.focus();
         // 先翻到下一张，保存在后台进行
         this.tracker.recordItemReview(item, performance, spent)
-            .catch(e => new Notice(`没有记下这次复习：${e.message}`));
+            .catch(e => new Notice(`没有记下这次复习：${errorMessage(e)}`));
     }
 
     private renderDone() {
@@ -239,7 +241,7 @@ export class ReviewSession {
         const item = this.items[this.index];
         if (!this.showingAnswer && (e.key === ' ' || e.key === 'Enter')) {
             e.preventDefault();
-            const answer = this.host.querySelector('.polyglot-flash-answer') as HTMLElement | null;
+            const answer = this.host.querySelector<HTMLElement>('.polyglot-flash-answer');
             if (answer) this.reveal(answer, item, this.tracker.kindOf(item));
             return;
         }
@@ -254,7 +256,7 @@ export class ReviewSession {
         try {
             if (kind === 'japanese') await this.plugin.playJapaneseVoice((item as JapaneseVocabularyItem).japaneseText, false);
             else await this.plugin.playEnglishVoice((item as EnglishVocabularyItem).word, false);
-        } catch (e) {
+        } catch {
             new Notice('朗读失败');
         }
     }
@@ -269,7 +271,7 @@ export class ReviewSession {
                 await this.tracker.updateEnglishVocabularyItem((item as EnglishVocabularyItem).word, { isFavorite: next });
             }
         } catch (e) {
-            new Notice(e.message);
+            new Notice(errorMessage(e));
         }
     }
 

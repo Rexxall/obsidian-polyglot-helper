@@ -4,6 +4,22 @@ import PolyglotHelper from "./main";
 import { Notice } from 'obsidian';
 import { EnglishSections, PolyglotHelperSettings } from "./types";
 
+import { fire } from './shared/fire';
+import { errorMessage } from './shared/errors';
+import type { CacheItem, CacheManager } from './cache-manager';
+
+/** 智能缓存清理面板在几个方法之间共用的状态。 */
+interface CleanupState {
+	allItems: CacheItem[];
+	filteredItems: CacheItem[];
+	selectedItems: Set<string>;
+	filter: { type: string; days: string; size: string; pattern: string };
+	cacheManager: CacheManager;
+	statsDiv?: HTMLElement;
+	listDiv?: HTMLElement;
+	selectAllCheckbox?: HTMLInputElement;
+}
+
 export class PolyglotSettingTab extends PluginSettingTab {
 	plugin: PolyglotHelper;
 	private currentTab: string = 'general';
@@ -257,7 +273,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 					text: '删除',
 					cls: 'api-config-delete-btn'
 				});
-				deleteButton.addEventListener('click', async () => {
+				deleteButton.addEventListener('click', fire(async () => {
 					// 确认删除
 					const confirmed = confirm(`确定要删除 "${config.name}" API配置吗？`);
 					if (confirmed) {
@@ -265,7 +281,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 						this.display(); // 重新渲染设置页面
 					}
-				});
+				}));
 			}
 
 			new Setting(configContainer)
@@ -564,7 +580,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 					}));
 			
 			// 复习间隔设置
-			const intervalDesc = document.createDocumentFragment();
+			const intervalDesc = createFragment();
 			intervalDesc.append(
 				'设置间隔重复的天数序列，用逗号分隔。',
 				intervalDesc.createEl('br'),
@@ -588,7 +604,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 					}));
 			
 			// 学习数据管理
-			const statsInfo = document.createDocumentFragment();
+			const statsInfo = createFragment();
 			statsInfo.append(
 				`总词汇量: ${this.plugin.settings.learningStats.totalWords} 词`,
 				statsInfo.createEl('br'),
@@ -633,7 +649,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName('缓存').setHeading();
 
 		// 创建智能清理区域
-		this.createSmartCleanupSection(containerEl);
+		void this.createSmartCleanupSection(containerEl);
 
 		// 快速清理选项
 		const quickCleanDiv = containerEl.createDiv({ cls: 'polyglot-quick-clean-section' });
@@ -650,7 +666,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 						try {
 							await this.plugin.clearTranslationCache();
 						} catch (error) {
-							new Notice(`清理失败: ${error.message}`);
+							new Notice(`清理失败: ${errorMessage(error)}`);
 						}
 					});
 			});
@@ -666,7 +682,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 						try {
 							await this.plugin.clearAudioCache();
 						} catch (error) {
-							new Notice(`清理失败: ${error.message}`);
+							new Notice(`清理失败: ${errorMessage(error)}`);
 						}
 					});
 			});
@@ -685,7 +701,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 							try {
 								await this.plugin.clearAllCache();
 							} catch (error) {
-								new Notice(`清理失败: ${error.message}`);
+								new Notice(`清理失败: ${errorMessage(error)}`);
 							}
 						}
 					});
@@ -779,7 +795,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 							new Notice('OpenAI TTS 测试失败，请检查配置和网络连接');
 						}
 					} catch (error) {
-						new Notice(`OpenAI TTS 测试失败: ${error.message}`);
+						new Notice(`OpenAI TTS 测试失败: ${errorMessage(error)}`);
 						this.plugin.logger.error('OpenAI TTS 测试失败', error);
 					} finally {
 						button.setButtonText('测试');
@@ -813,7 +829,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 							new Notice('有道 TTS 测试失败，请检查配置和网络连接');
 						}
 					} catch (error) {
-						new Notice(`有道 TTS 测试失败: ${error.message}`);
+						new Notice(`有道 TTS 测试失败: ${errorMessage(error)}`);
 						this.plugin.logger.error('有道 TTS 测试失败', error);
 					} finally {
 						button.setButtonText('测试');
@@ -939,7 +955,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 							new Notice('Gemini TTS 测试失败，请检查配置和网络连接');
 						}
 					} catch (error) {
-						new Notice(`Gemini TTS 测试失败: ${error.message}`);
+						new Notice(`Gemini TTS 测试失败: ${errorMessage(error)}`);
 						this.plugin.logger.error('Gemini TTS 测试失败', error);
 					} finally {
 						button.setButtonText('测试');
@@ -961,8 +977,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 			this.plugin.manifest.dir || ''
 		);
 
-		let allItems: any[] = [];
-		let filteredItems: any[] = [];
+		let allItems: CacheItem[] = [];
+		let filteredItems: CacheItem[] = [];
 		let selectedItems = new Set<string>();
 
 		// 筛选器状态
@@ -982,7 +998,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		const scanStatus = scanSection.createDiv({ cls: 'polyglot-scan-status' });
 
-		scanButton.addEventListener('click', async () => {
+		scanButton.addEventListener('click', fire(async () => {
 			try {
 				scanButton.disabled = true;
 				scanButton.textContent = '⏳ 扫描中...';
@@ -1008,12 +1024,12 @@ export class PolyglotSettingTab extends PluginSettingTab {
 			} catch (error) {
 				scanButton.disabled = false;
 				scanButton.textContent = '🔍 扫描缓存文件';
-				scanStatus.textContent = `❌ 扫描失败: ${error.message}`;
+				scanStatus.textContent = `❌ 扫描失败: ${errorMessage(error)}`;
 			}
-		});
+		}));
 	}
 
-	private createFilterAndPreviewSection(containerEl: HTMLElement, data: any) {
+	private createFilterAndPreviewSection(containerEl: HTMLElement, data: CleanupState) {
 		// 移除之前的筛选和预览区域
 		const existingSection = containerEl.querySelector('.polyglot-filter-preview-section');
 		if (existingSection) {
@@ -1032,7 +1048,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		this.createInlineActionButtons(section, data);
 	}
 
-	private createInlineFilterSection(containerEl: HTMLElement, data: any) {
+	private createInlineFilterSection(containerEl: HTMLElement, data: CleanupState) {
 		const filterDiv = containerEl.createDiv({ cls: 'polyglot-inline-filter' });
 		new Setting(filterDiv).setName('筛选条件').setHeading();
 
@@ -1075,7 +1091,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		sizeSelect.addEventListener('change', applyFilter);
 	}
 
-	private createInlinePreviewSection(containerEl: HTMLElement, data: any) {
+	private createInlinePreviewSection(containerEl: HTMLElement, data: CleanupState) {
 		const previewDiv = containerEl.createDiv({ cls: 'polyglot-inline-preview' });
 		new Setting(previewDiv).setName('预览结果').setHeading();
 
@@ -1089,7 +1105,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		selectAllCheckbox.addEventListener('change', () => {
 			if (selectAllCheckbox.checked) {
-				data.filteredItems.forEach((item: any) => data.selectedItems.add(item.path));
+				data.filteredItems.forEach((item: CacheItem) => data.selectedItems.add(item.path));
 			} else {
 				data.selectedItems.clear();
 			}
@@ -1107,7 +1123,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		this.updateInlinePreview(data);
 	}
 
-	private createInlineActionButtons(containerEl: HTMLElement, data: any) {
+	private createInlineActionButtons(containerEl: HTMLElement, data: CleanupState) {
 		const buttonDiv = containerEl.createDiv({ cls: 'polyglot-inline-actions' });
 
 		// 清理按钮
@@ -1116,7 +1132,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 			cls: 'mod-warning'
 		});
 
-		cleanButton.addEventListener('click', async () => {
+		cleanButton.addEventListener('click', fire(async () => {
 			if (data.selectedItems.size === 0) {
 				new Notice('请先选择要清理的文件');
 				return;
@@ -1130,7 +1146,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				cleanButton.textContent = '⏳ 清理中...';
 
 				const selectedPaths = Array.from(data.selectedItems);
-				await data.cacheManager.deleteItems(selectedPaths);
+				await data.cacheManager.deleteItems(data.allItems.filter(item => data.selectedItems.has(item.path)));
 
 				// 重新扫描
 				data.allItems = await data.cacheManager.scanAllCache();
@@ -1145,15 +1161,15 @@ export class PolyglotSettingTab extends PluginSettingTab {
 			} catch (error) {
 				cleanButton.disabled = false;
 				cleanButton.textContent = '🗑️ 清理选中项';
-				new Notice(`清理失败: ${error.message}`);
+				new Notice(`清理失败: ${errorMessage(error)}`);
 			}
-		});
+		}));
 	}
 
-	private applyInlineFilter(data: any) {
+	private applyInlineFilter(data: CleanupState) {
 		const { allItems, filter } = data;
 
-		data.filteredItems = allItems.filter((item: any) => {
+		data.filteredItems = allItems.filter((item: CacheItem) => {
 			// 类型筛选
 			if (filter.type !== 'all') {
 				if (filter.type === 'translation' && item.type !== 'translation') return false;
@@ -1177,14 +1193,15 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		});
 	}
 
-	private updateInlinePreview(data: any) {
+	private updateInlinePreview(data: CleanupState) {
 		const { filteredItems, selectedItems, statsDiv, listDiv, selectAllCheckbox } = data;
+		if (!statsDiv || !listDiv || !selectAllCheckbox) return;
 
 		// 更新统计信息
-		const totalSize = filteredItems.reduce((sum: number, item: any) => sum + item.size, 0);
+		const totalSize = filteredItems.reduce((sum: number, item: CacheItem) => sum + item.size, 0);
 		const selectedSize = filteredItems
-			.filter((item: any) => selectedItems.has(item.path))
-			.reduce((sum: number, item: any) => sum + item.size, 0);
+			.filter((item: CacheItem) => selectedItems.has(item.path))
+			.reduce((sum: number, item: CacheItem) => sum + item.size, 0);
 
 		const formatSize = (bytes: number) => {
 			if (bytes < 1024) return `${bytes} B`;
@@ -1193,14 +1210,14 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		};
 
 		statsDiv.empty();
-		statsDiv.createEl('div', { cls: 'polyglot-stat-item', text: `📊 筛选结果: ${filteredItems.length} 个文件 (${formatSize(totalSize)})` });
-		statsDiv.createEl('div', { cls: 'polyglot-stat-item selected', text: `✅ 已选择: ${selectedItems.size} 个文件 (${formatSize(selectedSize)})` });
+		statsDiv.createDiv({ cls: 'polyglot-stat-item', text: `📊 筛选结果: ${filteredItems.length} 个文件 (${formatSize(totalSize)})` });
+		statsDiv.createDiv({ cls: 'polyglot-stat-item selected', text: `✅ 已选择: ${selectedItems.size} 个文件 (${formatSize(selectedSize)})` });
 
 		// 更新文件列表
 		listDiv.empty();
 
 		if (filteredItems.length === 0) {
-			listDiv.createEl('div', {
+			listDiv.createDiv({
 				text: '没有找到符合条件的缓存文件',
 				cls: 'polyglot-empty-message'
 			});
@@ -1210,26 +1227,26 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		// 限制显示数量
 		const displayItems = filteredItems.slice(0, 50);
 		if (filteredItems.length > 50) {
-			listDiv.createEl('div', {
+			listDiv.createDiv({
 				text: `显示前50个文件，共${filteredItems.length}个`,
 				cls: 'polyglot-limit-message'
 			});
 		}
 
-		displayItems.forEach((item: any) => {
+		displayItems.forEach((item: CacheItem) => {
 			const itemDiv = listDiv.createDiv({ cls: 'polyglot-inline-item' });
 
 			const checkbox = itemDiv.createEl('input', { type: 'checkbox' });
 			checkbox.checked = selectedItems.has(item.path);
 
 			const infoDiv = itemDiv.createDiv({ cls: 'polyglot-item-info' });
-			infoDiv.createEl('div', { text: item.name, cls: 'polyglot-item-name' });
-			infoDiv.createEl('div', {
+			infoDiv.createDiv({ text: item.name, cls: 'polyglot-item-name' });
+			infoDiv.createDiv({
 				text: `${formatSize(item.size)} • ${new Date(item.lastModified).toLocaleDateString()}`,
 				cls: 'polyglot-item-details'
 			});
 
-			const typeTag = itemDiv.createEl('span', {
+			itemDiv.createSpan({
 				text: item.type === 'audio' ? '🎵 AUDIO' : '📝 TEXT',
 				cls: `polyglot-type-tag ${item.type}`
 			});

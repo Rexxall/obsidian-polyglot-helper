@@ -1579,15 +1579,10 @@ button.polyglot-page-btn:hover { background: var(--pg-hover); }
 .polyglot-word-source { padding-top: var(--ap-s2); border-top: 0.5px solid var(--ap-sep); font: var(--ap-caption); color: var(--ap-label-3); }
 .polyglot-word .polyglot-vocab-foot { margin: 0; padding: var(--ap-s2) 0 0; border-top: 0.5px solid var(--ap-sep); }
 
-/* 展开行（74 号附录补齐前先用 kit 变量写在本插件里） */
-.ap button.polyglot-expand {
-    display: flex; align-items: center; justify-content: space-between; width: 100%;
-    height: auto; padding: 2px 0; border: 0; background: none; box-shadow: none;
-    font: 600 12px/16px var(--ap-font); color: var(--ap-label-2); cursor: pointer;
-}
-.polyglot-expand-chevron { display: inline-flex; transition: transform var(--ap-base) var(--ap-ease); }
-.polyglot-expand-chevron svg { width: 14px; height: 14px; }
-.polyglot-expand[aria-expanded="true"] .polyglot-expand-chevron { transform: rotate(90deg); }
+/* 词卡里的展开行：用 74 号附录的 .ap-disclosure，收紧成小标题的尺寸 */
+.polyglot-word-disclosure > summary.ap-row { min-height: 0; padding: 2px 0; font: 600 12px/16px var(--ap-font); color: var(--ap-label-2); border-radius: var(--ap-r-field); }
+.polyglot-word-disclosure > summary.ap-row::after { margin-left: auto; }
+.polyglot-word-disclosure > .ap-disclosure-body { padding: var(--ap-s1) 0 0; font: inherit; color: inherit; }
 
 /* 学习页：一张卡（标题行、三格数字、开始按钮）＋今天要复习的词 */
 .polyglot-today { display: grid; gap: var(--ap-s3); padding: var(--ap-s1) 0 var(--ap-s4); }
@@ -1599,7 +1594,7 @@ button.polyglot-page-btn:hover { background: var(--pg-hover); }
 .polyglot-due-rest { margin-top: var(--ap-s2); padding-inline: var(--ap-s1); font: var(--ap-caption); }
 
 @media (prefers-reduced-motion: reduce) {
-    .polyglot-expand-chevron, .ap button.polyglot-word-play { transition: none; }
+    .ap button.polyglot-word-play { transition: none; }
 }
 
 /* 一节里有几本词典时，每本的第一组前标一行来源 */

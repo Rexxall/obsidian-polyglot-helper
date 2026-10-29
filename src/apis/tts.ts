@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import { PolyglotHelperSettings } from '../types';
 import { Logger } from '../logger';
 
+import { errorMessage } from '../shared/errors';
 // 辅助函数：截断文本用于有道API签名
 function truncate(q: string): string {
     const len = q.length;
@@ -30,7 +31,7 @@ async function sha256(str: string): Promise<string> {
             }
             return Math.abs(hash).toString(16);
         }
-    } catch (error) {
+    } catch {
         // 如果所有方法都失败，返回简单哈希
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
@@ -72,7 +73,7 @@ async function getOpenaiTtsAudioTS(
 
         const response = await openai.audio.speech.create({
             model: settings.openaiTtsModel || 'tts-1',
-            voice: voice as any,
+            voice,
             input: `「${text}」`,
             speed: clampedSpeed,
         });
@@ -80,7 +81,7 @@ async function getOpenaiTtsAudioTS(
         return await response.arrayBuffer();
     } catch (error) {
         logger.error("OpenAI TTS API (SDK) 调用失败", error);
-        new Notice(`OpenAI TTS API 调用失败: ${error.message}`);
+        new Notice(`OpenAI TTS API 调用失败: ${errorMessage(error)}`);
         return null;
     }
 }
@@ -157,11 +158,11 @@ async function getYoudaoTtsAudioTS(
             return response.arrayBuffer;
         } else if (contentType.includes('application/json')) {
             // 如果合成出现错误，则会返回json结果，具体header信息为：Content-type: application/json
-            let errorInfo;
+            let errorInfo: { errorCode?: string; text?: string } | undefined;
             try {
-                errorInfo = response.json;
+                errorInfo = response.json as { errorCode?: string };
                 logger.error("有道 TTS API 返回JSON错误:", errorInfo);
-            } catch (e) {
+            } catch {
                 const textResponse = response.text || '';
                 logger.error("有道 TTS API 返回文本错误:", textResponse);
                 errorInfo = { errorCode: 'unknown', text: textResponse };
@@ -231,7 +232,7 @@ async function getYoudaoTtsAudioTS(
         }
     } catch (error) {
         logger.error("请求有道 TTS API 失败", error);
-        new Notice(`请求有道 TTS API 失败: ${error.message}`);
+        new Notice(`请求有道 TTS API 失败: ${errorMessage(error)}`);
         return null;
     }
 }
@@ -262,7 +263,7 @@ async function getGeminiTtsAudioTS(
     }
 
     const maxRetries = 3;
-    let lastError: any = null;
+    let lastError: unknown = null;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
@@ -281,7 +282,7 @@ async function getGeminiTtsAudioTS(
 
             const mp3 = await openai.audio.speech.create({
                 model: model,
-                voice: voice as any,
+                voice,
                 input: cleanedText,
                 speed: speed,
             });
@@ -301,22 +302,18 @@ async function getGeminiTtsAudioTS(
                 logger.error("Gemini TTS生成失败，已达到最大重试次数", error);
 
                 // 提供更友好的错误信息
-                let errorMessage = "未知错误";
-                if (error.message) {
-                    errorMessage = error.message;
-                } else if (error.error?.message) {
-                    errorMessage = error.error.message;
-                }
+                const nested = (error as { error?: { message?: unknown } } | null)?.error?.message;
+                const detail = typeof nested === 'string' ? nested : errorMessage(error) || "未知错误";
 
                 // 只在最后一次失败时显示通知，避免重复通知
-                new Notice(`Gemini TTS 错误: ${errorMessage}`);
+                new Notice(`Gemini TTS 错误: ${detail}`);
                 return null;
             }
 
             // 等待一段时间后重试（指数退避）
             const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
             logger.info(`等待 ${waitTime}ms 后重试...`);
-            await new Promise(resolve => setTimeout(resolve, waitTime));
+            await new Promise(resolve => window.setTimeout(resolve, waitTime));
         }
     }
 
@@ -339,8 +336,8 @@ export async function getTtsAudioTS(
         case 'gemini':
             return getGeminiTtsAudioTS(text, settings, logger, customSpeed);
         default:
-            logger.info(`未知的 TTS 引擎: ${settings.ttsEngine}`);
-            new Notice(`未知的 TTS 引擎: ${settings.ttsEngine}`);
+            logger.info(`未知的 TTS 引擎: ${String(settings.ttsEngine)}`);
+            new Notice(`未知的 TTS 引擎: ${String(settings.ttsEngine)}`);
             return null;
     }
 }
@@ -371,7 +368,7 @@ export async function getBatchTtsAudioTS(
 
             // 添加延迟以避免API限制
             if (i < texts.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, 500));
+                await new Promise(resolve => window.setTimeout(resolve, 500));
             }
         } catch (error) {
             logger.error(`批量TTS生成失败: ${text}`, error);

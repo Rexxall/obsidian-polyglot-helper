@@ -2,6 +2,7 @@ import { App, Modal, Setting, Notice } from 'obsidian';
 import { CacheManager, CacheItem, CacheFilter } from './cache-manager';
 import { Logger } from './shared/Logger';
 
+import { fire } from './shared/fire';
 export class CacheCleanupModal extends Modal {
     private cacheManager: CacheManager;
     private allItems: CacheItem[] = [];
@@ -18,7 +19,11 @@ export class CacheCleanupModal extends Modal {
         this.cacheManager = new CacheManager(app, logger, pluginDir);
     }
 
-    async onOpen() {
+    onOpen() {
+        void this.render();
+    }
+
+    private async render() {
 
         this.modalEl.addClass('ap', 'ap-modal');
         const { contentEl } = this;
@@ -80,7 +85,7 @@ export class CacheCleanupModal extends Modal {
                     .addOption('audio', '🎵 音频缓存')
                     .setValue(this.filter.type || 'all')
                     .onChange(value => {
-                        this.filter.type = value as any;
+                        this.filter.type = value as CacheFilter['type'];
                         this.applyFilter();
                     });
             });
@@ -169,14 +174,14 @@ export class CacheCleanupModal extends Modal {
 
         // 刷新按钮
         const refreshBtn = buttonDiv.createEl('button', { text: '🔄 刷新' });
-        refreshBtn.addEventListener('click', async () => {
+        refreshBtn.addEventListener('click', fire(async () => {
             await this.loadCacheData();
             this.applyFilter();
-        });
+        }));
 
         // 清理按钮
         const cleanBtn = buttonDiv.createEl('button', { text: '🗑️ 清理选中项', cls: 'mod-warning' });
-        cleanBtn.addEventListener('click', () => this.confirmCleanup());
+        cleanBtn.addEventListener('click', fire(() => this.confirmCleanup()));
 
         // 取消按钮
         const cancelBtn = buttonDiv.createEl('button', { text: '❌ 取消' });
@@ -201,13 +206,13 @@ export class CacheCleanupModal extends Modal {
             this.filteredItems.filter(item => this.selectedItems.has(item.path))
         );
 
-        statsContainer.createEl('div', { 
+        statsContainer.createDiv({ 
             text: `📊 筛选结果: ${stats.total} 个文件 (${this.cacheManager.formatSize(stats.totalSize)})`,
             cls: 'polyglot-stat-item'
         });
 
         if (this.selectedItems.size > 0) {
-            statsContainer.createEl('div', { 
+            statsContainer.createDiv({ 
                 text: `✅ 已选择: ${this.selectedItems.size} 个文件 (${this.cacheManager.formatSize(selectedStats.totalSize)})`,
                 cls: 'polyglot-stat-item selected'
             });
@@ -218,7 +223,7 @@ export class CacheCleanupModal extends Modal {
             .map(([type, count]) => `${type}: ${count}`)
             .join(', ');
         if (typeStats) {
-            statsContainer.createEl('div', { 
+            statsContainer.createDiv({ 
                 text: `📂 类型分布: ${typeStats}`,
                 cls: 'polyglot-stat-detail'
             });
@@ -232,7 +237,7 @@ export class CacheCleanupModal extends Modal {
         listContainer.empty();
 
         if (this.filteredItems.length === 0) {
-            listContainer.createEl('div', { 
+            listContainer.createDiv({ 
                 text: '没有找到符合条件的缓存文件',
                 cls: 'polyglot-empty-message'
             });
@@ -242,7 +247,7 @@ export class CacheCleanupModal extends Modal {
         // 限制显示数量，避免性能问题
         const displayItems = this.filteredItems.slice(0, 100);
         if (this.filteredItems.length > 100) {
-            listContainer.createEl('div', { 
+            listContainer.createDiv({ 
                 text: `⚠️ 只显示前100个文件，共${this.filteredItems.length}个`,
                 cls: 'polyglot-warning-message'
             });
@@ -267,13 +272,13 @@ export class CacheCleanupModal extends Modal {
             const infoDiv = itemDiv.createDiv({ cls: 'polyglot-item-info' });
             
             const nameDiv = infoDiv.createDiv({ cls: 'polyglot-item-name' });
-            nameDiv.createEl('span', { text: item.name, cls: 'name' });
-            nameDiv.createEl('span', { text: item.type, cls: `type ${item.type}` });
+            nameDiv.createSpan({ text: item.name, cls: 'name' });
+            nameDiv.createSpan({ text: item.type, cls: `type ${item.type}` });
             
             const detailDiv = infoDiv.createDiv({ cls: 'polyglot-item-detail' });
-            detailDiv.createEl('span', { text: this.cacheManager.formatSize(item.size), cls: 'size' });
-            detailDiv.createEl('span', { text: this.cacheManager.formatTime(item.lastModified), cls: 'time' });
-            detailDiv.createEl('span', { text: item.category, cls: 'category' });
+            detailDiv.createSpan({ text: this.cacheManager.formatSize(item.size), cls: 'size' });
+            detailDiv.createSpan({ text: this.cacheManager.formatTime(item.lastModified), cls: 'time' });
+            detailDiv.createSpan({ text: item.category, cls: 'category' });
         });
     }
 

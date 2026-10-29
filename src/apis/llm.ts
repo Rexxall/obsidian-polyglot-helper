@@ -1,7 +1,8 @@
 import { requestUrl, RequestUrlResponse } from "obsidian";
-import { PolyglotHelperSettings } from "../types";
+import { ApiConfig, PolyglotHelperSettings } from "../types";
 import { Logger } from '../shared/Logger';
 
+import { errorMessage } from '../shared/errors';
 export const LLM_TIMEOUT_MS = 60_000;
 
 // One place for the OpenAI-compatible chat request used by all three helpers below.
@@ -11,9 +12,9 @@ export async function postChatCompletion(
     body: Record<string, unknown>,
     timeoutMs: number = LLM_TIMEOUT_MS
 ): Promise<RequestUrlResponse> {
-    let timer: ReturnType<typeof setTimeout> | undefined;
+    let timer: number | undefined;
     const timeout = new Promise<never>((_, reject) => {
-        timer = setTimeout(
+        timer = window.setTimeout(
             () => reject(new Error(`LLM 请求超过 ${Math.round(timeoutMs / 1000)} 秒未响应`)),
             timeoutMs
         );
@@ -33,19 +34,44 @@ export async function postChatCompletion(
             timeout
         ]);
     } finally {
-        clearTimeout(timer);
+        window.clearTimeout(timer);
     }
 }
 
+/** OpenAI 兼容接口返回的 choices[0].message.content；格式不对时为空串。 */
+export function chatContent(response: { json: unknown }): string {
+    const body = response.json as { choices?: { message?: { content?: unknown } }[] } | null | undefined;
+    const content = body?.choices?.[0]?.message?.content;
+    return typeof content === 'string' ? content : '';
+}
+
+/** LLM 补全词条时返回的字段，全部可缺。 */
+export interface LlmWordInfo {
+    meaning?: string;
+    pos?: string;
+    example?: string;
+    translation?: string;
+    etymology?: string;
+    synonyms?: string[];
+    antonyms?: string[];
+    collocations?: string[];
+    mnemonic?: string;
+    medical_usage?: string;
+    medical_field?: string;
+    slang_meaning?: string;
+    slang_example?: string;
+    tags?: string[];
+}
+
 // Helper to strip markdown and parse JSON safely
-function safeJsonParse(text: string, logger: Logger): any {
+function safeJsonParse(text: string, logger: Logger): unknown {
     if (!text) return null;
     const cleanedText = text.replace(/```(?:json)?\s*([\s\S]*?)\s*```/g, '$1').trim();
     try {
         return JSON.parse(cleanedText);
     } catch (e) {
         logger.error("Failed to parse LLM response as JSON.", {
-            error: e.message,
+            error: errorMessage(e),
             originalText: text,
             cleanedText: cleanedText
         });
@@ -53,7 +79,7 @@ function safeJsonParse(text: string, logger: Logger): any {
     }
 }
 
-export async function getLlmInfoTS(word: string, settings: PolyglotHelperSettings, existingData: any, logger: Logger, apiConfig?: any): Promise<any> {
+export async function getLlmInfoTS(word: string, settings: PolyglotHelperSettings, existingData: unknown, logger: Logger, apiConfig?: ApiConfig): Promise<LlmWordInfo | null> {
     // 使用传入的API配置，如果没有则回退到设置中的配置
     const apiKey = apiConfig?.apiKey || settings.englishLlmApiKey;
     const baseUrl = apiConfig?.baseUrl || settings.englishLlmBaseUrl;
@@ -107,8 +133,8 @@ ${contextStr}
         });
 
         if (response.status === 200) {
-            const content = response.json?.choices?.[0]?.message?.content;
-            return content ? safeJsonParse(content, logger) : null;
+            const parsed = safeJsonParse(chatContent(response), logger);
+            return parsed && typeof parsed === 'object' ? parsed : null;
         } else {
             logger.error(`LLM API request failed with status ${response.status}`, { response: response.text });
             return null;
@@ -120,7 +146,7 @@ ${contextStr}
     }
 } 
 
-export async function getChineseTranslationTS(text: string, settings: PolyglotHelperSettings, logger: Logger, apiConfig?: any): Promise<string | null> {
+export async function getChineseTranslationTS(text: string, settings: PolyglotHelperSettings, logger: Logger, apiConfig?: ApiConfig): Promise<string | null> {
     // 使用传入的API配置，如果没有则回退到设置中的配置
     const apiKey = apiConfig?.apiKey || settings.englishLlmApiKey;
     const baseUrl = apiConfig?.baseUrl || settings.englishLlmBaseUrl;
@@ -148,7 +174,7 @@ English text: "${text}"`;
         });
 
         if (response.status === 200) {
-            return response.json?.choices?.[0]?.message?.content?.trim() ?? null;
+            return chatContent(response).trim() || null;
         } else {
             logger.error(`Chinese translation API request failed with status ${response.status}`, { response: response.text });
             return null;
@@ -183,7 +209,7 @@ Chinese text: "${text}"`;
         });
 
         if (response.status === 200) {
-            return response.json?.choices?.[0]?.message?.content?.trim() ?? null;
+            return chatContent(response).trim() || null;
         } else {
             logger.error(`Japanese translation API request failed with status ${response.status}`, { response: response.text });
             return null;

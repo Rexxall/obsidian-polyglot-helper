@@ -45,5 +45,5 @@ if (prod) {
 	process.exit(0);
 } else {
 	await context.watch();
-	console.log("Watching for changes...");
+	process.stdout.write("Watching for changes...\n");
 } 

@@ -20,15 +20,31 @@ function cleanMwText(text: string): string {
     return text.trim();
 }
 
+/** sseq 里每个 sense 是 ["sense", { dt: [["text", "..."], ...] }] */
+type MwSense = [string, { dt?: [string, unknown][] } | undefined];
+
+interface MwEntry {
+    meta?: { id?: string; syns?: string[][]; ants?: string[][] };
+    fl?: string;
+    def?: { sseq?: MwSense[][] }[];
+    shortdef?: string[];
+}
+
+/** 查不到词时 API 返回一串建议拼写（字符串），只保留词条对象。 */
+function firstEntry(json: unknown): MwEntry | undefined {
+    const first: unknown = Array.isArray(json) ? json[0] : undefined;
+    return first && typeof first === 'object' ? first : undefined;
+}
+
 export async function getMwThesaurusInfoTS(word: string, apiKey: string, logger: Logger): Promise<Partial<MerriamWebsterInfo>> {
     if (!apiKey) return {};
 
     const url = `https://www.dictionaryapi.com/api/v3/references/thesaurus/json/${encodeURIComponent(word)}?key=${apiKey}`;
     try {
         const response = await requestUrl({ url });
-        if (response.status === 200 && response.json.length > 0) {
-            const data = response.json[0];
-            if (typeof data !== 'object' || !data.meta || !data.meta.id.toLowerCase().startsWith(word.toLowerCase())) {
+        const data = response.status === 200 ? firstEntry(response.json) : undefined;
+        if (data) {
+            if (!data.meta?.id?.toLowerCase().startsWith(word.toLowerCase())) {
                 return {};
             }
 
@@ -37,15 +53,11 @@ export async function getMwThesaurusInfoTS(word: string, apiKey: string, logger:
             const antonyms = (data.meta.ants?.[0] || []).slice(0, 15);
             
             let definitions: string[] = [];
-            if (data.def && data.def[0]?.sseq) {
-                for (const sense_block of data.def[0].sseq) {
-                    for (const sense of sense_block) {
-                        const dt_block = sense[1]?.dt;
-                        if (dt_block) {
-                            if (Array.isArray(dt_block[0]) && dt_block[0][0] === 'text') {
-                                definitions.push(cleanMwText(dt_block[0][1]));
-                            }
-                        }
+            for (const sense_block of data.def?.[0]?.sseq ?? []) {
+                for (const sense of sense_block) {
+                    const first = sense[1]?.dt?.[0];
+                    if (Array.isArray(first) && first[0] === 'text' && typeof first[1] === 'string') {
+                        definitions.push(cleanMwText(first[1]));
                     }
                 }
             }
@@ -64,12 +76,12 @@ export async function getMwMedicalInfoTS(word: string, apiKey: string, logger: L
     const url = `https://www.dictionaryapi.com/api/v3/references/medical/json/${encodeURIComponent(word)}?key=${apiKey}`;
     try {
         const response = await requestUrl({ url });
-        if (response.status === 200 && response.json.length > 0) {
-            const data = response.json[0];
-            if (typeof data !== 'object' || !data.shortdef) {
+        const data = response.status === 200 ? firstEntry(response.json) : undefined;
+        if (data) {
+            if (!data.shortdef) {
                 return {};
             }
-            const medical_definitions = (data.shortdef || []).slice(0, 5);
+            const medical_definitions = data.shortdef.slice(0, 5);
             return { medical_definitions };
         }
     } catch (error) {

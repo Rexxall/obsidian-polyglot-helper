@@ -1,9 +1,9 @@
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const vm = require('node:vm');
-const esbuild = require('esbuild');
-const path = require('node:path');
-const source = esbuild.buildSync({entryPoints:[path.join(__dirname,'src/cache-manager.ts')],bundle:true,write:false,platform:'node',format:'cjs',external:['obsidian']}).outputFiles[0].text;
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import esbuild from 'esbuild';
+import path from 'node:path';
+const source = esbuild.buildSync({entryPoints:[path.join(import.meta.dirname,'src/cache-manager.ts')],bundle:true,write:false,platform:'node',format:'cjs',external:['obsidian']}).outputFiles[0].text;
 function fixture() {
  const exports={}; const context={module:{exports},exports,require:()=>({Notice:class{}}),console};vm.runInNewContext(source,context);
  const removed=[],scanned=[];const app={vault:{adapter:{exists:async p=>{scanned.push(p);return false},remove:async p=>removed.push(p)}}};

@@ -113,7 +113,7 @@ export class Logger {
 	private vaultAdapter?: LogVaultAdapter;
 	private logBuffer: string[] = [];
 	private isMobile: boolean;
-	private flushTimer: ReturnType<typeof setInterval> | null = null;
+	private flushTimer: number | null = null;
 	private fileWritePending = false;
 
 	constructor(vaultAdapter?: LogVaultAdapter, options?: LoggerOptions);
@@ -153,28 +153,28 @@ export class Logger {
 	/**
 	 * DEBUG 级别日志
 	 */
-	debug(message: string, details?: any): void {
+	debug(message: string, details?: unknown): void {
 		this.log(LogLevel.DEBUG, message, details);
 	}
 
 	/**
 	 * INFO 级别日志
 	 */
-	info(message: string, details?: any): void {
+	info(message: string, details?: unknown): void {
 		this.log(LogLevel.INFO, message, details);
 	}
 
 	/**
 	 * WARN 级别日志
 	 */
-	warn(message: string, details?: any): void {
+	warn(message: string, details?: unknown): void {
 		this.log(LogLevel.WARN, message, details);
 	}
 
 	/**
 	 * ERROR 级别日志
 	 */
-	error(message: string, details?: any): void {
+	error(message: string, details?: unknown): void {
 		this.log(LogLevel.ERROR, message, details);
 	}
 
@@ -229,7 +229,7 @@ export class Logger {
 
 	// ── 私有方法 ──
 
-	private log(level: LogLevel, message: string, details?: any): void {
+	private log(level: LogLevel, message: string, details?: unknown): void {
 		if (level < this.options.level) return;
 
 		const levelName = LogLevel[level] || 'UNKNOWN';
@@ -246,7 +246,7 @@ export class Logger {
 		}
 	}
 
-	private formatMessage(level: string, message: string, details?: any): string {
+	private formatMessage(level: string, message: string, details?: unknown): string {
 		const parts: string[] = [];
 
 		if (this.options.timestamp) {
@@ -271,17 +271,17 @@ export class Logger {
 				try {
 					parts.push(`\n  ${JSON.stringify(details, null, 2)}`);
 				} catch {
-					parts.push(`\n  ${String(details)}`);
+					parts.push('\n  [对象无法序列化]');
 				}
-			} else {
-				parts.push(` ${String(details)}`);
+			} else if (typeof details === 'string' || typeof details === 'number' || typeof details === 'boolean') {
+				parts.push(` ${details}`);
 			}
 		}
 
 		return parts.join(' ');
 	}
 
-	private writeToConsole(level: LogLevel, formatted: string, details?: any): void {
+	private writeToConsole(level: LogLevel, formatted: string, details?: unknown): void {
 		switch (level) {
 			case LogLevel.DEBUG:
 				console.debug(formatted);
@@ -358,7 +358,7 @@ export class Logger {
 
 			// 追加到文件
 			await this.vaultAdapter.append(this.options.filePath, data);
-		} catch (error) {
+		} catch {
 			// 静默处理文件写入错误
 		} finally {
 			this.fileWritePending = false;
@@ -368,12 +368,12 @@ export class Logger {
 	private startFlushTimer(): void {
 		if (this.flushTimer) return;
 		// 每 5 秒刷新一次缓冲区
-		this.flushTimer = setInterval(() => this.flushSync(), 5000);
+		this.flushTimer = window.setInterval(() => this.flushSync(), 5000);
 	}
 
 	private stopFlushTimer(): void {
 		if (this.flushTimer) {
-			clearInterval(this.flushTimer);
+			window.clearInterval(this.flushTimer);
 			this.flushTimer = null;
 		}
 		// 最后刷新一次

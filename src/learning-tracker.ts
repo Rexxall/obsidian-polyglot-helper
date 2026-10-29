@@ -1,6 +1,7 @@
 import { App, Notice } from "obsidian";
 import { PolyglotHelperSettings, VocabularyItem, JapaneseVocabularyItem, EnglishVocabularyItem, ReviewRecord } from "./types";
 
+import { errorMessage } from "./shared/errors";
 /**
  * 学习进度追踪器
  * 实现间隔重复系统(SRS)和学习统计功能
@@ -125,12 +126,12 @@ export class LearningTracker {
         const result: { success: number; skipped: number; errors: string[] } = { success: 0, skipped: 0, errors: [] };
 
         try {
-            const data = JSON.parse(jsonData);
-            if (!data.vocabulary || !Array.isArray(data.vocabulary)) {
+            const data = JSON.parse(jsonData) as { vocabulary?: unknown } | null;
+            if (!data || !Array.isArray(data.vocabulary)) {
                 throw new Error('无效的词汇库格式');
             }
 
-            for (const item of data.vocabulary) {
+            for (const item of data.vocabulary as Partial<VocabularyItem>[]) {
                 try {
                     if (!item.word || !item.translation) {
                         result.errors.push(`跳过无效项目: ${JSON.stringify(item)}`);
@@ -151,13 +152,13 @@ export class LearningTracker {
                     );
                     result.success++;
                 } catch (error) {
-                    result.errors.push(`导入 "${item.word}" 失败: ${error.message}`);
+                    result.errors.push(`导入 "${item.word ?? ''}" 失败: ${errorMessage(error)}`);
                 }
             }
 
             new Notice(`导入完成: ${result.success} 成功, ${result.skipped} 跳过, ${result.errors.length} 错误`);
         } catch (error) {
-            result.errors.push(`解析JSON失败: ${error.message}`);
+            result.errors.push(`解析JSON失败: ${errorMessage(error)}`);
         }
 
         return result;

@@ -2,8 +2,10 @@ import { Notice, TFile, setIcon } from "obsidian";
 import type PolyglotHelper from "./main";
 import { getDictionaryInfoTS } from "./apis/dictionary";
 import { getJishoInfoTS } from "./apis/jisho";
-import { postChatCompletion } from "./apis/llm";
+import { chatContent, postChatCompletion } from "./apis/llm";
+import type { DictionaryInfo } from "./types";
 
+import { fire } from "./shared/fire";
 interface LookupResult {
     reading: string;
     pos: string;
@@ -18,7 +20,7 @@ const LLM_TIMEOUT_MS = 20_000;
 const cache = new Map<string, LookupResult>();
 
 export function isJapaneseText(text: string): boolean {
-    return /[぀-ヿ一-龯]/.test(text) && !/^[\x00-\x7F]+$/.test(text);
+    return /[぀-ヿ一-龯]/.test(text) && [...text].some((ch) => ch.charCodeAt(0) > 0x7f);
 }
 
 /** 从一行里取出包含选中词的那一句。 */
@@ -67,24 +69,24 @@ export class LookupPopover {
         head.createSpan({ cls: 'polyglot-pop-reading' });
         const play = head.createEl('button', { cls: 'polyglot-play', attr: { 'aria-label': '朗读' } });
         setIcon(play, 'play');
-        play.addEventListener('click', () => this.play());
+        play.addEventListener('click', fire(() => this.play()));
 
         this.body = this.el.createDiv({ cls: 'polyglot-pop-body' });
         this.body.createDiv({ cls: 'polyglot-muted', text: '正在查……' });
 
         const acts = this.el.createDiv({ cls: 'polyglot-pop-actions' });
         const save = acts.createEl('button', { cls: 'mod-cta polyglot-primary', text: '收进生词本' });
-        save.addEventListener('click', () => this.save(save));
+        save.addEventListener('click', fire(() => this.save(save)));
         const full = acts.createEl('button', { cls: 'polyglot-link', text: '完整词条 →' });
         full.addEventListener('click', () => {
             this.close();
-            this.plugin.openFullEntry(this.word, this.japanese, this.file);
+            void this.plugin.openFullEntry(this.word, this.japanese, this.file);
         });
         acts.createSpan({ cls: 'polyglot-pop-src' });
 
         this.position();
         this.bindDismiss();
-        this.load();
+        void this.load();
     }
 
     close() {
@@ -169,7 +171,7 @@ export class LookupPopover {
     private async lookupEnglish(): Promise<LookupResult> {
         const lower = this.word.toLowerCase();
         const [dict, llm] = await Promise.all([
-            getDictionaryInfoTS(lower, this.plugin.logger as any).catch(() => ({} as any)),
+            getDictionaryInfoTS(lower, this.plugin.logger).catch((): Partial<DictionaryInfo> => ({})),
             this.askModel(
                 `Word: "${this.word}"\nSentence: "${this.sentence}"\n` +
                 'Return strict JSON: {"pos":"part of speech abbreviation like adj.","meaning":"简短中文释义，不超过20字","in_context":"这个词在这句话里具体指什么，中文，不超过30字"}'
@@ -186,14 +188,14 @@ export class LookupPopover {
             meaning: llm?.meaning || firstDef,
             inContext: llm?.in_context || '',
             example: dict.examples?.[0] || '',
-            definitions: (dict.meanings || []).map((m: string) => m.replace(/^_([^_]+)_:\s*/, '')),
+            definitions: (dict.meanings || []).map((m) => m.replace(/^_([^_]+)_:\s*/, '')),
             sources,
         };
     }
 
     private async lookupJapanese(): Promise<LookupResult> {
         const [jisho, llm] = await Promise.all([
-            getJishoInfoTS(this.word, this.plugin.logger as any).catch(() => null),
+            getJishoInfoTS(this.word, this.plugin.logger).catch(() => null),
             this.askModel(
                 `語: 「${this.word}」\n文: 「${this.sentence}」\n` +
                 'Return strict JSON: {"reading":"かな読み","pos":"品詞（中文，如 名词、动词）","meaning":"简短中文释义，不超过20字","in_context":"这个词在这句话里具体指什么，中文，不超过30字"}'
@@ -226,8 +228,11 @@ export class LookupPopover {
                 ],
             }, LLM_TIMEOUT_MS);
             if (res.status !== 200) return null;
-            const raw = (res.json.choices?.[0]?.message?.content || '').replace(/```(?:json)?\s*([\s\S]*?)\s*```/g, '$1').trim();
-            return JSON.parse(raw);
+            const raw = chatContent(res).replace(/```(?:json)?\s*([\s\S]*?)\s*```/g, '$1').trim();
+            const parsed = JSON.parse(raw) as unknown;
+            if (!parsed || typeof parsed !== 'object') return null;
+            // 只留字符串字段
+            return Object.fromEntries(Object.entries(parsed).filter((entry): entry is [string, string] => typeof entry[1] === 'string'));
         } catch (e) {
             this.plugin.logger.warn?.('查词小卡：模型没有给出结果', e);
             return null;
@@ -238,7 +243,7 @@ export class LookupPopover {
         try {
             if (this.japanese) await this.plugin.playJapaneseVoice(this.word, false);
             else await this.plugin.playEnglishVoice(this.word, false);
-        } catch (e) {
+        } catch {
             new Notice('朗读失败');
         }
     }

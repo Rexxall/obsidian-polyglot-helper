@@ -1,5 +1,5 @@
 import { Notice, App } from 'obsidian';
-import { PolyglotHelperSettings } from './types';
+import { ApiConfig, PolyglotHelperSettings } from './types';
 import { Logger } from './shared/Logger';
 import { getDictionaryInfoTS } from './apis/dictionary';
 import { getUrbanDictionaryInfoTS } from './apis/urban';
@@ -7,11 +7,12 @@ import { getMwThesaurusInfoTS, getMwMedicalInfoTS } from './apis/merriam-webster
 import { getRelatedIdiomsTS } from './apis/idioms';
 import { getEtymologyInfoTS } from './apis/etymology';
 import { getTatoebaExamplesTS } from './apis/tatoeba';
-import { getLlmInfoTS, getChineseTranslationTS } from './apis/llm';
-import { extractRootWord, ENGLISH_STOP_WORDS, getAudioUrl, getImageUrl, addQueryToHistory } from './utils';
+import { getLlmInfoTS, getChineseTranslationTS, LlmWordInfo } from './apis/llm';
+import { extractRootWord, ENGLISH_STOP_WORDS, getAudioUrl, getImageUrl } from './utils';
 import { getCambridgeInfoTS } from './apis/cambridge';
 import { getFromCache, saveToCache } from './cache';
 
+import { errorMessage } from './shared/errors';
 async function _processSingleWordOrPhrase(
     word: string,
     forceRefresh: boolean,
@@ -19,7 +20,7 @@ async function _processSingleWordOrPhrase(
     logger: Logger,
     app: App,
     pluginDir: string | undefined,
-    apiConfig?: any
+    apiConfig?: ApiConfig
 ): Promise<string | null> {
     try {
         if (!pluginDir) {
@@ -46,53 +47,59 @@ async function _processSingleWordOrPhrase(
         const sections = settings.englishSections;
         const rootWord = extractRootWord(word);
 
-        const promiseMap = {
-            dictionary: sections.definitions ? getDictionaryInfoTS(rootWord, logger) : Promise.resolve(null),
-            urban: sections.slang ? getUrbanDictionaryInfoTS(word, logger) : Promise.resolve(null),
-            thesaurus: sections.definitions ? getMwThesaurusInfoTS(rootWord, settings.mwThesaurusKey, logger) : Promise.resolve(null),
-            medical: sections.medical ? getMwMedicalInfoTS(rootWord, settings.mwMedicalKey, logger) : Promise.resolve(null),
-            etymology: sections.etymology ? getEtymologyInfoTS(rootWord, logger) : Promise.resolve(null),
-            idioms: sections.idioms ? getRelatedIdiomsTS(word, logger) : Promise.resolve(null),
-            tatoeba: sections.tatoeba ? getTatoebaExamplesTS(word, logger) : Promise.resolve(null),
-            cambridge: sections.definitions ? getCambridgeInfoTS(rootWord, logger) : Promise.resolve(null),
+        // 每个来源单独兜底：失败只记日志，结果当作没有
+        const safely = async <T>(name: string, enabled: boolean | undefined, run: () => Promise<T>): Promise<T | null> => {
+            if (!enabled) return null;
+            try {
+                return await run();
+            } catch (error) {
+                logger.error(`API call failed for ${name}`, error);
+                return null;
+            }
         };
+        const [dictionary, urban, thesaurus, medical, etymology, idioms, tatoeba, cambridge] = await Promise.all([
+            safely('dictionary', sections.definitions, () => getDictionaryInfoTS(rootWord, logger)),
+            safely('urban', sections.slang, () => getUrbanDictionaryInfoTS(word, logger)),
+            safely('thesaurus', sections.definitions, () => getMwThesaurusInfoTS(rootWord, settings.mwThesaurusKey, logger)),
+            safely('medical', sections.medical, () => getMwMedicalInfoTS(rootWord, settings.mwMedicalKey, logger)),
+            safely('etymology', sections.etymology, () => getEtymologyInfoTS(rootWord, logger)),
+            safely('idioms', sections.idioms, () => getRelatedIdiomsTS(word, logger)),
+            safely('tatoeba', sections.tatoeba, () => getTatoebaExamplesTS(word, logger)),
+            safely('cambridge', sections.definitions, () => getCambridgeInfoTS(rootWord, logger)),
+        ]);
+        const data = { dictionary, urban, thesaurus, medical, etymology, idioms, tatoeba, cambridge };
 
-        const settledResults = await Promise.all(
-            Object.entries(promiseMap).map(async ([key, promise]) => {
-                try {
-                    const value = await promise;
-                    return [key, value];
-                } catch (error) {
-                    logger.error(`API call failed for ${key}`, error);
-                    return [key, null];
-                }
-            })
-        );
-        
-        const data = Object.fromEntries(settledResults);
+        const llmData: LlmWordInfo = await getLlmInfoTS(word, settings, data, logger, apiConfig) || {};
 
-        let llmData = await getLlmInfoTS(word, settings, data, logger, apiConfig) || {};
-
-        const wordInfo: any = { word };
-        wordInfo.phonetics = data.cambridge?.us_phonetic || data.dictionary?.phonetics || '';
-        wordInfo.uk_phonetic = data.cambridge?.uk_phonetic || '';
-        wordInfo.us_phonetic = data.cambridge?.us_phonetic || '';
-        wordInfo.english_definition = data.dictionary?.meanings || [];
-        wordInfo.cambridge_definitions = data.cambridge?.definitions || [];
-        wordInfo.pos = llmData.pos || data.cambridge?.pos || data.thesaurus?.partOfSpeech || '';
-        wordInfo.synonyms = llmData.synonyms || Array.from(new Set([...(data.dictionary?.synonyms || []), ...(data.thesaurus?.synonyms || [])]));
-        wordInfo.antonyms = llmData.antonyms || Array.from(new Set([...(data.dictionary?.antonyms || []), ...(data.thesaurus?.antonyms || [])]));
-        const llmFields = ['meaning', 'example', 'translation', 'etymology', 'collocations', 'mnemonic', 'medical_usage', 'medical_field', 'slang_meaning', 'slang_example', 'tags'];
-        for (const field of llmFields) {
-            wordInfo[field] = llmData[field] || '';
-        }
-        wordInfo.detailed_etymology = data.etymology?.etymology || '';
-        wordInfo.tatoeba_examples = data.tatoeba?.examples || [];
-        wordInfo.medical_definitions_api = data.medical?.medical_definitions || [];
-        wordInfo.slang_meaning_api = data.urban?.slang_meaning || '';
-        wordInfo.slang_example_api = data.urban?.slang_example || '';
-        wordInfo.audio_url = getAudioUrl(word);
-        wordInfo.image_url = getImageUrl(word);
+        const wordInfo = {
+            word,
+            phonetics: cambridge?.us_phonetic || dictionary?.phonetics || '',
+            uk_phonetic: cambridge?.uk_phonetic || '',
+            us_phonetic: cambridge?.us_phonetic || '',
+            english_definition: dictionary?.meanings || [],
+            cambridge_definitions: cambridge?.definitions || [],
+            pos: llmData.pos || cambridge?.pos || thesaurus?.partOfSpeech || '',
+            synonyms: llmData.synonyms || Array.from(new Set([...(dictionary?.synonyms || []), ...(thesaurus?.synonyms || [])])),
+            antonyms: llmData.antonyms || Array.from(new Set([...(dictionary?.antonyms || []), ...(thesaurus?.antonyms || [])])),
+            meaning: llmData.meaning || '',
+            example: llmData.example || '',
+            translation: llmData.translation || '',
+            etymology: llmData.etymology || '',
+            collocations: llmData.collocations || [],
+            mnemonic: llmData.mnemonic || '',
+            medical_usage: llmData.medical_usage || '',
+            medical_field: llmData.medical_field || '',
+            slang_meaning: llmData.slang_meaning || '',
+            slang_example: llmData.slang_example || '',
+            tags: llmData.tags || [],
+            detailed_etymology: etymology?.etymology || '',
+            tatoeba_examples: tatoeba?.examples || [],
+            medical_definitions_api: medical?.medical_definitions || [],
+            slang_meaning_api: urban?.slang_meaning || '',
+            slang_example_api: urban?.slang_example || '',
+            audio_url: getAudioUrl(word),
+            image_url: getImageUrl(word),
+        };
 
         const header = `## ${word} ${shortMeaning ? `- ${shortMeaning}` : ''}`;
         const output: string[] = [header];
@@ -119,10 +126,10 @@ async function _processSingleWordOrPhrase(
 
         const definitionCallout = [];
         if (wordInfo.english_definition?.length > 0) {
-            definitionCallout.push(`- **Dictionary API**:\n${wordInfo.english_definition.map((d: string) => `  - ${d}`).join('\n')}`);
+            definitionCallout.push(`- **Dictionary API**:\n${wordInfo.english_definition.map((d) => `  - ${d}`).join('\n')}`);
         }
         if (wordInfo.cambridge_definitions?.length > 0) {
-            definitionCallout.push(`- **剑桥词典**:\n${wordInfo.cambridge_definitions.map((d: string) => `  - ${d}`).join('\n')}`);
+            definitionCallout.push(`- **剑桥词典**:\n${wordInfo.cambridge_definitions.map((d) => `  - ${d}`).join('\n')}`);
         }
         if (definitionCallout.length > 0) {
             output.push(`> [!abstract] 详细释义\n${definitionCallout.map(line => `> ${line.replace(/\n/g, '\n> ')}`).join('\n> \n')}`);
@@ -136,7 +143,7 @@ async function _processSingleWordOrPhrase(
             }
         }
         if (wordInfo.tatoeba_examples?.length > 0) {
-            wordInfo.tatoeba_examples.forEach((ex: { eng: string, cmn: string }) => {
+            wordInfo.tatoeba_examples.forEach((ex) => {
                 let tatoebaLine = `- ${ex.eng}`;
                 if (ex.cmn) {
                     tatoebaLine += `\n  - ${ex.cmn}`;
@@ -200,7 +207,7 @@ export async function runEnglishProcess(
     app: App,
     pluginDir: string | undefined,
     saveSettings: () => Promise<void>,
-    apiConfig?: any
+    apiConfig?: ApiConfig
 ): Promise<string | null> {
     const notice = new Notice("正在处理...", 0);
     try {
@@ -238,7 +245,7 @@ export async function runEnglishProcess(
 
     } catch (e) {
         notice.hide();
-        new Notice(`处理失败: ${e.message}`);
+        new Notice(`处理失败: ${errorMessage(e)}`);
         logger.error("Error during English processing (TS)", e);
         return null;
     }

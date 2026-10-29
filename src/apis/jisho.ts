@@ -1,4 +1,4 @@
-import { requestUrl, Notice } from 'obsidian';
+import { requestUrl } from 'obsidian';
 import { Logger } from '../logger';
 
 export interface JishoResult {

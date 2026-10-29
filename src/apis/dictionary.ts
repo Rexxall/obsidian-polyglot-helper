@@ -2,12 +2,23 @@ import { requestUrl } from "obsidian";
 import { DictionaryInfo } from "../types";
 import { Logger } from "../logger";
 
+interface DictionaryEntry {
+    phonetics?: { text?: string }[];
+    meanings?: {
+        partOfSpeech?: string;
+        definitions?: { definition?: string; example?: string }[];
+        synonyms?: string[];
+        antonyms?: string[];
+    }[];
+}
+
 export async function getDictionaryInfoTS(word: string, logger: Logger): Promise<Partial<DictionaryInfo>> {
     const DICTIONARY_API_URL = `https://api.dictionaryapi.dev/api/v2/entries/en/${word.toLowerCase()}`;
     try {
         const response = await requestUrl({ url: DICTIONARY_API_URL });
         if (response.status === 200) {
-            const data = response.json[0];
+            const data = (response.json as DictionaryEntry[])[0];
+            if (!data) return {};
             
             let phonetics = "";
             if (data.phonetics?.length) {

@@ -1,22 +1,22 @@
-import { ItemView, WorkspaceLeaf, Notice, Modal, Setting, ButtonComponent, TextComponent, DropdownComponent } from "obsidian";
+import { App, ItemView, WorkspaceLeaf, Notice, Modal, Setting, TextComponent } from "obsidian";
 import PolyglotHelper from "./main";
-import { VocabularyItem } from "./types";
+import { EnglishVocabularyItem, JapaneseVocabularyItem, VocabularyItem } from "./types";
 import { CacheCleanupModal } from "./cache-cleanup-modal";
 
+import { fire } from "./shared/fire";
+import { errorMessage } from "./shared/errors";
 // 复习视图类型常量
 export const POLYGLOT_REVIEW_VIEW_TYPE = "polyglot-review-view";
 
 export const MANAGEMENT_PANEL_VIEW_TYPE = "polyglot-management-panel";
 
-export interface ManagementPanelView {
-    renderJapaneseVocabulary(container: HTMLElement): void;
-    renderEnglishVocabulary(container: HTMLElement): void;
-    renderFavoriteVocabulary(container: HTMLElement): void;
-}
-
 export class ManagementPanelView extends ItemView {
     plugin: PolyglotHelper;
     private currentTab: 'vocabulary' | 'learning' | 'cache' = 'vocabulary';
+    // 这三个方法在文件末尾挂到原型上
+    declare renderJapaneseVocabulary: (container: HTMLElement) => void;
+    declare renderEnglishVocabulary: (container: HTMLElement) => void;
+    declare renderFavoriteVocabulary: (container: HTMLElement) => void;
 
     constructor(leaf: WorkspaceLeaf, plugin: PolyglotHelper) {
         super(leaf);
@@ -177,44 +177,44 @@ export class ManagementPanelView extends ItemView {
 
         {
             const host = statsGrid.createDiv({ cls: 'polyglot-stat-card' });
-            host.createEl('div', { cls: 'stat-icon', text: '📚' });
-            host.createEl('div', { cls: 'stat-number', text: `${totalWords + japaneseWords + englishWords}` });
-            host.createEl('div', { cls: 'stat-label', text: '总词汇量' });
+            host.createDiv({ cls: 'stat-icon', text: '📚' });
+            host.createDiv({ cls: 'stat-number', text: `${totalWords + japaneseWords + englishWords}` });
+            host.createDiv({ cls: 'stat-label', text: '总词汇量' });
         }
 
         {
             const host = statsGrid.createDiv({ cls: 'polyglot-stat-card' });
-            host.createEl('div', { cls: 'stat-icon', text: '🇯🇵' });
-            host.createEl('div', { cls: 'stat-number', text: `${japaneseWords}` });
-            host.createEl('div', { cls: 'stat-label', text: '日语词汇' });
+            host.createDiv({ cls: 'stat-icon', text: '🇯🇵' });
+            host.createDiv({ cls: 'stat-number', text: `${japaneseWords}` });
+            host.createDiv({ cls: 'stat-label', text: '日语词汇' });
         }
 
         {
             const host = statsGrid.createDiv({ cls: 'polyglot-stat-card' });
-            host.createEl('div', { cls: 'stat-icon', text: '🇺🇸' });
-            host.createEl('div', { cls: 'stat-number', text: `${englishWords}` });
-            host.createEl('div', { cls: 'stat-label', text: '英语词汇' });
+            host.createDiv({ cls: 'stat-icon', text: '🇺🇸' });
+            host.createDiv({ cls: 'stat-number', text: `${englishWords}` });
+            host.createDiv({ cls: 'stat-label', text: '英语词汇' });
         }
 
         {
             const host = statsGrid.createDiv({ cls: 'polyglot-stat-card' });
-            host.createEl('div', { cls: 'stat-icon', text: '⏰' });
-            host.createEl('div', { cls: 'stat-number', text: `${dueWords}` });
-            host.createEl('div', { cls: 'stat-label', text: '待复习' });
+            host.createDiv({ cls: 'stat-icon', text: '⏰' });
+            host.createDiv({ cls: 'stat-number', text: `${dueWords}` });
+            host.createDiv({ cls: 'stat-label', text: '待复习' });
         }
 
         {
             const host = statsGrid.createDiv({ cls: 'polyglot-stat-card' });
-            host.createEl('div', { cls: 'stat-icon', text: '🆕' });
-            host.createEl('div', { cls: 'stat-number', text: `${newWords}` });
-            host.createEl('div', { cls: 'stat-label', text: '新单词' });
+            host.createDiv({ cls: 'stat-icon', text: '🆕' });
+            host.createDiv({ cls: 'stat-number', text: `${newWords}` });
+            host.createDiv({ cls: 'stat-label', text: '新单词' });
         }
 
         {
             const host = statsGrid.createDiv({ cls: 'polyglot-stat-card' });
-            host.createEl('div', { cls: 'stat-icon', text: '⭐' });
-            host.createEl('div', { cls: 'stat-number', text: `${masteredWords}` });
-            host.createEl('div', { cls: 'stat-label', text: '已掌握' });
+            host.createDiv({ cls: 'stat-icon', text: '⭐' });
+            host.createDiv({ cls: 'stat-number', text: `${masteredWords}` });
+            host.createDiv({ cls: 'stat-label', text: '已掌握' });
         }
 
         // 操作按钮
@@ -227,13 +227,13 @@ export class ManagementPanelView extends ItemView {
         reviewBtn.addEventListener('click', () => this.startReview());
 
         const exportBtn = actions.createEl('button', { text: '📤 导出词汇库', cls: 'polyglot-btn-secondary' });
-        exportBtn.addEventListener('click', () => this.exportVocabulary());
+        exportBtn.addEventListener('click', fire(() => this.exportVocabulary()));
 
         const importBtn = actions.createEl('button', { text: '📥 导入词汇库', cls: 'polyglot-btn-secondary' });
         importBtn.addEventListener('click', () => this.importVocabulary());
 
         const clearBtn = actions.createEl('button', { text: '🗑️ 清空词汇库', cls: 'polyglot-btn-danger' });
-        clearBtn.addEventListener('click', () => this.clearVocabulary());
+        clearBtn.addEventListener('click', fire(() => this.clearVocabulary()));
 
         // 搜索和筛选区域
         const filterSection = container.createDiv({ cls: 'polyglot-filter-section' });
@@ -379,9 +379,9 @@ export class ManagementPanelView extends ItemView {
 
         if (words.length === 0) {
             const emptyState = container.createDiv({ cls: 'polyglot-empty-state' });
-            emptyState.createEl('div', { cls: 'empty-icon', text: '📚' });
-            emptyState.createEl('div', { cls: 'empty-title', text: '没有找到词汇' });
-            emptyState.createEl('div', { cls: 'empty-subtitle', text: '尝试调整筛选条件或添加新单词' });
+            emptyState.createDiv({ cls: 'empty-icon', text: '📚' });
+            emptyState.createDiv({ cls: 'empty-title', text: '没有找到词汇' });
+            emptyState.createDiv({ cls: 'empty-subtitle', text: '尝试调整筛选条件或添加新单词' });
             return;
         }
 
@@ -424,7 +424,7 @@ export class ManagementPanelView extends ItemView {
                 });
 
                 // 页码信息
-                pagination.createEl('span', {
+                pagination.createSpan({
                     text: `第 ${page + 1} 页，共 ${totalPages} 页`,
                     cls: 'polyglot-page-info'
                 });
@@ -475,26 +475,26 @@ export class ManagementPanelView extends ItemView {
         const wordContent = wordItem.createDiv({ cls: 'polyglot-vocab-content' });
 
         const wordHeader = wordContent.createDiv({ cls: 'polyglot-vocab-header' });
-        wordHeader.createEl('span', { text: item.word, cls: 'polyglot-vocab-word' });
-        wordHeader.createEl('span', { text: item.translation, cls: 'polyglot-vocab-translation' });
+        wordHeader.createSpan({ text: item.word, cls: 'polyglot-vocab-word' });
+        wordHeader.createSpan({ text: item.translation, cls: 'polyglot-vocab-translation' });
 
         // 元数据
         const wordMeta = wordContent.createDiv({ cls: 'polyglot-vocab-meta' });
-        wordMeta.createEl('span', { cls: 'meta-item', text: `📊 复习 ${item.reviewCount} 次` });
-        wordMeta.createEl('span', { cls: 'meta-item', text: `🎯 难度 ${item.difficulty}/4` });
-        wordMeta.createEl('span', { cls: 'meta-item', text: `📅 添加于 ${new Date(item.createdAt).toLocaleDateString()}` });
+        wordMeta.createSpan({ cls: 'meta-item', text: `📊 复习 ${item.reviewCount} 次` });
+        wordMeta.createSpan({ cls: 'meta-item', text: `🎯 难度 ${item.difficulty}/4` });
+        wordMeta.createSpan({ cls: 'meta-item', text: `📅 添加于 ${new Date(item.createdAt).toLocaleDateString()}` });
 
         if (item.nextReview) {
             const nextReviewDate = new Date(item.nextReview);
             const isOverdue = nextReviewDate.getTime() <= now;
-            wordMeta.createEl('span', { cls: `meta-item ${isOverdue ? 'overdue' : ''}`, text: `⏰ ${isOverdue ? '已到期' : '下次复习'}: ${nextReviewDate.toLocaleDateString()}` });
+            wordMeta.createSpan({ cls: `meta-item ${isOverdue ? 'overdue' : ''}`, text: `⏰ ${isOverdue ? '已到期' : '下次复习'}: ${nextReviewDate.toLocaleDateString()}` });
         }
 
         // 标签
         if (item.tags && item.tags.length > 0) {
             const tagsDiv = wordContent.createDiv({ cls: 'polyglot-vocab-tags' });
             item.tags.forEach(tag => {
-                tagsDiv.createEl('span', { text: tag, cls: 'polyglot-tag' });
+                tagsDiv.createSpan({ text: tag, cls: 'polyglot-tag' });
             });
         }
 
@@ -526,7 +526,7 @@ export class ManagementPanelView extends ItemView {
             title: '删除',
             cls: 'polyglot-btn-small polyglot-btn-danger'
         });
-        deleteBtn.addEventListener('click', () => this.deleteVocabularyItem(item.word));
+        deleteBtn.addEventListener('click', fire(() => this.deleteVocabularyItem(item.word)));
     }
 
     private async exportVocabulary() {
@@ -537,7 +537,7 @@ export class ManagementPanelView extends ItemView {
             await this.plugin.app.vault.create(fileName, exportData);
             new Notice(`✅ 词汇库已导出到 ${fileName}`);
         } catch (error) {
-            new Notice(`❌ 导出失败: ${error.message}`);
+            new Notice(`❌ 导出失败: ${errorMessage(error)}`);
         }
     }
 
@@ -555,7 +555,7 @@ export class ManagementPanelView extends ItemView {
 
     private startReview() {
         // 打开复习视图
-        this.plugin.app.workspace.getLeaf(false).setViewState({
+        void this.plugin.app.workspace.getLeaf(false).setViewState({
             type: POLYGLOT_REVIEW_VIEW_TYPE,
             active: true,
         });
@@ -597,15 +597,15 @@ export class ManagementPanelView extends ItemView {
         const basicStats = container.createDiv({ cls: 'polyglot-learning-stats' });
         const stats = this.plugin.settings.learningStats;
 
-        basicStats.createEl('div', {
+        basicStats.createDiv({
             text: `📚 总词汇量: ${stats.totalWords}`,
             cls: 'polyglot-stat-card'
         });
-        basicStats.createEl('div', {
+        basicStats.createDiv({
             text: `🔥 连续学习: ${stats.streakDays} 天`,
             cls: 'polyglot-stat-card'
         });
-        basicStats.createEl('div', {
+        basicStats.createDiv({
             text: `📝 总复习次数: ${stats.totalReviews}`,
             cls: 'polyglot-stat-card'
         });
@@ -622,17 +622,17 @@ export class ManagementPanelView extends ItemView {
             const status = achievement.achieved ? '✅' : '⏳';
             const progress = achievement.progress ? Math.round(achievement.progress) : 0;
 
-            achievementItem.createEl('span', { text: status, cls: 'polyglot-achievement-status' });
-            achievementItem.createEl('span', { text: achievement.name, cls: 'polyglot-achievement-name' });
-            achievementItem.createEl('span', { text: achievement.description, cls: 'polyglot-achievement-desc' });
+            achievementItem.createSpan({ text: status, cls: 'polyglot-achievement-status' });
+            achievementItem.createSpan({ text: achievement.name, cls: 'polyglot-achievement-name' });
+            achievementItem.createSpan({ text: achievement.description, cls: 'polyglot-achievement-desc' });
 
             if (!achievement.achieved && achievement.progress) {
                 const progressBar = achievementItem.createDiv({ cls: 'polyglot-progress-bar' });
-                const progressFill = progressBar.createDiv({
+                progressBar.createDiv({
                     cls: 'polyglot-progress-fill',
                     attr: { style: `width: ${progress}%` }
                 });
-                achievementItem.createEl('span', { text: `${progress}%`, cls: 'polyglot-progress-text' });
+                achievementItem.createSpan({ text: `${progress}%`, cls: 'polyglot-progress-text' });
             }
         });
 
@@ -645,8 +645,8 @@ export class ManagementPanelView extends ItemView {
 
         mastery.forEach(level => {
             const levelItem = masteryChart.createDiv({ cls: 'polyglot-mastery-item' });
-            levelItem.createEl('span', { text: level.level, cls: 'polyglot-mastery-label' });
-            levelItem.createEl('span', { text: `${level.count} (${level.percentage}%)`, cls: 'polyglot-mastery-value' });
+            levelItem.createSpan({ text: level.level, cls: 'polyglot-mastery-label' });
+            levelItem.createSpan({ text: `${level.count} (${level.percentage}%)`, cls: 'polyglot-mastery-value' });
 
             const bar = levelItem.createDiv({ cls: 'polyglot-mastery-bar' });
             bar.createDiv({
@@ -663,7 +663,7 @@ export class ManagementPanelView extends ItemView {
         const recommendationsList = recommendationsSection.createDiv({ cls: 'polyglot-recommendations-list' });
 
         recommendations.forEach(rec => {
-            recommendationsList.createEl('div', { text: rec, cls: 'polyglot-recommendation-item' });
+            recommendationsList.createDiv({ text: rec, cls: 'polyglot-recommendation-item' });
         });
 
         // 操作按钮
@@ -671,17 +671,17 @@ export class ManagementPanelView extends ItemView {
 
         const reviewBtn = actions.createEl('button', { text: '📚 开始复习' });
         reviewBtn.addEventListener('click', () => {
-            this.plugin.activateReviewView();
+            void this.plugin.activateReviewView();
         });
 
         const resetBtn = actions.createEl('button', { text: '🔄 重置学习数据', cls: 'danger' });
-        resetBtn.addEventListener('click', async () => {
+        resetBtn.addEventListener('click', fire(async () => {
             const confirmed = confirm('确定要重置所有学习数据吗？此操作不可恢复！');
             if (confirmed) {
                 await this.plugin.learningTracker.resetLearningData();
                 this.renderPanel();
             }
-        });
+        }));
     }
 
     private renderCacheTab(container: HTMLElement) {
@@ -691,32 +691,32 @@ export class ManagementPanelView extends ItemView {
         const statsSection = container.createDiv({ cls: 'polyglot-cache-stats' });
 
         // 获取缓存统计（异步）
-        this.updateCacheStats(statsSection);
+        void this.updateCacheStats(statsSection);
 
         // 缓存操作
         const actions = container.createDiv({ cls: 'polyglot-cache-actions' });
 
         // 清理翻译缓存按钮
         const clearTranslationBtn = actions.createEl('button', { text: '📝 清理翻译缓存' });
-        clearTranslationBtn.addEventListener('click', async () => {
+        clearTranslationBtn.addEventListener('click', fire(async () => {
             try {
                 await this.plugin.clearTranslationCache();
-                this.updateCacheStats(statsSection);
+                void this.updateCacheStats(statsSection);
             } catch (error) {
-                new Notice(`清理翻译缓存失败: ${error.message}`);
+                new Notice(`清理翻译缓存失败: ${errorMessage(error)}`);
             }
-        });
+        }));
 
         // 清理音频缓存按钮
         const clearAudioBtn = actions.createEl('button', { text: '🎵 清理音频缓存' });
-        clearAudioBtn.addEventListener('click', async () => {
+        clearAudioBtn.addEventListener('click', fire(async () => {
             try {
                 await this.plugin.clearAudioCache();
-                this.updateCacheStats(statsSection);
+                void this.updateCacheStats(statsSection);
             } catch (error) {
-                new Notice(`清理音频缓存失败: ${error.message}`);
+                new Notice(`清理音频缓存失败: ${errorMessage(error)}`);
             }
-        });
+        }));
 
         // 智能清理按钮
         const smartCleanBtn = actions.createEl('button', { text: '🧠 智能清理' });
@@ -727,28 +727,28 @@ export class ManagementPanelView extends ItemView {
 
         // 清理所有缓存按钮
         const clearAllBtn = actions.createEl('button', { text: '🗑️ 清理所有缓存' });
-        clearAllBtn.addEventListener('click', async () => {
+        clearAllBtn.addEventListener('click', fire(async () => {
             try {
                 await this.plugin.clearAllCache();
-                this.updateCacheStats(statsSection);
+                void this.updateCacheStats(statsSection);
             } catch (error) {
-                new Notice(`清理失败: ${error.message}`);
+                new Notice(`清理失败: ${errorMessage(error)}`);
             }
-        });
+        }));
 
         const clearExpiredBtn = actions.createEl('button', { text: '🗑️ 清理过期缓存' });
-        clearExpiredBtn.addEventListener('click', async () => {
+        clearExpiredBtn.addEventListener('click', fire(async () => {
             try {
                 await this.plugin.clearExpiredCache(24);
-                this.updateCacheStats(statsSection);
+                void this.updateCacheStats(statsSection);
             } catch (error) {
-                new Notice(`清理失败: ${error.message}`);
+                new Notice(`清理失败: ${errorMessage(error)}`);
             }
-        });
+        }));
 
         const refreshBtn = actions.createEl('button', { text: '🔄 刷新统计' });
         refreshBtn.addEventListener('click', () => {
-            this.updateCacheStats(statsSection);
+            void this.updateCacheStats(statsSection);
         });
 
         // 缓存设置
@@ -764,13 +764,13 @@ export class ManagementPanelView extends ItemView {
         });
 
         const applyBtn = autoCleanSetting.createEl('button', { text: '应用' });
-        applyBtn.addEventListener('click', async () => {
+        applyBtn.addEventListener('click', fire(async () => {
             const hours = parseInt(autoCleanInput.value);
             if (hours > 0) {
                 await this.plugin.clearExpiredCache(hours);
-                this.updateCacheStats(statsSection);
+                void this.updateCacheStats(statsSection);
             }
-        });
+        }));
     }
 
     private async updateCacheStats(container: HTMLElement) {
@@ -791,14 +791,14 @@ export class ManagementPanelView extends ItemView {
 
             {
                 const host = overviewGrid.createDiv({ cls: 'polyglot-stat-card' });
-                host.createEl('div', { cls: 'stat-number', text: `${stats.total}` });
-                host.createEl('div', { cls: 'stat-label', text: '总文件数' });
+                host.createDiv({ cls: 'stat-number', text: `${stats.total}` });
+                host.createDiv({ cls: 'stat-label', text: '总文件数' });
             }
 
             {
                 const host = overviewGrid.createDiv({ cls: 'polyglot-stat-card' });
-                host.createEl('div', { cls: 'stat-number', text: `${this.formatFileSize(stats.totalSize)}` });
-                host.createEl('div', { cls: 'stat-label', text: '总大小' });
+                host.createDiv({ cls: 'stat-number', text: `${this.formatFileSize(stats.totalSize)}` });
+                host.createDiv({ cls: 'stat-label', text: '总大小' });
             }
 
             // 类型分布统计
@@ -815,10 +815,10 @@ export class ManagementPanelView extends ItemView {
 
                 {
                     const host = typeGrid.createDiv({ cls: 'polyglot-stat-card' });
-                    host.createEl('div', { cls: 'stat-icon', text: `${icon}` });
-                    host.createEl('div', { cls: 'stat-number', text: `${count}` });
-                    host.createEl('div', { cls: 'stat-label', text: `${label}` });
-                    host.createEl('div', { cls: 'stat-size', text: `${this.formatFileSize(typeSize)}` });
+                    host.createDiv({ cls: 'stat-icon', text: `${icon}` });
+                    host.createDiv({ cls: 'stat-number', text: `${count}` });
+                    host.createDiv({ cls: 'stat-label', text: `${label}` });
+                    host.createDiv({ cls: 'stat-size', text: `${this.formatFileSize(typeSize)}` });
                 }
             });
 
@@ -833,9 +833,9 @@ export class ManagementPanelView extends ItemView {
                 const categorySize = categoryItems.reduce((sum, item) => sum + item.size, 0);
 
                 const categoryItem = categoryList.createDiv({ cls: 'polyglot-category-item' });
-                categoryItem.createEl('span', { cls: 'category-name', text: `${category}` });
-                categoryItem.createEl('span', { cls: 'category-count', text: `${count} 个文件` });
-                categoryItem.createEl('span', { cls: 'category-size', text: `${this.formatFileSize(categorySize)}` });
+                categoryItem.createSpan({ cls: 'category-name', text: `${category}` });
+                categoryItem.createSpan({ cls: 'category-count', text: `${count} 个文件` });
+                categoryItem.createSpan({ cls: 'category-size', text: `${this.formatFileSize(categorySize)}` });
             });
 
             // 时间分布统计
@@ -847,8 +847,8 @@ export class ManagementPanelView extends ItemView {
 
             Object.entries(timeStats).forEach(([period, count]) => {
                 const timeItem = timeList.createDiv({ cls: 'polyglot-time-item' });
-                timeItem.createEl('span', { cls: 'time-period', text: `${period}` });
-                timeItem.createEl('span', { cls: 'time-count', text: `${count} 个文件` });
+                timeItem.createSpan({ cls: 'time-period', text: `${period}` });
+                timeItem.createSpan({ cls: 'time-count', text: `${count} 个文件` });
             });
 
             // 内存缓存统计
@@ -859,8 +859,8 @@ export class ManagementPanelView extends ItemView {
             const memoryGrid = memorySection.createDiv({ cls: 'polyglot-stats-grid' });
             {
                 const host = memoryGrid.createDiv({ cls: 'polyglot-stat-card' });
-                host.createEl('div', { cls: 'stat-number', text: `${memoryStats.size}` });
-                host.createEl('div', { cls: 'stat-label', text: '缓存项数' });
+                host.createDiv({ cls: 'stat-number', text: `${memoryStats.size}` });
+                host.createDiv({ cls: 'stat-label', text: '缓存项数' });
             }
 
             // 音频缓存统计
@@ -871,17 +871,17 @@ export class ManagementPanelView extends ItemView {
             const audioGrid = audioSection.createDiv({ cls: 'polyglot-stats-grid' });
             {
                 const host = audioGrid.createDiv({ cls: 'polyglot-stat-card' });
-                host.createEl('div', { cls: 'stat-number', text: `${audioStats.size}` });
-                host.createEl('div', { cls: 'stat-label', text: '音频缓存项' });
+                host.createDiv({ cls: 'stat-number', text: `${audioStats.size}` });
+                host.createDiv({ cls: 'stat-label', text: '音频缓存项' });
             }
 
         } catch (error) {
-            container.createEl('div', { text: '获取缓存统计失败', cls: 'polyglot-error' });
+            container.createDiv({ text: '获取缓存统计失败', cls: 'polyglot-error' });
             this.plugin.logger.error('获取缓存统计失败', error);
         }
     }
 
-    private calculateTimeDistribution(items: any[]): Record<string, number> {
+    private calculateTimeDistribution(items: { lastModified: number }[]): Record<string, number> {
         const now = Date.now();
         const timeRanges = {
             '今天': 0,
@@ -925,7 +925,7 @@ class AddVocabularyModal extends Modal {
     plugin: PolyglotHelper;
     onSubmit: () => void;
 
-    constructor(app: any, plugin: PolyglotHelper, onSubmit: () => void) {
+    constructor(app: App, plugin: PolyglotHelper, onSubmit: () => void) {
         super(app);
         this.plugin = plugin;
         this.onSubmit = onSubmit;
@@ -1010,7 +1010,7 @@ class SingleWordReviewModal extends Modal {
     item: VocabularyItem;
     onSubmit: () => void;
 
-    constructor(app: any, plugin: PolyglotHelper, item: VocabularyItem, onSubmit: () => void) {
+    constructor(app: App, plugin: PolyglotHelper, item: VocabularyItem, onSubmit: () => void) {
         super(app);
         this.plugin = plugin;
         this.item = item;
@@ -1067,12 +1067,12 @@ class SingleWordReviewModal extends Modal {
                 text: rating.text,
                 cls: rating.cls
             });
-            btn.addEventListener('click', async () => {
+            btn.addEventListener('click', fire(async () => {
                 await this.plugin.learningTracker.recordReview(this.item.word, rating.value);
                 new Notice(`已记录复习结果: ${rating.text}`);
                 this.close();
                 this.onSubmit();
-            });
+            }));
         });
     }
 
@@ -1087,7 +1087,7 @@ class ImportVocabularyModal extends Modal {
     plugin: PolyglotHelper;
     onSubmit: () => void;
 
-    constructor(app: any, plugin: PolyglotHelper, onSubmit: () => void) {
+    constructor(app: App, plugin: PolyglotHelper, onSubmit: () => void) {
         super(app);
         this.plugin = plugin;
         this.onSubmit = onSubmit;
@@ -1115,13 +1115,12 @@ class ImportVocabularyModal extends Modal {
 
                     try {
                         const text = await file.text();
-                        const data = JSON.parse(text);
-                        await this.plugin.learningTracker.importVocabulary(data);
+                        await this.plugin.learningTracker.importVocabulary(text);
                         new Notice('导入成功');
                         this.close();
                         this.onSubmit();
                     } catch (error) {
-                        new Notice(`导入失败: ${error.message}`);
+                        new Notice(`导入失败: ${errorMessage(error)}`);
                     }
                 }))
             .addButton(btn => btn
@@ -1140,7 +1139,7 @@ class EditVocabularyModal extends Modal {
     item: VocabularyItem;
     onSubmit: () => void;
 
-    constructor(app: any, plugin: PolyglotHelper, item: VocabularyItem, onSubmit: () => void) {
+    constructor(app: App, plugin: PolyglotHelper, item: VocabularyItem, onSubmit: () => void) {
         super(app);
         this.plugin = plugin;
         this.item = item;
@@ -1227,7 +1226,7 @@ class AddJapaneseVocabularyModal extends Modal {
     plugin: PolyglotHelper;
     onSubmit: () => void;
 
-    constructor(app: any, plugin: PolyglotHelper, onSubmit: () => void) {
+    constructor(app: App, plugin: PolyglotHelper, onSubmit: () => void) {
         super(app);
         this.plugin = plugin;
         this.onSubmit = onSubmit;
@@ -1334,7 +1333,7 @@ class AddEnglishVocabularyModal extends Modal {
     plugin: PolyglotHelper;
     onSubmit: () => void;
 
-    constructor(app: any, plugin: PolyglotHelper, onSubmit: () => void) {
+    constructor(app: App, plugin: PolyglotHelper, onSubmit: () => void) {
         super(app);
         this.plugin = plugin;
         this.onSubmit = onSubmit;
@@ -1439,10 +1438,10 @@ class AddEnglishVocabularyModal extends Modal {
 // 日语复习模态框
 class JapaneseReviewModal extends Modal {
     plugin: PolyglotHelper;
-    item: any; // JapaneseVocabularyItem
+    item: JapaneseVocabularyItem;
     onSubmit: () => void;
 
-    constructor(app: any, plugin: PolyglotHelper, item: any, onSubmit: () => void) {
+    constructor(app: App, plugin: PolyglotHelper, item: JapaneseVocabularyItem, onSubmit: () => void) {
         super(app);
         this.plugin = plugin;
         this.item = item;
@@ -1503,7 +1502,7 @@ class JapaneseReviewModal extends Modal {
                 text: rating.text,
                 cls: rating.cls
             });
-            btn.addEventListener('click', async () => {
+            btn.addEventListener('click', fire(async () => {
                 await this.plugin.learningTracker.recordJapaneseReview(
                     this.item.originalText,
                     this.item.japaneseText,
@@ -1512,7 +1511,7 @@ class JapaneseReviewModal extends Modal {
                 new Notice(`已记录复习结果: ${rating.text}`);
                 this.close();
                 this.onSubmit();
-            });
+            }));
         });
     }
 
@@ -1525,10 +1524,10 @@ class JapaneseReviewModal extends Modal {
 // 英语复习模态框
 class EnglishReviewModal extends Modal {
     plugin: PolyglotHelper;
-    item: any; // EnglishVocabularyItem
+    item: EnglishVocabularyItem;
     onSubmit: () => void;
 
-    constructor(app: any, plugin: PolyglotHelper, item: any, onSubmit: () => void) {
+    constructor(app: App, plugin: PolyglotHelper, item: EnglishVocabularyItem, onSubmit: () => void) {
         super(app);
         this.plugin = plugin;
         this.item = item;
@@ -1591,12 +1590,12 @@ class EnglishReviewModal extends Modal {
                 text: rating.text,
                 cls: rating.cls
             });
-            btn.addEventListener('click', async () => {
+            btn.addEventListener('click', fire(async () => {
                 await this.plugin.learningTracker.recordEnglishReview(this.item.word, rating.value);
                 new Notice(`已记录复习结果: ${rating.text}`);
                 this.close();
                 this.onSubmit();
-            });
+            }));
         });
     }
 
@@ -1627,7 +1626,7 @@ ManagementPanelView.prototype.renderJapaneseVocabulary = function(this: Manageme
     const reviewBtn = actions.createEl('button', { text: '📖 开始日语复习', cls: 'polyglot-btn-success' });
     reviewBtn.addEventListener('click', () => {
         // 打开复习视图并设置为日语模式
-        this.plugin.app.workspace.getLeaf(false).setViewState({
+        void this.plugin.app.workspace.getLeaf(false).setViewState({
             type: POLYGLOT_REVIEW_VIEW_TYPE,
             active: true,
         });
@@ -1635,24 +1634,24 @@ ManagementPanelView.prototype.renderJapaneseVocabulary = function(this: Manageme
 
     // 统计信息
     const stats = container.createDiv({ cls: 'polyglot-vocab-stats' });
-    const el1 = stats.createEl('div', { cls: 'polyglot-stat-card' });
-    el1.createEl('div', { cls: 'stat-number', text: `${japaneseVocab.length}` });
-    el1.createEl('div', { cls: 'stat-label', text: '日语词汇总数' });
-    const el2 = stats.createEl('div', { cls: 'polyglot-stat-card' });
-    el2.createEl('div', { cls: 'stat-number', text: `${japaneseVocab.filter(item => !item.nextReview || item.nextReview <= Date.now()).length}` });
-    el2.createEl('div', { cls: 'stat-label', text: '待复习' });
-    const el3 = stats.createEl('div', { cls: 'polyglot-stat-card' });
-    el3.createEl('div', { cls: 'stat-number', text: `${japaneseVocab.filter(item => item.reviewCount === 0).length}` });
-    el3.createEl('div', { cls: 'stat-label', text: '新词汇' });
+    const el1 = stats.createDiv({ cls: 'polyglot-stat-card' });
+    el1.createDiv({ cls: 'stat-number', text: `${japaneseVocab.length}` });
+    el1.createDiv({ cls: 'stat-label', text: '日语词汇总数' });
+    const el2 = stats.createDiv({ cls: 'polyglot-stat-card' });
+    el2.createDiv({ cls: 'stat-number', text: `${japaneseVocab.filter(item => !item.nextReview || item.nextReview <= Date.now()).length}` });
+    el2.createDiv({ cls: 'stat-label', text: '待复习' });
+    const el3 = stats.createDiv({ cls: 'polyglot-stat-card' });
+    el3.createDiv({ cls: 'stat-number', text: `${japaneseVocab.filter(item => item.reviewCount === 0).length}` });
+    el3.createDiv({ cls: 'stat-label', text: '新词汇' });
 
     // 词汇列表
     const vocabList = container.createDiv({ cls: 'polyglot-vocab-list' });
 
     if (japaneseVocab.length === 0) {
         const emptyState = vocabList.createDiv({ cls: 'polyglot-empty-state' });
-        emptyState.createEl('div', { cls: 'empty-icon', text: '🇯🇵' });
-        emptyState.createEl('div', { cls: 'empty-title', text: '还没有日语词汇' });
-        emptyState.createEl('div', { cls: 'empty-subtitle', text: '开始分析日语文本来自动添加词汇吧！' });
+        emptyState.createDiv({ cls: 'empty-icon', text: '🇯🇵' });
+        emptyState.createDiv({ cls: 'empty-title', text: '还没有日语词汇' });
+        emptyState.createDiv({ cls: 'empty-subtitle', text: '开始分析日语文本来自动添加词汇吧！' });
         return;
     }
 
@@ -1668,7 +1667,7 @@ ManagementPanelView.prototype.renderJapaneseVocabulary = function(this: Manageme
         textDiv.createEl('p', { text: item.japaneseText, cls: 'japanese-text' });
 
         if (item.reading) {
-            textDiv.createEl('span', { text: item.reading, cls: 'reading' });
+            textDiv.createSpan({ text: item.reading, cls: 'reading' });
         }
 
         // 翻译
@@ -1679,7 +1678,7 @@ ManagementPanelView.prototype.renderJapaneseVocabulary = function(this: Manageme
         const metaDiv = itemEl.createDiv({ cls: 'polyglot-vocab-meta' });
 
         // 复习状态
-        const statusSpan = metaDiv.createEl('span', { cls: 'polyglot-vocab-status' });
+        const statusSpan = metaDiv.createSpan({ cls: 'polyglot-vocab-status' });
         if (item.reviewCount === 0) {
             statusSpan.setText('新词汇');
             statusSpan.addClass('status-new');
@@ -1695,13 +1694,13 @@ ManagementPanelView.prototype.renderJapaneseVocabulary = function(this: Manageme
         const actionsDiv = metaDiv.createDiv({ cls: 'polyglot-vocab-actions' });
 
         const playBtn = actionsDiv.createEl('button', { text: '🔊', cls: 'polyglot-btn-icon' });
-        playBtn.addEventListener('click', async () => {
+        playBtn.addEventListener('click', fire(async () => {
             try {
                 await this.plugin.playJapaneseVoice(item.japaneseText, false);
-            } catch (error) {
+            } catch {
                 new Notice('音频播放失败');
             }
-        });
+        }));
 
         const reviewBtn = actionsDiv.createEl('button', { text: '📖', cls: 'polyglot-btn-icon' });
         reviewBtn.addEventListener('click', () => {
@@ -1711,13 +1710,13 @@ ManagementPanelView.prototype.renderJapaneseVocabulary = function(this: Manageme
         });
 
         const deleteBtn = actionsDiv.createEl('button', { text: '🗑️', cls: 'polyglot-btn-icon danger' });
-        deleteBtn.addEventListener('click', async () => {
+        deleteBtn.addEventListener('click', fire(async () => {
             const confirmed = confirm(`确定要删除日语词汇 "${item.originalText}" 吗？`);
             if (confirmed) {
                 await this.plugin.learningTracker.removeJapaneseVocabularyItem(item.originalText, item.japaneseText);
                 this.renderJapaneseVocabulary(container);
             }
-        });
+        }));
     });
 };
 
@@ -1741,7 +1740,7 @@ ManagementPanelView.prototype.renderEnglishVocabulary = function(this: Managemen
     const reviewBtn = actions.createEl('button', { text: '📖 开始英语复习', cls: 'polyglot-btn-success' });
     reviewBtn.addEventListener('click', () => {
         // 打开复习视图并设置为英语模式
-        this.plugin.app.workspace.getLeaf(false).setViewState({
+        void this.plugin.app.workspace.getLeaf(false).setViewState({
             type: POLYGLOT_REVIEW_VIEW_TYPE,
             active: true,
         });
@@ -1749,24 +1748,24 @@ ManagementPanelView.prototype.renderEnglishVocabulary = function(this: Managemen
 
     // 统计信息
     const stats = container.createDiv({ cls: 'polyglot-vocab-stats' });
-    const el1 = stats.createEl('div', { cls: 'polyglot-stat-card' });
-    el1.createEl('div', { cls: 'stat-number', text: `${englishVocab.length}` });
-    el1.createEl('div', { cls: 'stat-label', text: '英语单词总数' });
-    const el2 = stats.createEl('div', { cls: 'polyglot-stat-card' });
-    el2.createEl('div', { cls: 'stat-number', text: `${englishVocab.filter(item => !item.nextReview || item.nextReview <= Date.now()).length}` });
-    el2.createEl('div', { cls: 'stat-label', text: '待复习' });
-    const el3 = stats.createEl('div', { cls: 'polyglot-stat-card' });
-    el3.createEl('div', { cls: 'stat-number', text: `${englishVocab.filter(item => item.reviewCount === 0).length}` });
-    el3.createEl('div', { cls: 'stat-label', text: '新单词' });
+    const el1 = stats.createDiv({ cls: 'polyglot-stat-card' });
+    el1.createDiv({ cls: 'stat-number', text: `${englishVocab.length}` });
+    el1.createDiv({ cls: 'stat-label', text: '英语单词总数' });
+    const el2 = stats.createDiv({ cls: 'polyglot-stat-card' });
+    el2.createDiv({ cls: 'stat-number', text: `${englishVocab.filter(item => !item.nextReview || item.nextReview <= Date.now()).length}` });
+    el2.createDiv({ cls: 'stat-label', text: '待复习' });
+    const el3 = stats.createDiv({ cls: 'polyglot-stat-card' });
+    el3.createDiv({ cls: 'stat-number', text: `${englishVocab.filter(item => item.reviewCount === 0).length}` });
+    el3.createDiv({ cls: 'stat-label', text: '新单词' });
 
     // 词汇列表
     const vocabList = container.createDiv({ cls: 'polyglot-vocab-list' });
 
     if (englishVocab.length === 0) {
         const emptyState = vocabList.createDiv({ cls: 'polyglot-empty-state' });
-        emptyState.createEl('div', { cls: 'empty-icon', text: '🇺🇸' });
-        emptyState.createEl('div', { cls: 'empty-title', text: '还没有英语单词' });
-        emptyState.createEl('div', { cls: 'empty-subtitle', text: '开始分析英语文本来自动添加单词吧！' });
+        emptyState.createDiv({ cls: 'empty-icon', text: '🇺🇸' });
+        emptyState.createDiv({ cls: 'empty-title', text: '还没有英语单词' });
+        emptyState.createDiv({ cls: 'empty-subtitle', text: '开始分析英语文本来自动添加单词吧！' });
         return;
     }
 
@@ -1781,11 +1780,11 @@ ManagementPanelView.prototype.renderEnglishVocabulary = function(this: Managemen
         textDiv.createEl('h4', { text: item.word, cls: 'english-word' });
 
         if (item.phonetics) {
-            textDiv.createEl('span', { text: `[${item.phonetics}]`, cls: 'phonetics' });
+            textDiv.createSpan({ text: `[${item.phonetics}]`, cls: 'phonetics' });
         }
 
         if (item.partOfSpeech) {
-            textDiv.createEl('span', { text: item.partOfSpeech, cls: 'part-of-speech' });
+            textDiv.createSpan({ text: item.partOfSpeech, cls: 'part-of-speech' });
         }
 
         // 翻译
@@ -1796,7 +1795,7 @@ ManagementPanelView.prototype.renderEnglishVocabulary = function(this: Managemen
         const metaDiv = itemEl.createDiv({ cls: 'polyglot-vocab-meta' });
 
         // 复习状态
-        const statusSpan = metaDiv.createEl('span', { cls: 'polyglot-vocab-status' });
+        const statusSpan = metaDiv.createSpan({ cls: 'polyglot-vocab-status' });
         if (item.reviewCount === 0) {
             statusSpan.setText('新单词');
             statusSpan.addClass('status-new');
@@ -1812,13 +1811,13 @@ ManagementPanelView.prototype.renderEnglishVocabulary = function(this: Managemen
         const actionsDiv = metaDiv.createDiv({ cls: 'polyglot-vocab-actions' });
 
         const playBtn = actionsDiv.createEl('button', { text: '🔊', cls: 'polyglot-btn-icon' });
-        playBtn.addEventListener('click', async () => {
+        playBtn.addEventListener('click', fire(async () => {
             try {
                 await this.plugin.playEnglishVoice(item.word, false);
-            } catch (error) {
+            } catch {
                 new Notice('音频播放失败');
             }
-        });
+        }));
 
         const reviewBtn = actionsDiv.createEl('button', { text: '📖', cls: 'polyglot-btn-icon' });
         reviewBtn.addEventListener('click', () => {
@@ -1828,13 +1827,13 @@ ManagementPanelView.prototype.renderEnglishVocabulary = function(this: Managemen
         });
 
         const deleteBtn = actionsDiv.createEl('button', { text: '🗑️', cls: 'polyglot-btn-icon danger' });
-        deleteBtn.addEventListener('click', async () => {
+        deleteBtn.addEventListener('click', fire(async () => {
             const confirmed = confirm(`确定要删除英语单词 "${item.word}" 吗？`);
             if (confirmed) {
                 await this.plugin.learningTracker.removeEnglishVocabularyItem(item.word);
                 this.renderEnglishVocabulary(container);
             }
-        });
+        }));
     });
 };
 
@@ -1853,7 +1852,7 @@ ManagementPanelView.prototype.renderFavoriteVocabulary = function(this: Manageme
     const reviewBtn = actions.createEl('button', { text: '📖 复习收藏词汇', cls: 'polyglot-btn-success' });
     reviewBtn.addEventListener('click', () => {
         // 打开复习视图
-        this.plugin.app.workspace.getLeaf(false).setViewState({
+        void this.plugin.app.workspace.getLeaf(false).setViewState({
             type: POLYGLOT_REVIEW_VIEW_TYPE,
             active: true,
         });
@@ -1861,24 +1860,24 @@ ManagementPanelView.prototype.renderFavoriteVocabulary = function(this: Manageme
 
     // 统计信息
     const stats = container.createDiv({ cls: 'polyglot-vocab-stats' });
-    const el1 = stats.createEl('div', { cls: 'polyglot-stat-card' });
-    el1.createEl('div', { cls: 'stat-number', text: `${totalFavorites}` });
-    el1.createEl('div', { cls: 'stat-label', text: '收藏总数' });
-    const el2 = stats.createEl('div', { cls: 'polyglot-stat-card' });
-    el2.createEl('div', { cls: 'stat-number', text: `${japaneseVocab.length}` });
-    el2.createEl('div', { cls: 'stat-label', text: '日语收藏' });
-    const el3 = stats.createEl('div', { cls: 'polyglot-stat-card' });
-    el3.createEl('div', { cls: 'stat-number', text: `${englishVocab.length}` });
-    el3.createEl('div', { cls: 'stat-label', text: '英语收藏' });
+    const el1 = stats.createDiv({ cls: 'polyglot-stat-card' });
+    el1.createDiv({ cls: 'stat-number', text: `${totalFavorites}` });
+    el1.createDiv({ cls: 'stat-label', text: '收藏总数' });
+    const el2 = stats.createDiv({ cls: 'polyglot-stat-card' });
+    el2.createDiv({ cls: 'stat-number', text: `${japaneseVocab.length}` });
+    el2.createDiv({ cls: 'stat-label', text: '日语收藏' });
+    const el3 = stats.createDiv({ cls: 'polyglot-stat-card' });
+    el3.createDiv({ cls: 'stat-number', text: `${englishVocab.length}` });
+    el3.createDiv({ cls: 'stat-label', text: '英语收藏' });
 
     // 词汇列表
     const vocabList = container.createDiv({ cls: 'polyglot-vocab-list' });
 
     if (totalFavorites === 0) {
         const emptyState = vocabList.createDiv({ cls: 'polyglot-empty-state' });
-        emptyState.createEl('div', { cls: 'empty-icon', text: '💖' });
-        emptyState.createEl('div', { cls: 'empty-title', text: '还没有收藏的词汇' });
-        emptyState.createEl('div', { cls: 'empty-subtitle', text: '在复习时点击收藏按钮来添加收藏吧！' });
+        emptyState.createDiv({ cls: 'empty-icon', text: '💖' });
+        emptyState.createDiv({ cls: 'empty-title', text: '还没有收藏的词汇' });
+        emptyState.createDiv({ cls: 'empty-subtitle', text: '在复习时点击收藏按钮来添加收藏吧！' });
         return;
     }
 
@@ -1898,7 +1897,7 @@ ManagementPanelView.prototype.renderFavoriteVocabulary = function(this: Manageme
             textDiv.createEl('p', { text: item.japaneseText, cls: 'japanese-text' });
 
             if (item.reading) {
-                textDiv.createEl('span', { text: item.reading, cls: 'reading' });
+                textDiv.createSpan({ text: item.reading, cls: 'reading' });
             }
 
             // 翻译
@@ -1909,22 +1908,22 @@ ManagementPanelView.prototype.renderFavoriteVocabulary = function(this: Manageme
             const actionsDiv = itemEl.createDiv({ cls: 'polyglot-vocab-actions' });
 
             const playBtn = actionsDiv.createEl('button', { text: '🔊', cls: 'polyglot-btn-icon' });
-            playBtn.addEventListener('click', async () => {
+            playBtn.addEventListener('click', fire(async () => {
                 try {
                     await this.plugin.playJapaneseVoice(item.japaneseText, false);
-                } catch (error) {
+                } catch {
                     new Notice('音频播放失败');
                 }
-            });
+            }));
 
             const unfavoriteBtn = actionsDiv.createEl('button', { text: '💔', cls: 'polyglot-btn-icon' });
-            unfavoriteBtn.addEventListener('click', async () => {
+            unfavoriteBtn.addEventListener('click', fire(async () => {
                 await this.plugin.learningTracker.updateJapaneseVocabularyItem(item.originalText, item.japaneseText, {
                     isFavorite: false
                 });
                 this.renderFavoriteVocabulary(container);
                 new Notice('已取消收藏');
-            });
+            }));
         });
     }
 
@@ -1942,11 +1941,11 @@ ManagementPanelView.prototype.renderFavoriteVocabulary = function(this: Manageme
             textDiv.createEl('h4', { text: item.word, cls: 'english-word' });
 
             if (item.phonetics) {
-                textDiv.createEl('span', { text: `[${item.phonetics}]`, cls: 'phonetics' });
+                textDiv.createSpan({ text: `[${item.phonetics}]`, cls: 'phonetics' });
             }
 
             if (item.partOfSpeech) {
-                textDiv.createEl('span', { text: item.partOfSpeech, cls: 'part-of-speech' });
+                textDiv.createSpan({ text: item.partOfSpeech, cls: 'part-of-speech' });
             }
 
             // 翻译
@@ -1957,22 +1956,22 @@ ManagementPanelView.prototype.renderFavoriteVocabulary = function(this: Manageme
             const actionsDiv = itemEl.createDiv({ cls: 'polyglot-vocab-actions' });
 
             const playBtn = actionsDiv.createEl('button', { text: '🔊', cls: 'polyglot-btn-icon' });
-            playBtn.addEventListener('click', async () => {
+            playBtn.addEventListener('click', fire(async () => {
                 try {
                     await this.plugin.playEnglishVoice(item.word, false);
-                } catch (error) {
+                } catch {
                     new Notice('音频播放失败');
                 }
-            });
+            }));
 
             const unfavoriteBtn = actionsDiv.createEl('button', { text: '💔', cls: 'polyglot-btn-icon' });
-            unfavoriteBtn.addEventListener('click', async () => {
+            unfavoriteBtn.addEventListener('click', fire(async () => {
                 await this.plugin.learningTracker.updateEnglishVocabularyItem(item.word, {
                     isFavorite: false
                 });
                 this.renderFavoriteVocabulary(container);
                 new Notice('已取消收藏');
-            });
+            }));
         });
     }
 };

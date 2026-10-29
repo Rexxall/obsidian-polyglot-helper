@@ -1,11 +1,11 @@
-const test = require('node:test');
-const assert = require('node:assert/strict');
-const vm = require('node:vm');
-const path = require('node:path');
-const esbuild = require('esbuild');
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import path from 'node:path';
+import esbuild from 'esbuild';
 
 function load(entry) {
-  const code = esbuild.buildSync({ entryPoints: [path.join(__dirname, entry)], bundle: true, write: false, platform: 'node', format: 'cjs', external: ['obsidian'] }).outputFiles[0].text;
+  const code = esbuild.buildSync({ entryPoints: [path.join(import.meta.dirname, entry)], bundle: true, write: false, platform: 'node', format: 'cjs', external: ['obsidian'] }).outputFiles[0].text;
   const module = { exports: {} };
   vm.runInNewContext(code, { module, exports: module.exports, require: () => ({}), console });
   return module.exports;

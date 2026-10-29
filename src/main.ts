@@ -1,9 +1,9 @@
-import { Editor, MarkdownView, Notice, Plugin, ItemView, WorkspaceLeaf, TFile, normalizePath, requestUrl } from 'obsidian';
-import { PolyglotHelperSettings, HistoryItem } from './types';
+import { Editor, MarkdownView, Notice, Plugin, TFile, normalizePath, requestUrl } from 'obsidian';
+import { PolyglotHelperSettings, HistoryItem, SimpleVocabularyItem } from './types';
 import { runEnglishProcess } from './english-processor';
-import { getChineseTranslationTS } from './apis/llm';
-import { getJapaneseSimpleTranslationTS } from './apis/japanese-translation';
-import { Logger, LogLevel } from './shared/Logger';
+import { chatContent, getChineseTranslationTS } from './apis/llm';
+
+import { Logger } from './shared/Logger';
 import { EncryptedSettings } from './shared/EncryptedSettings';
 import { JapaneseProcessor } from './japanese-processor';
 import { handlePriorityOutput, addQueryToHistory } from './utils';
@@ -13,7 +13,7 @@ import { getFromCache, saveToCache } from './cache';
 import { LearningTracker } from './learning-tracker';
 import { SimpleVocabView, SIMPLE_VOCAB_VIEW_TYPE } from './simple-vocab-view';
 import { PerformanceOptimizer } from './performance-optimizer';
-import { getTtsAudioTS } from './apis/tts';
+
 import { AudioCacheManager } from './audio-cache';
 import { CacheManager } from './cache-manager';
 import { PolyglotReviewView, POLYGLOT_REVIEW_VIEW_TYPE } from './review-view';
@@ -23,6 +23,8 @@ import { LookupPopover, sentenceAround } from './lookup-popover';
 import { LEGACY_PLUGIN_ID, readLegacyPluginData } from './legacy-migration';
 import { collectCards, toAnkiText, toFlashcardNote } from './vocab-export';
 
+import { fire } from './shared/fire';
+import { errorMessage } from './shared/errors';
 // --- Interfaces and Defaults ---
 const DEFAULT_SETTINGS: PolyglotHelperSettings = {
 	// General Settings
@@ -192,7 +194,7 @@ const DEFAULT_SETTINGS: PolyglotHelperSettings = {
 
 // Deep copy, so editing settings (e.g. an API key inside apiConfigs) never changes DEFAULT_SETTINGS itself.
 export function freshDefaultSettings(): PolyglotHelperSettings {
-	return JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+	return JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) as PolyglotHelperSettings;
 }
 
 // --- Main Plugin Class ---
@@ -244,7 +246,7 @@ export default class PolyglotHelper extends Plugin {
 				this.learningTracker = new LearningTracker(this.app, this.settings, this.saveSettings.bind(this));
 				
 				// 延迟初始化复杂组件
-				setTimeout(() => {
+				window.setTimeout(() => {
 					try {
 						this.performanceOptimizer = new PerformanceOptimizer(this.app, this);
 						this.japaneseProcessor = new JapaneseProcessor(this.app, this.settings, this.logger, pluginDir, this.audioCacheManager);
@@ -260,7 +262,7 @@ export default class PolyglotHelper extends Plugin {
 				this.learningTracker = new LearningTracker(this.app, this.settings, this.saveSettings.bind(this));
 				this.performanceOptimizer = new PerformanceOptimizer(this.app, this);
 				
-				setTimeout(() => {
+				window.setTimeout(() => {
 					try {
 						this.japaneseProcessor = new JapaneseProcessor(this.app, this.settings, this.logger, pluginDir, this.audioCacheManager);
 						this.logger.info("Polyglot Helper plugin loaded successfully on desktop.");
@@ -300,12 +302,12 @@ export default class PolyglotHelper extends Plugin {
 
 		// 添加主视图按钮
 		this.addRibbonIcon('book-a', 'Polyglot 助手', () => {
-			this.activateView();
+			void this.activateView();
 		});
 
 		// 添加管理面板侧边栏按钮
 		this.addRibbonIcon('library-big', '打开 Polyglot 管理面板', () => {
-			this.activateManagementPanel();
+			void this.activateManagementPanel();
 		});
 
 		this.setupDueStatus();
@@ -332,7 +334,7 @@ export default class PolyglotHelper extends Plugin {
 			editorCallback: (editor: Editor, view: MarkdownView) => {
 				const query = editor.getSelection()?.trim();
 				if (query) {
-					this.processEnglish(query, this.settings.forceRefresh, view.file, { from: editor.getCursor('from'), to: editor.getCursor('to') });
+					void this.processEnglish(query, this.settings.forceRefresh, view.file, { from: editor.getCursor('from'), to: editor.getCursor('to') });
 				} else {
 					new Notice("请先选中文本。");
 				}
@@ -345,7 +347,7 @@ export default class PolyglotHelper extends Plugin {
 			editorCallback: (editor: Editor, view: MarkdownView) => {
 				const query = editor.getSelection()?.trim();
 				if (query) {
-					this.processJapanese(query, this.settings.forceRefresh, view.file, { from: editor.getCursor('from'), to: editor.getCursor('to') });
+					void this.processJapanese(query, this.settings.forceRefresh, view.file, { from: editor.getCursor('from'), to: editor.getCursor('to') });
 				} else {
 					new Notice("请先选中文本。");
 				}
@@ -361,7 +363,7 @@ export default class PolyglotHelper extends Plugin {
 				if (!text) {
 					try {
 						text = await navigator.clipboard.readText();
-					} catch (error) {
+					} catch {
 						new Notice("无法读取剪贴板，请先选中文本。");
 						return;
 					}
@@ -370,7 +372,7 @@ export default class PolyglotHelper extends Plugin {
 					new Notice("没有选中文本，剪贴板也为空。");
 					return;
 				}
-				this.processQuickEnglish(text, false);
+				void this.processQuickEnglish(text, false);
 			}
 		});
 
@@ -382,7 +384,7 @@ export default class PolyglotHelper extends Plugin {
 				if (!text) {
 					try {
 						text = await navigator.clipboard.readText();
-					} catch (error) {
+					} catch {
 						new Notice("无法读取剪贴板，请先选中文本。");
 						return;
 					}
@@ -391,7 +393,7 @@ export default class PolyglotHelper extends Plugin {
 					new Notice("没有选中文本，剪贴板也为空。");
 					return;
 				}
-				this.processQuickJapanese(text, false);
+				void this.processQuickJapanese(text, false);
 			}
 		});
 
@@ -400,7 +402,7 @@ export default class PolyglotHelper extends Plugin {
 			id: 'open-polyglot-panel',
 			name: '打开助手面板',
 			callback: () => {
-				this.activateView();
+				void this.activateView();
 			}
 		});
 
@@ -408,7 +410,7 @@ export default class PolyglotHelper extends Plugin {
 			id: 'open-simple-vocab',
 			name: '打开词汇库',
 			callback: () => {
-				this.activateSimpleVocabView();
+				void this.activateSimpleVocabView();
 			}
 		});
 
@@ -416,7 +418,7 @@ export default class PolyglotHelper extends Plugin {
 			id: 'open-polyglot-tab',
 			name: '在新标签页打开助手',
 			callback: () => {
-				this.activateViewInNewTab();
+				void this.activateViewInNewTab();
 			}
 		});
 
@@ -465,7 +467,7 @@ export default class PolyglotHelper extends Plugin {
 								new Notice("无法获取翻译，请手动添加。");
 							}
 						} catch (e) {
-							new Notice("添加单词失败：" + e.message);
+							new Notice("添加单词失败：" + errorMessage(e));
 							this.logger.error("添加单词失败", e);
 						}
 					}
@@ -488,7 +490,7 @@ export default class PolyglotHelper extends Plugin {
 					new Notice("🎵 正在生成语音...");
 					await this.playJapaneseVoice(selectedText);
 				} catch (error) {
-					new Notice(`语音播放失败: ${error.message}`);
+					new Notice(`语音播放失败: ${errorMessage(error)}`);
 					this.logger.error("语音播放失败", error);
 				}
 			}
@@ -514,7 +516,7 @@ export default class PolyglotHelper extends Plugin {
 				try {
 					await this.clearAllCache();
 				} catch (error) {
-					new Notice(`❌ 清理缓存失败: ${error.message}`);
+					new Notice(`❌ 清理缓存失败: ${errorMessage(error)}`);
 				}
 			}
 		});
@@ -602,7 +604,7 @@ export default class PolyglotHelper extends Plugin {
 
 		const leaf = this.app.workspace.getLeavesOfType(POLYGLOT_HELPER_VIEW_TYPE)?.[0];
 		if (leaf) {
-			this.app.workspace.revealLeaf(leaf);
+			void this.app.workspace.revealLeaf(leaf);
 		}
 	}
 
@@ -619,7 +621,7 @@ export default class PolyglotHelper extends Plugin {
 
 		const leaf = this.app.workspace.getLeavesOfType(MANAGEMENT_PANEL_VIEW_TYPE)?.[0];
 		if (leaf) {
-			this.app.workspace.revealLeaf(leaf);
+			void this.app.workspace.revealLeaf(leaf);
 		}
 	}
 
@@ -636,7 +638,7 @@ export default class PolyglotHelper extends Plugin {
 
 		const leaf = this.app.workspace.getLeavesOfType(SIMPLE_VOCAB_VIEW_TYPE)?.[0];
 		if (leaf) {
-			this.app.workspace.revealLeaf(leaf);
+			void this.app.workspace.revealLeaf(leaf);
 		}
 	}
 
@@ -648,7 +650,7 @@ export default class PolyglotHelper extends Plugin {
 				type: POLYGLOT_HELPER_VIEW_TYPE,
 				active: true,
 			});
-			this.app.workspace.revealLeaf(leaf);
+			void this.app.workspace.revealLeaf(leaf);
 		}
 	}
 
@@ -697,7 +699,7 @@ export default class PolyglotHelper extends Plugin {
 				}
 			}
 		} catch (e) {
-			new Notice(`处理失败: ${e.message}`);
+			new Notice(`处理失败: ${errorMessage(e)}`);
 			this.logger.error("Error in processEnglish", e);
 		}
 	}
@@ -783,7 +785,7 @@ export default class PolyglotHelper extends Plugin {
 			}
 		} catch (e) {
 			this.logger.error("处理日语时出错", e);
-			new Notice(`处理失败: ${e.message}`);
+			new Notice(`处理失败: ${errorMessage(e)}`);
 		}
 	}
 
@@ -832,13 +834,13 @@ export default class PolyglotHelper extends Plugin {
 				);
 
 				// 直接在侧边栏显示结果（使用专门的快速翻译显示方法）
-				const view = this.app.workspace.getLeavesOfType('polyglot-helper-view')[0]?.view as any;
-				if (view && view.displayQuickTranslationResult) {
+				const view = this.app.workspace.getLeavesOfType(POLYGLOT_HELPER_VIEW_TYPE)[0]?.view;
+				if (view instanceof PolyglotHelperView) {
 					view.displayQuickTranslationResult(query, result, false, "→汉");
 				}
 			}
 		} catch (e) {
-			new Notice(`翻译失败: ${e.message}`);
+			new Notice(`翻译失败: ${errorMessage(e)}`);
 			this.logger.error("Error in processQuickEnglish", e);
 		}
 	}
@@ -887,7 +889,7 @@ export default class PolyglotHelper extends Plugin {
 				);
 			}
 		} catch (e) {
-			new Notice(`翻译失败: ${e.message}`);
+			new Notice(`翻译失败: ${errorMessage(e)}`);
 			this.logger.error("Error in processQuickEnglishWithTargetFile", e);
 		}
 	}
@@ -923,7 +925,7 @@ export default class PolyglotHelper extends Plugin {
 				japaneseTranslation = rich?.jp || await this.translateToJapanese(query);
 				// 获取纯假名读音，并优先使用 LLM 提供的 romaji
 				let reading: string | null = await this.getJapaneseReading(japaneseTranslation || '');
-				const romajiFromLLM: string | undefined = (rich && (rich as any).romaji) ? (rich as any).romaji : undefined;
+				const romajiFromLLM: string | undefined = rich?.romaji || undefined;
 				// 写入缓存（与日语分析使用的同一子目录/键）
 				if (japaneseTranslation && this.manifest.dir) {
 					await saveToCache(
@@ -957,7 +959,9 @@ export default class PolyglotHelper extends Plugin {
 										await saveToCache(this.app, this.manifest.dir, 'japanese', `quick_${query}`, { translation: japaneseTranslation, reading: readingNow, romaji: '', audioFilePath: null });
 									}
 								}
-							} catch {}
+							} catch {
+								// 取读音失败时退回用译文本身转罗马音
+							}
 						}
 						const { kanaToRomaji } = await import('./utils');
 						precomputedRomaji = kanaToRomaji(kana && kana.trim().length > 0 ? kana : japaneseTranslation);
@@ -1008,25 +1012,25 @@ export default class PolyglotHelper extends Plugin {
 				new Notice(`✅ 翻译完成: ${query} → ${japaneseTranslation}`);
 
 				// 直接在侧边栏显示结果（使用专门的快速翻译显示方法）
-				const view = this.app.workspace.getLeavesOfType('polyglot-helper-view')[0]?.view as any;
-				if (view && view.displayQuickTranslationResult) {
+				const view = this.app.workspace.getLeavesOfType(POLYGLOT_HELPER_VIEW_TYPE)[0]?.view;
+				if (view instanceof PolyglotHelperView) {
 					view.displayQuickTranslationResult(query, japaneseTranslation, false, "→日", precomputedRomaji);
 				}
 
 				// 如果开启了"快速翻译播放音频"开关，则后台生成并播放语音
 				if (this.settings.quickTranslationOptions?.playAudio) {
 					// 异步后台生成并播放
-					setTimeout(async () => {
+					window.setTimeout(fire(async () => {
 						try {
 							// 检查TTS配置
 							if (ttsEngine === 'openai' && (!this.settings.openaiTtsApiKey || !this.settings.openaiTtsBaseUrl)) return;
 							if (ttsEngine === 'youdao' && (!this.settings.youdaoAppKey || !this.settings.youdaoAppSecret)) return;
 							
-							await this.playJapaneseVoice(japaneseTranslation!, this.settings.forceRefreshAudio);
+							await this.playJapaneseVoice(japaneseTranslation ?? '', this.settings.forceRefreshAudio);
 						} catch (error) {
 							console.error('Quick JP voice generation failed:', error);
 						}
-					}, 100);
+					}), 100);
 				}
 			} else {
 				processingNotice.hide();
@@ -1035,7 +1039,7 @@ export default class PolyglotHelper extends Plugin {
 		} catch (error) {
 			processingNotice.hide();
 			this.logger.error("快捷日语翻译失败", error);
-			new Notice(`翻译失败: ${error.message}`);
+			new Notice(`翻译失败: ${errorMessage(error)}`);
 		}
 	}
 
@@ -1094,7 +1098,7 @@ export default class PolyglotHelper extends Plugin {
 			const word = query.trim().split(/\s+/)[0].toLowerCase();
 
 			// 从结果中提取音标
-			const phoneticMatch = result.match(/\[([^\]]+)\]|\/([^\/]+)\//);
+			const phoneticMatch = result.match(/\[([^\]]+)\]|\/([^/]+)\//);
 			const phonetics = phoneticMatch ? (phoneticMatch[1] || phoneticMatch[2]) : '';
 
 			// 提取词性
@@ -1202,7 +1206,7 @@ export default class PolyglotHelper extends Plugin {
 	/**
 	 * 通用翻译方法（供性能优化器调用）
 	 */
-	async translateText(text: string, options: any = {}): Promise<string | null> {
+	async translateText(text: string, options: { type?: string; force?: boolean } = {}): Promise<string | null> {
 		const { type = 'auto', force = false } = options;
 
 		try {
@@ -1235,7 +1239,7 @@ Japanese text: "${text}"`;
 				});
 
 				if (response.status === 200) {
-					return response.json.choices[0].message.content.trim();
+					return chatContent(response).trim();
 				} else {
 					this.logger.error(`Translation API request failed with status ${response.status}`, { response: response.text });
 					return null;
@@ -1266,7 +1270,7 @@ English text: "${text}"`;
 				});
 
 				if (response.status === 200) {
-					return response.json.choices[0].message.content.trim();
+					return chatContent(response).trim();
 				} else {
 					this.logger.error(`Translation API request failed with status ${response.status}`, { response: response.text });
 					return null;
@@ -1355,7 +1359,7 @@ Input text: "${inputText}"`;
 			});
 
 			if (response.status === 200) {
-				let translation = response.json.choices[0].message.content.trim();
+				let translation = chatContent(response).trim();
 				// 语言校验：必须包含日文字符（平假名/片假名/汉字），否则重试一次
 				const hasJapanese = /[\u3040-\u30FF\u4E00-\u9FFF]/.test(translation);
 				if (!hasJapanese) {
@@ -1375,7 +1379,7 @@ Input text: "${inputText}"`;
 						body: JSON.stringify({ model: apiConfig.model, messages: strictMessages, temperature: 0.0 })
 					});
 					if (retry.status === 200) {
-						translation = retry.json.choices[0].message.content.trim();
+						translation = chatContent(retry).trim();
 					}
 				}
 				this.logger.info('翻译成功', { original: inputText, translation });
@@ -1386,7 +1390,7 @@ Input text: "${inputText}"`;
 			}
 		} catch (error) {
 			this.logger.error('翻译失败', {
-				error: error.message,
+				error: errorMessage(error),
 				text: inputText,
 				apiConfigured: !!(this.settings.englishLlmApiKey && this.settings.englishLlmBaseUrl)
 			});
@@ -1408,9 +1412,8 @@ Input text: "${inputText}"`;
 				{ role: 'user', content: prompt }
 			];
 
-			const body: any = { model: apiConfig.model, messages, temperature: 0.0 };
 			// 要求 JSON 输出（支持 OpenAI 兼容）
-			body.response_format = { type: 'json_object' };
+			const body = { model: apiConfig.model, messages, temperature: 0.0, response_format: { type: 'json_object' } };
 
 			const res = await requestUrl({
 				url: apiConfig.baseUrl,
@@ -1420,13 +1423,15 @@ Input text: "${inputText}"`;
 			});
 
 			if (res.status === 200) {
-				let raw = res.json.choices?.[0]?.message?.content?.trim() || '';
+				let raw = chatContent(res).trim();
 				try {
 					// 去掉围栏
 					raw = raw.replace(/```(?:json)?\s*([\s\S]*?)\s*```/g, '$1');
-					const data = JSON.parse(raw);
+					const data = JSON.parse(raw) as { jp?: unknown; romaji?: unknown } | null;
 					if (typeof data?.jp === 'string') return { jp: data.jp.trim(), romaji: typeof data.romaji === 'string' ? data.romaji.trim() : undefined };
-				} catch {}
+				} catch {
+					// 模型没按 JSON 回答，交给调用方走普通翻译
+				}
 			}
 			return null;
 		} catch (e) {
@@ -1456,7 +1461,7 @@ Input text: "${inputText}"`;
 				body: JSON.stringify({ model: apiConfig.model, messages, temperature: 0.0 })
 			});
 			if (res.status === 200) {
-				const kana = (res.json.choices?.[0]?.message?.content || '').trim();
+				const kana = chatContent(res).trim();
 				// 仅保留假名
 				if (/^[\u3040-\u30FF\s]+$/.test(kana)) return kana;
 				return kana.replace(/[^\u3040-\u30FF\s]/g, '').trim() || null;
@@ -1534,11 +1539,11 @@ Input text: "${inputText}"`;
 	 */
 	private createMobileAudioPlayer(audio: HTMLAudioElement, text: string, audioUrl: string): void {
 		// 创建一个临时的播放按钮
-		const playButton = document.createElement('button');
+		const playButton = createEl('button');
 		playButton.textContent = `🔊 播放: ${text}`;
 		playButton.className = 'polyglot-mobile-play';
 
-		playButton.addEventListener('click', async () => {
+		playButton.addEventListener('click', fire(async () => {
 			try {
 				await audio.play();
 				playButton.remove();
@@ -1547,10 +1552,10 @@ Input text: "${inputText}"`;
 				console.error('Mobile audio play failed:', error);
 				new Notice('❌ 音频播放失败');
 			}
-		});
+		}));
 
 		// 5秒后自动移除按钮
-		setTimeout(() => {
+		window.setTimeout(() => {
 			if (playButton.parentNode) {
 				playButton.remove();
 				URL.revokeObjectURL(audioUrl);
@@ -1634,7 +1639,7 @@ Input text: "${inputText}"`;
 
         switch (item.type) {
             case 'english':
-			case 'japanese':
+			case 'japanese': {
 				const activeSections = Object.entries(sectionsToUse || {})
                     .filter(([, isActive]) => isActive)
                     .map(([key]) => key)
@@ -1642,12 +1647,13 @@ Input text: "${inputText}"`;
                 cacheKey = `${item.query}-${activeSections}`;
 				if (item.type === 'japanese') subfolder = 'japanese';
                 break;
+			}
             case 'quick_english':
                 cacheKey = `quick_${item.query}`;
                 break;
 
             default:
-				this.logger.info(`Unknown history item type: ${(item as any).type}`);
+				this.logger.info(`Unknown history item type: ${String((item as { type?: unknown }).type)}`);
                 return null;
         }
 
@@ -1655,14 +1661,14 @@ Input text: "${inputText}"`;
 
 		if (item.type === 'japanese') {
 			// 日语分析缓存的是对象格式，需要特殊处理
-			const cachedResult = await getFromCache<any>(this.app, this.manifest.dir, subfolder, cacheKey);
+			const cachedResult = await getFromCache<{ original?: string; markdown?: string; colloquial?: string }>(this.app, this.manifest.dir, subfolder, cacheKey);
 			if (cachedResult && cachedResult.original && cachedResult.markdown) {
 				// 重新构建完整的结果格式
 				const kihonkeiMatch = cachedResult.markdown.match(/> - \*\*基本形:\*\* (.*)/);
 				let titlePart = kihonkeiMatch ? kihonkeiMatch[1].trim() : null;
 				if (!titlePart) {
 					const colloquialBoldMatch = cachedResult.colloquial?.match(/\*\*(.*?)\*\*/);
-					titlePart = colloquialBoldMatch ? colloquialBoldMatch[1] : cachedResult.colloquial;
+					titlePart = colloquialBoldMatch ? colloquialBoldMatch[1] : (cachedResult.colloquial ?? null);
 				}
 
 				const header = `## ${cachedResult.original} - ${titlePart}`;
@@ -1835,7 +1841,7 @@ Input text: "${inputText}"`;
 	/** Key material lives in this device's local storage, never in data.json. */
 	private getDeviceKey(): string {
 		const id = 'polyglot-helper-device-key';
-		const saved = this.app.loadLocalStorage(id);
+		const saved: unknown = this.app.loadLocalStorage(id);
 		if (typeof saved === 'string' && saved.length >= 32) return saved;
 		const bytes = crypto.getRandomValues(new Uint8Array(32));
 		const key = btoa(String.fromCharCode(...bytes));
@@ -1865,9 +1871,10 @@ Input text: "${inputText}"`;
 		const es = this.secureSettings;
 		if (!es) return;
 		for (const key of this.ENCRYPTED_FLAT_FIELDS) {
-			const val = (this.settings as any)[key];
+			const fields = this.settings as unknown as Record<string, unknown>;
+			const val = fields[key];
 			if (typeof val === 'string' && es.isEncryptedValue(val)) {
-				(this.settings as any)[key] = await this.decryptOne(val);
+				fields[key] = await this.decryptOne(val);
 			}
 		}
 		for (const config of this.settings.apiConfigs) {
@@ -1885,7 +1892,7 @@ Input text: "${inputText}"`;
 		if (!es) return false;
 		if (this.settingsNeedSave) return true;
 		for (const key of this.ENCRYPTED_FLAT_FIELDS) {
-			const val = (this.settings as any)[key];
+			const val = (this.settings as unknown as Record<string, unknown>)[key];
 			if (typeof val === 'string' && val.length > 0 && !es.isEncryptedValue(val)) return true;
 		}
 		for (const config of this.settings.apiConfigs) {
@@ -1899,9 +1906,10 @@ Input text: "${inputText}"`;
 		const copy = { ...this.settings };
 		if (!es) return copy;
 		for (const key of this.ENCRYPTED_FLAT_FIELDS) {
-			const val = (copy as any)[key];
+			const fields = copy as unknown as Record<string, unknown>;
+			const val = fields[key];
 			if (typeof val === 'string' && val.length > 0 && !es.isEncryptedValue(val)) {
-				(copy as any)[key] = await es.encryptValue(val);
+				fields[key] = await es.encryptValue(val);
 			}
 		}
 		copy.apiConfigs = await Promise.all(copy.apiConfigs.map(async config => ({
@@ -2024,7 +2032,7 @@ Input text: "${inputText}"`;
 	/**
 	 * 获取缓存统计信息
 	 */
-	getCacheStats(): { fileCache: any; memoryCache: any; audioCache: any } {
+	getCacheStats() {
 		return {
 			fileCache: this.getFileCacheStats(),
 			memoryCache: this.performanceOptimizer.getCacheStats(),
@@ -2053,13 +2061,13 @@ Input text: "${inputText}"`;
 						totalSize += stat.size;
 						fileCount++;
 					}
-				} catch (error) {
+				} catch {
 					// 忽略单个文件的错误
 				}
 			}
 
 			return { size: totalSize, files: fileCount };
-		} catch (error) {
+		} catch {
 			return { size: 0, files: 0 };
 		}
 	}
@@ -2084,13 +2092,13 @@ Input text: "${inputText}"`;
 						await this.app.vault.adapter.remove(file);
 						deletedCount++;
 					}
-				} catch (error) {
+				} catch {
 					// 忽略单个文件的错误
 				}
 			}
 
 			new Notice(`✅ 已清理 ${deletedCount} 个过期缓存文件`);
-		} catch (error) {
+		} catch {
 			new Notice("❌ 清理过期缓存失败");
 		}
 	}
@@ -2121,7 +2129,7 @@ Input text: "${inputText}"`;
 	/**
 	 * 获取简化的词汇库
 	 */
-	getSimpleVocabulary(): Record<string, any> {
+	getSimpleVocabulary(): Record<string, SimpleVocabularyItem> {
 		return this.settings.simpleVocabulary || {};
 	}
 

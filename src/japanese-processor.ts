@@ -1,14 +1,15 @@
-import { App, Editor, Notice } from 'obsidian';
-import { PolyglotHelperSettings } from './types';
+import { App, Notice } from 'obsidian';
+import { ApiConfig, PolyglotHelperSettings } from './types';
 import { Logger } from './shared/Logger';
 import { getJapaneseTranslationTS, getJapaneseSimpleTranslationTS } from './apis/japanese-translation';
-import { getTtsAudioTS } from './apis/tts';
-import { getJishoInfoTS } from './apis/jisho';
-import { handleOutput, addQueryToHistory, sleep } from './utils';
+
+
+import { sleep } from './utils';
 import { getFromCache, saveToCache } from './cache';
-import { cleanFileName, generateUniqueFileName, generateConsistentFileName } from './file-utils';
+import { cleanFileName } from './file-utils';
 import { AudioCacheManager } from './audio-cache';
 
+import { errorMessage } from './shared/errors';
 export class JapaneseProcessor {
     constructor(
         private app: App,
@@ -103,7 +104,7 @@ export class JapaneseProcessor {
         return this.audioCacheManager.getCacheStats();
     }
 
-    async runJapaneseProcess(query: string, force: boolean, apiConfig?: any, saveSettings?: () => Promise<void>, currentFilePath?: string): Promise<{ original: string; colloquial: string; markdown: string } | null> {
+    async runJapaneseProcess(query: string, force: boolean, apiConfig?: ApiConfig, saveSettings?: () => Promise<void>, currentFilePath?: string): Promise<{ original: string; colloquial: string; markdown: string } | null> {
         const sentence = query;
         if (!sentence) {
             new Notice("查询内容为空。");
@@ -163,7 +164,7 @@ export class JapaneseProcessor {
         } catch (error) {
             notice.hide();
             this.logger.error("处理日语时出错", error);
-            new Notice(`处理失败: ${error.message}`);
+            new Notice(`处理失败: ${errorMessage(error)}`);
             return null;
         }
     }
@@ -171,7 +172,7 @@ export class JapaneseProcessor {
     /**
      * 处理多行日语输入，按每行单独处理并显示进度
      */
-    private async runMultiLineJapaneseProcess(lines: string[], force: boolean, apiConfig?: any, saveSettings?: () => Promise<void>, currentFilePath?: string): Promise<{ original: string; colloquial: string; markdown: string } | null> {
+    private async runMultiLineJapaneseProcess(lines: string[], force: boolean, apiConfig?: ApiConfig, saveSettings?: () => Promise<void>, currentFilePath?: string): Promise<{ original: string; colloquial: string; markdown: string } | null> {
         const total = lines.length;
         
         // 创建进度通知
@@ -226,7 +227,7 @@ export class JapaneseProcessor {
         } catch (error) {
             progressNotice.hide();
             this.logger.error("处理多行日语时出错", error);
-            new Notice(`处理失败: ${error.message}`);
+            new Notice(`处理失败: ${errorMessage(error)}`);
             return null;
         }
     }
@@ -234,7 +235,7 @@ export class JapaneseProcessor {
     /**
      * 处理单个日语单词/短语
      */
-    private async runSingleLineJapaneseProcess(line: string, force: boolean, apiConfig?: any): Promise<{ original: string; colloquial: string; markdown: string } | null> {
+    private async runSingleLineJapaneseProcess(line: string, force: boolean, apiConfig?: ApiConfig): Promise<{ original: string; colloquial: string; markdown: string } | null> {
         try {
             const activeJapaneseSections = Object.entries(this.settings.japaneseSections)
                 .filter(([, isActive]) => isActive)
@@ -368,7 +369,7 @@ export class JapaneseProcessor {
         return null;
     }
 
-    async runQuickJapaneseTranslation(query: string, force: boolean, apiConfig?: any): Promise<{ translation: string; reading: string; audioFilePath: string | null } | null> {
+    async runQuickJapaneseTranslation(query: string, force: boolean, apiConfig?: ApiConfig): Promise<{ translation: string; reading: string; audioFilePath: string | null } | null> {
         const notice = new Notice("正在获取日语快捷翻译...", 0);
         try {
             if (!force) {
@@ -405,7 +406,7 @@ export class JapaneseProcessor {
         } catch (error) {
             notice.hide();
             this.logger.error("处理日语快捷翻译时出错", error);
-            new Notice(`处理失败: ${error.message}`);
+            new Notice(`处理失败: ${errorMessage(error)}`);
             return null;
         }
     }

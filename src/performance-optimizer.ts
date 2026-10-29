@@ -12,7 +12,7 @@ export class PerformanceOptimizer {
     private logger: Logger;
     private isInitialized: boolean = false;
     private performanceMetrics: Map<string, number> = new Map();
-    private simpleCache: Map<string, any> = new Map();
+    private simpleCache: Map<string, string> = new Map();
 
     constructor(app: App, plugin: PolyglotHelper) {
         this.app = app;
@@ -98,7 +98,7 @@ export class PerformanceOptimizer {
                 }
                 
                 this.logger.warn(`操作失败，第 ${attempt + 1} 次重试`, error);
-                await new Promise(resolve => setTimeout(resolve, delay * (attempt + 1)));
+                await new Promise(resolve => window.setTimeout(resolve, delay * (attempt + 1)));
             }
         }
         
@@ -116,7 +116,7 @@ export class PerformanceOptimizer {
     /**
      * 获取缓存统计信息
      */
-    getCacheStats(): any {
+    getCacheStats(): { size: number; hitRate: number; lastCleanup: number } {
         return {
             size: this.simpleCache.size,
             hitRate: 0, // 简化实现
@@ -159,7 +159,7 @@ export class PerformanceOptimizer {
     /**
      * 优化的翻译方法 (简化版本)
      */
-    async optimizedTranslation(text: string, options: any = {}): Promise<string | null> {
+    async optimizedTranslation(text: string, options: { type?: string; force?: boolean } = {}): Promise<string | null> {
         if (!this.isInitialized) {
             this.logger.warn('性能优化器未初始化，使用直接翻译');
             return await this.plugin.translateText(text, options);
