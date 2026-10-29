@@ -10,7 +10,7 @@
 - Debug logs no longer contain API keys or the text you looked up.
 - Long unbroken words and links wrap in results instead of widening the side panel.
 - Settings line up on one left and one right edge: group text, headings, notes and dividers start at the same place, and the setup card in the side panel lines up with the input above it.
-- Switches keep the knob 2px from every edge when off and on; pressing one shows Obsidian's own pressed state.
+- Switches keep the knob 2px from every edge. Pressed, the knob stretches into a capsule inside the track instead of growing past it, then turns round and slides when released; with reduced motion it does not stretch.
 
 ## 1.6.0
 
