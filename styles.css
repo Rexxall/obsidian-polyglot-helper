@@ -142,7 +142,7 @@
 .ap-settings .setting-item:not(.setting-item-heading):has(+ .setting-item-heading),
 .ap-settings .setting-item:not(.setting-item-heading):last-child,
 .ap-settings .setting-item:not(.setting-item-heading):has(+ :not(.setting-item)) { border-bottom-left-radius: var(--ap-r-group); border-bottom-right-radius: var(--ap-r-group); }
-.ap-settings .setting-item-heading { background: none; padding: var(--ap-s6) var(--ap-s1) var(--ap-s2); min-height: 0; }
+.ap-settings .setting-item-heading { background: none; padding: var(--ap-s6) 0 var(--ap-s2); min-height: 0; }
 .ap-settings .setting-item-heading .setting-item-name { font: var(--ap-headline); }
 .ap-settings .setting-item-heading .setting-item-description { padding-top: 4px; }
 .ap-settings .setting-item-name { font: var(--ap-body); }
@@ -1515,7 +1515,7 @@ button.polyglot-page-btn:hover { background: var(--pg-hover); }
 }
 .theme-dark .ap button.polyglot-tab-button.active { background: color-mix(in srgb, var(--text-normal) 16%, var(--ap-page)); }
 .polyglot-settings.ap-settings .polyglot-setting-description {
-    padding: var(--ap-s2) var(--ap-s1) 0;
+    padding: var(--ap-s2) 0 0;
     font: var(--ap-callout);
     color: var(--ap-label-2);
 }
@@ -1687,3 +1687,37 @@ button.polyglot-page-btn:hover { background: var(--pg-hover); }
 .ph-test-result.is-error strong {
   color: var(--text-error);
 }
+
+/* Settings alignment: one left line and one right line.
+   Group text, headings, notes, button rows and hairlines all start at --ap-inset; groups bleed out by
+   the same amount, so controls inside and outside a group end on one right line. From Obsidian 1.13
+   the page is drawn inside a settings row whose card is dropped here. Empty or hidden helpers between
+   rows (status lines, QR boxes) do not split a group. */
+.setting-group .setting-items:has(> .ap-settings) { padding: 0; border: 0; border-radius: 0; background: none; }
+.ap.ap-settings { --ap-inset: var(--ap-s4); padding-inline: var(--ap-inset); }
+.vertical-tab-content.ap.ap-settings { padding-inline: calc(var(--size-4-8, 32px) + var(--ap-inset)); }
+.ap.ap-settings .setting-item:not(.setting-item-heading) { margin-inline: calc(-1 * var(--ap-inset)); padding-inline: var(--ap-inset); border-radius: 0; }
+.ap.ap-settings .setting-item-heading { margin: 0; padding-inline: 0; border: 0; }
+.ap.ap-settings .setting-item:not(.setting-item-heading):is(
+  .setting-item:not(.setting-item-heading) + *,
+  .setting-item:not(.setting-item-heading) + :is(:empty, [style*="display: none"]) + *,
+  .setting-item:not(.setting-item-heading) + :is(:empty, [style*="display: none"]) + :is(:empty, [style*="display: none"]) + *
+)::before { content: ""; display: block; position: absolute; top: 0; left: var(--ap-inset); right: 0; border-top: 0.5px solid var(--ap-sep); }
+.ap.ap-settings .setting-item:not(.setting-item-heading):not(
+  .setting-item:not(.setting-item-heading) + *,
+  .setting-item:not(.setting-item-heading) + :is(:empty, [style*="display: none"]) + *,
+  .setting-item:not(.setting-item-heading) + :is(:empty, [style*="display: none"]) + :is(:empty, [style*="display: none"]) + *
+) { border-top-left-radius: var(--ap-r-group); border-top-right-radius: var(--ap-r-group); }
+.ap.ap-settings .setting-item:not(.setting-item-heading):not(
+  .setting-item:not(.setting-item-heading) + *,
+  .setting-item:not(.setting-item-heading) + :is(:empty, [style*="display: none"]) + *,
+  .setting-item:not(.setting-item-heading) + :is(:empty, [style*="display: none"]) + :is(:empty, [style*="display: none"]) + *
+)::before { content: none; }
+.ap.ap-settings .setting-item:not(.setting-item-heading):not(:has(
+  + .setting-item:not(.setting-item-heading),
+  + :is(:empty, [style*="display: none"]) + .setting-item:not(.setting-item-heading),
+  + :is(:empty, [style*="display: none"]) + :is(:empty, [style*="display: none"]) + .setting-item:not(.setting-item-heading)
+)) { border-bottom-left-radius: var(--ap-r-group); border-bottom-right-radius: var(--ap-r-group); }
+
+/* Side panel: the setup card lines up with the input and the mode row */
+.polyglot-helper-view-container .polyglot-status { margin: var(--ap-s3) 0; }
