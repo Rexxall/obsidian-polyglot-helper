@@ -42,6 +42,7 @@ import { collectCards, toAnkiText, toFlashcardNote } from './vocab-export';
 
 import { fire } from './shared/fire';
 import { errorMessage } from './shared/errors';
+import { tr } from './shared/i18n';
 // --- Interfaces and Defaults ---
 const DEFAULT_SETTINGS: PolyglotHelperSettings = {
 	// General Settings
@@ -235,7 +236,7 @@ export default class PolyglotHelper extends Plugin {
 			console.debug("Polyglot Helper: Logger initialized successfully");
 		} catch (error) {
 			console.error("Failed to initialize logger:", error);
-			new Notice("插件初始化失败：日志系统");
+			new Notice(tr("插件初始化失败：日志系统", "Plugin failed to start: logging"));
 			return;
 		}
 
@@ -280,7 +281,7 @@ export default class PolyglotHelper extends Plugin {
 			
 		} catch (error) {
 			console.error("Failed to initialize core components:", error);
-			new Notice("插件初始化失败：核心组件");
+			new Notice(tr("插件初始化失败：核心组件", "Plugin failed to start: core components"));
 			return;
 		}
 
@@ -320,14 +321,14 @@ export default class PolyglotHelper extends Plugin {
 		// === 查词小卡 ===
 		this.addCommand({
 			id: 'lookup-popover',
-			name: '查词小卡（选中的词）',
+			name: tr('查词小卡（选中的词）', 'Quick word card (selected word)'),
 			editorCallback: (editor: Editor, view: MarkdownView) => this.openLookupPopover(editor, view.file),
 		});
 		this.registerEvent(this.app.workspace.on('editor-menu', (menu, editor, info) => {
 			const selection = editor.getSelection().trim();
 			if (!selection || selection.length > 60 || selection.includes('\n')) return;
 			menu.addItem(item => item
-				.setTitle('查词小卡')
+				.setTitle(tr('查词小卡', 'Quick word card'))
 				.setIcon('book-a')
 				.onClick(() => this.openLookupPopover(editor, info.file)));
 		}));
@@ -335,26 +336,26 @@ export default class PolyglotHelper extends Plugin {
 		// === 核心翻译功能 ===
 		this.addCommand({
 			id: 'analyze-english',
-			name: '英语分析',
+			name: tr('英语分析', 'English analysis'),
 			editorCallback: (editor: Editor, view: MarkdownView) => {
 				const query = editor.getSelection()?.trim();
 				if (query) {
 					void this.processEnglish(query, this.settings.forceRefresh, view.file, { from: editor.getCursor('from'), to: editor.getCursor('to') });
 				} else {
-					new Notice("请先选中文本。");
+					new Notice(tr("请先选中文本。", "Select some text first."));
 				}
 			}
 		});
 
 		this.addCommand({
 			id: 'analyze-japanese',
-			name: '日语分析',
+			name: tr('日语分析', 'Japanese analysis'),
 			editorCallback: (editor: Editor, view: MarkdownView) => {
 				const query = editor.getSelection()?.trim();
 				if (query) {
 					void this.processJapanese(query, this.settings.forceRefresh, view.file, { from: editor.getCursor('from'), to: editor.getCursor('to') });
 				} else {
-					new Notice("请先选中文本。");
+					new Notice(tr("请先选中文本。", "Select some text first."));
 				}
 			}
 		});
@@ -362,19 +363,19 @@ export default class PolyglotHelper extends Plugin {
 		// 拆分为两个独立的快速翻译命令
 		this.addCommand({
 			id: 'quick-translate-to-chinese',
-			name: '快速翻译 → 汉语',
+			name: tr('快速翻译 → 汉语', 'Quick translation → Chinese'),
 			callback: async () => {
 				let text = this.app.workspace.activeEditor?.editor?.getSelection()?.trim();
 				if (!text) {
 					try {
 						text = await navigator.clipboard.readText();
 					} catch {
-						new Notice("无法读取剪贴板，请先选中文本。");
+						new Notice(tr("无法读取剪贴板，请先选中文本。", "Cannot read the clipboard; select some text first."));
 						return;
 					}
 				}
 				if (!text) {
-					new Notice("没有选中文本，剪贴板也为空。");
+					new Notice(tr("没有选中文本，剪贴板也为空。", "No text selected and the clipboard is empty."));
 					return;
 				}
 				void this.processQuickEnglish(text, false);
@@ -383,19 +384,19 @@ export default class PolyglotHelper extends Plugin {
 
 		this.addCommand({
 			id: 'quick-translate-to-japanese',
-			name: '快速翻译 → 日语',
+			name: tr('快速翻译 → 日语', 'Quick translation → Japanese'),
 			callback: async () => {
 				let text = this.app.workspace.activeEditor?.editor?.getSelection()?.trim();
 				if (!text) {
 					try {
 						text = await navigator.clipboard.readText();
 					} catch {
-						new Notice("无法读取剪贴板，请先选中文本。");
+						new Notice(tr("无法读取剪贴板，请先选中文本。", "Cannot read the clipboard; select some text first."));
 						return;
 					}
 				}
 				if (!text) {
-					new Notice("没有选中文本，剪贴板也为空。");
+					new Notice(tr("没有选中文本，剪贴板也为空。", "No text selected and the clipboard is empty."));
 					return;
 				}
 				void this.processQuickJapanese(text, false);
@@ -405,7 +406,7 @@ export default class PolyglotHelper extends Plugin {
 		// === 界面工具 ===
 		this.addCommand({
 			id: 'open-polyglot-panel',
-			name: '打开助手面板',
+			name: tr('打开助手面板', 'Open the helper panel'),
 			callback: () => {
 				void this.activateView();
 			}
@@ -413,7 +414,7 @@ export default class PolyglotHelper extends Plugin {
 
 		this.addCommand({
 			id: 'open-simple-vocab',
-			name: '打开词汇库',
+			name: tr('打开词汇库', 'Open the word list'),
 			callback: () => {
 				void this.activateSimpleVocabView();
 			}
@@ -421,7 +422,7 @@ export default class PolyglotHelper extends Plugin {
 
 		this.addCommand({
 			id: 'open-polyglot-tab',
-			name: '在新标签页打开助手',
+			name: tr('在新标签页打开助手', 'Open the helper in a new tab'),
 			callback: () => {
 				void this.activateViewInNewTab();
 			}
@@ -429,11 +430,11 @@ export default class PolyglotHelper extends Plugin {
 
 		this.addCommand({
 			id: 'toggle-word-selection-mode',
-			name: '切换选词模式',
+			name: tr('切换选词模式', 'Toggle word-selection mode'),
 			callback: async () => {
 				this.settings.wordSelectionMode = !this.settings.wordSelectionMode;
 				await this.saveSettings();
-				new Notice(this.settings.wordSelectionMode ? '✅ 选词模式已开启' : '❌ 选词模式已关闭');
+				new Notice(this.settings.wordSelectionMode ? tr('✅ 选词模式已开启', '✅ Word-selection mode on') : tr('❌ 选词模式已关闭', '❌ Word-selection mode off'));
 				
 				// 触发设置变化事件，更新UI
 				this.app.workspace.trigger('polyglot-settings-change');
@@ -443,11 +444,11 @@ export default class PolyglotHelper extends Plugin {
 		// === 词汇管理 ===
 		this.addCommand({
 			id: 'add-to-vocabulary',
-			name: '添加到词汇库',
+			name: tr('添加到词汇库', 'Add to word list'),
 			editorCallback: async (editor: Editor) => {
 				const selection = editor.getSelection()?.trim();
 				if (!selection) {
-					new Notice("请先选中单词。");
+					new Notice(tr("请先选中单词。", "Select a word first."));
 					return;
 				}
 
@@ -459,7 +460,7 @@ export default class PolyglotHelper extends Plugin {
 				if (word) {
 					if (translation) {
 						await this.addSimpleVocabularyItem(word, translation);
-						new Notice(`已添加单词 "${word}" 到词汇库。`);
+						new Notice(tr(`已添加单词 "${word}" 到词汇库。`, `Added "${word}" to the word list.`));
 					} else {
 						// 如果没有提供翻译，尝试自动翻译
 						try {
@@ -467,9 +468,9 @@ export default class PolyglotHelper extends Plugin {
 							const result = await getChineseTranslationTS(word, this.settings, this.logger, apiConfig);
 							if (result) {
 								await this.addSimpleVocabularyItem(word, result);
-								new Notice(`已添加单词 "${word}" 到词汇库。`);
+								new Notice(tr(`已添加单词 "${word}" 到词汇库。`, `Added "${word}" to the word list.`));
 							} else {
-								new Notice("无法获取翻译，请手动添加。");
+								new Notice(tr("无法获取翻译，请手动添加。", "Could not get a translation; add it by hand."));
 							}
 						} catch (e) {
 							new Notice("添加单词失败：" + errorMessage(e));
@@ -483,19 +484,19 @@ export default class PolyglotHelper extends Plugin {
 		// === 语音功能 ===
 		this.addCommand({
 			id: 'play-voice',
-			name: '播放语音',
+			name: tr('播放语音', 'Play pronunciation'),
 			editorCallback: async (editor: Editor) => {
 				const selectedText = editor.getSelection()?.trim();
 				if (!selectedText) {
-					new Notice("请先选中要播放的文本");
+					new Notice(tr("请先选中要播放的文本", "Select the text to play first"));
 					return;
 				}
 
 				try {
-					new Notice("🎵 正在生成语音...");
+					new Notice(tr("🎵 正在生成语音...", "🎵 Generating speech..."));
 					await this.playJapaneseVoice(selectedText);
 				} catch (error) {
-					new Notice(`语音播放失败: ${errorMessage(error)}`);
+					new Notice(tr(`语音播放失败: ${errorMessage(error)}`, `Could not play the audio: ${errorMessage(error)}`));
 					this.logger.error("语音播放失败", error);
 				}
 			}
@@ -504,31 +505,31 @@ export default class PolyglotHelper extends Plugin {
 		// === 系统工具 ===
 		this.addCommand({
 			id: 'export-vocab-flashcards',
-			name: '导出词库为闪卡笔记（间隔重复插件格式）',
+			name: tr('导出词库为闪卡笔记（间隔重复插件格式）', 'Export word list as flashcard notes (Spaced Repetition format)'),
 			callback: () => void this.exportVocabulary('flashcards'),
 		});
 
 		this.addCommand({
 			id: 'export-vocab-anki',
-			name: '导出词库为 Anki 导入文件',
+			name: tr('导出词库为 Anki 导入文件', 'Export word list as an Anki import file'),
 			callback: () => void this.exportVocabulary('anki'),
 		});
 
 		this.addCommand({
 			id: 'clear-cache',
-			name: '清理缓存',
+			name: tr('清理缓存', 'Clear cache'),
 			callback: async () => {
 				try {
 					await this.clearAllCache();
 				} catch (error) {
-					new Notice(`❌ 清理缓存失败: ${errorMessage(error)}`);
+					new Notice(tr(`❌ 清理缓存失败: ${errorMessage(error)}`, `❌ Could not clear the cache: ${errorMessage(error)}`));
 				}
 			}
 		});
 
 		this.addCommand({
 			id: 'smart-cache-cleanup',
-			name: '智能缓存管理',
+			name: tr('智能缓存管理', 'Smart cache management'),
 			callback: () => {
 				const modal = new CacheCleanupModal(this.app, this.logger, this.manifest.dir || '');
 				modal.open();
@@ -544,7 +545,7 @@ export default class PolyglotHelper extends Plugin {
 	openLookupPopover(editor: Editor, file: TFile | null) {
 		const word = editor.getSelection().trim();
 		if (!word) {
-			new Notice('先选中一个词');
+			new Notice(tr('先选中一个词', 'Select a word first'));
 			return;
 		}
 		const from = editor.getCursor('from');
@@ -666,7 +667,7 @@ export default class PolyglotHelper extends Plugin {
 	async processEnglish(query: string, force: boolean, file: TFile | null, selection?: { from: { line: number, ch: number }, to: { line: number, ch: number } }, opts: ProcessOptions = {}): Promise<ProcessOutcome> {
 		try {
 			if (!this.manifest.dir) {
-				new Notice("致命错误：找不到插件目录。");
+				new Notice(tr("致命错误：找不到插件目录。", "Fatal error: plugin folder not found."));
 				return { status: 'failed', error: new Error('plugin folder missing') };
 			}
 
@@ -707,7 +708,7 @@ export default class PolyglotHelper extends Plugin {
 				return { status: 'done' };
 			}
 		} catch (e) {
-			if (!opts.quiet) new Notice(`处理失败: ${errorMessage(e)}`);
+			if (!opts.quiet) new Notice(tr(`处理失败: ${errorMessage(e)}`, `Failed: ${errorMessage(e)}`));
 			this.logger.error("Error in processEnglish", e);
 			return { status: 'failed', error: e };
 		}
@@ -716,7 +717,7 @@ export default class PolyglotHelper extends Plugin {
 	async processJapanese(query: string, force: boolean, file: TFile | null, selection?: { from: { line: number, ch: number }, to: { line: number, ch: number } }, opts: ProcessOptions = {}): Promise<ProcessOutcome> {
 		if (!this.manifest.dir) {
 			this.logger.error("插件目录未定义，无法处理日语。");
-			new Notice("致命错误：插件目录未找到。");
+			new Notice(tr("致命错误：插件目录未找到。", "Fatal error: plugin folder not found."));
 			return { status: 'failed', error: new Error('plugin folder missing') };
 		}
 		
@@ -797,7 +798,7 @@ export default class PolyglotHelper extends Plugin {
 			}
 		} catch (e) {
 			this.logger.error("处理日语时出错", e);
-			if (!opts.quiet) new Notice(`处理失败: ${errorMessage(e)}`);
+			if (!opts.quiet) new Notice(tr(`处理失败: ${errorMessage(e)}`, `Failed: ${errorMessage(e)}`));
 			return { status: 'failed', error: e };
 		}
 	}
@@ -853,7 +854,7 @@ export default class PolyglotHelper extends Plugin {
 				}
 			}
 		} catch (e) {
-			new Notice(`翻译失败: ${errorMessage(e)}`);
+			new Notice(tr(`翻译失败: ${errorMessage(e)}`, `Translation failed: ${errorMessage(e)}`));
 			this.logger.error("Error in processQuickEnglish", e);
 		}
 	}
@@ -902,21 +903,21 @@ export default class PolyglotHelper extends Plugin {
 				);
 			}
 		} catch (e) {
-			new Notice(`翻译失败: ${errorMessage(e)}`);
+			new Notice(tr(`翻译失败: ${errorMessage(e)}`, `Translation failed: ${errorMessage(e)}`));
 			this.logger.error("Error in processQuickEnglishWithTargetFile", e);
 		}
 	}
 
 	async processQuickJapanese(query: string, force: boolean) {
 		// 创建一个持续的处理状态提示
-		const processingNotice = new Notice("🔄 正在翻译并生成语音...", 0);
+		const processingNotice = new Notice(tr("🔄 正在翻译并生成语音...", "🔄 Translating and generating speech..."), 0);
 
 		try {
 			// 检查API配置
 			const { englishLlmApiKey, englishLlmBaseUrl, ttsEngine } = this.settings;
 			if (!englishLlmApiKey || !englishLlmBaseUrl) {
 				processingNotice.hide();
-				new Notice("❌ 请先在设置中配置 LLM 的 API 密钥和接口地址");
+				new Notice(tr("❌ 请先在设置中配置 LLM 的 API 密钥和接口地址", "❌ Add an AI key and endpoint in settings first"));
 				return;
 			}
 
@@ -1020,7 +1021,7 @@ export default class PolyglotHelper extends Plugin {
 
 				// 不论是否需要音频，先显示文本结果
 				processingNotice.hide();
-				new Notice(`✅ 翻译完成: ${query} → ${japaneseTranslation}`);
+				new Notice(tr(`✅ 翻译完成: ${query} → ${japaneseTranslation}`, `✅ Translated: ${query} → ${japaneseTranslation}`));
 
 				// 直接在侧边栏显示结果（使用专门的快速翻译显示方法）
 				const view = this.app.workspace.getLeavesOfType(POLYGLOT_HELPER_VIEW_TYPE)[0]?.view;
@@ -1045,12 +1046,12 @@ export default class PolyglotHelper extends Plugin {
 				}
 			} else {
 				processingNotice.hide();
-				new Notice("❌ 翻译失败");
+				new Notice(tr("❌ 翻译失败", "❌ Translation failed"));
 			}
 		} catch (error) {
 			processingNotice.hide();
 			this.logger.error("快捷日语翻译失败", error);
-			new Notice(`翻译失败: ${errorMessage(error)}`);
+			new Notice(tr(`翻译失败: ${errorMessage(error)}`, `Translation failed: ${errorMessage(error)}`));
 		}
 	}
 
@@ -1157,7 +1158,7 @@ export default class PolyglotHelper extends Plugin {
 					examples,
 					['auto-added'] // tags
 				);
-				new Notice(`✅ 已添加英语单词 "${word}" 到词汇库`);
+				new Notice(tr(`✅ 已添加英语单词 "${word}" 到词汇库`, `✅ Added the English word "${word}" to the word list`));
 			}
 		} catch (error) {
 			this.logger.error('提取英语词汇失败', error);
@@ -1207,7 +1208,7 @@ export default class PolyglotHelper extends Plugin {
 					examples,
 					['auto-added'] // tags
 				);
-				new Notice(`✅ 已添加日语词汇 "${originalText}" 到词汇库`);
+				new Notice(tr(`✅ 已添加日语词汇 "${originalText}" 到词汇库`, `✅ Added the Japanese entry "${originalText}" to the word list`));
 			}
 		} catch (error) {
 			this.logger.error('提取日语词汇失败', error);
@@ -1526,7 +1527,7 @@ Input text: "${inputText}"`;
 						console.warn('Audio play failed, might need user interaction:', playError);
 						// 移动端可能需要用户交互才能播放音频
 						if ('ontouchstart' in window) {
-							new Notice('请在移动端点击播放按钮来播放语音');
+							new Notice(tr('请在移动端点击播放按钮来播放语音', 'On mobile, tap the play button to hear it'));
 							// 创建一个播放按钮
 							this.createMobileAudioPlayer(audio, japaneseText, audioUrl);
 						} else {
@@ -1551,17 +1552,17 @@ Input text: "${inputText}"`;
 	private createMobileAudioPlayer(audio: HTMLAudioElement, text: string, audioUrl: string): void {
 		// 创建一个临时的播放按钮
 		const playButton = createEl('button');
-		playButton.textContent = `🔊 播放: ${text}`;
+		playButton.textContent = tr(`🔊 播放: ${text}`, `🔊 Playing: ${text}`);
 		playButton.className = 'polyglot-mobile-play';
 
 		playButton.addEventListener('click', fire(async () => {
 			try {
 				await audio.play();
 				playButton.remove();
-				new Notice(`🎵 正在播放: ${text}`);
+				new Notice(tr(`🎵 正在播放: ${text}`, `🎵 Playing: ${text}`));
 			} catch (error) {
 				console.error('Mobile audio play failed:', error);
-				new Notice('❌ 音频播放失败');
+				new Notice(tr('❌ 音频播放失败', '❌ Could not play the audio'));
 			}
 		}));
 
@@ -1614,7 +1615,7 @@ Input text: "${inputText}"`;
 					console.warn('Audio play failed, might need user interaction:', playError);
 					// 移动端可能需要用户交互才能播放音频
 					if ('ontouchstart' in window) {
-						new Notice('请在移动端点击播放按钮来播放语音');
+						new Notice(tr('请在移动端点击播放按钮来播放语音', 'On mobile, tap the play button to hear it'));
 						// 创建一个播放按钮
 						this.createMobileAudioPlayer(audio, englishText, audioUrl);
 					} else {
@@ -1699,7 +1700,7 @@ Input text: "${inputText}"`;
 			if (legacy) {
 				stored = legacy.data;
 				await this.saveData(legacy.data);
-				new Notice(`Polyglot Helper：已从旧版插件目录（${legacy.dir}）导入设置和词库。确认无误后可在第三方插件里停用并删除旧版。`, 12000);
+				new Notice(tr(`Polyglot Helper：已从旧版插件目录（${legacy.dir}）导入设置和词库。确认无误后可在第三方插件里停用并删除旧版。`, `Polyglot Helper: settings and word list imported from the old plugin folder (${legacy.dir}). Once everything looks right, disable and delete the old version under Community plugins.`), 12000);
 			}
 		}
 		this.settings = Object.assign(freshDefaultSettings(), stored);
@@ -1825,14 +1826,14 @@ Input text: "${inputText}"`;
 		const due = this.learningTracker.getDueCounts().total;
 		const visible = this.settings.showDueInStatusBar !== false && this.settings.enableLearningTracker && due > 0;
 		el.toggle(visible);
-		if (visible) el.setText(`待复习 ${due}`);
+		if (visible) el.setText(tr(`待复习 ${due}`, `${due} to review`));
 	}
 
 	/** 把英语、日语词库导出成 Spaced Repetition 闪卡笔记或 Anki 导入文本。 */
 	async exportVocabulary(format: 'flashcards' | 'anki') {
 		const cards = collectCards(this.settings.englishVocabItems || {}, this.settings.japaneseVocabItems || {});
 		if (cards.length === 0) {
-			new Notice('词库是空的，先查几个词再导出');
+			new Notice(tr('词库是空的，先查几个词再导出', 'The word list is empty; look up a few words first'));
 			return;
 		}
 		const folder = normalizePath(this.settings.vocabExportFolder?.trim() || 'Polyglot');
@@ -1845,7 +1846,7 @@ Input text: "${inputText}"`;
 		} else {
 			await vault.create(path, format === 'flashcards' ? toFlashcardNote(cards) : toAnkiText(cards));
 		}
-		new Notice(`已导出 ${cards.length} 张卡片到 ${path}`);
+		new Notice(tr(`已导出 ${cards.length} 张卡片到 ${path}`, `Exported ${cards.length} cards to ${path}`));
 		if (format === 'flashcards') {
 			const file = vault.getAbstractFileByPath(path);
 			if (file instanceof TFile) await this.app.workspace.getLeaf(false).openFile(file);
@@ -1879,7 +1880,7 @@ Input text: "${inputText}"`;
 				return plain;
 			} catch {
 				this.settingsNeedSave = true;
-				new Notice('语言助手：本设备读不出已保存的 API 密钥，请在设置中重新填写。');
+				new Notice(tr('语言助手：本设备读不出已保存的 API 密钥，请在设置中重新填写。', 'Polyglot Helper: this device cannot read the saved API keys. Enter them again in settings.'));
 				return '';
 			}
 		}
@@ -1979,10 +1980,10 @@ Input text: "${inputText}"`;
 				// 清理性能优化器的内存缓存
 				this.performanceOptimizer.clearCache();
 				this.logger.info('翻译缓存已清理');
-				new Notice("✅ 翻译缓存已清理");
+				new Notice(tr("✅ 翻译缓存已清理", "✅ Translation cache cleared"));
 			} catch (error) {
 				this.logger.error('清理翻译缓存失败', error);
-				new Notice("❌ 清理翻译缓存失败");
+				new Notice(tr("❌ 清理翻译缓存失败", "❌ Could not clear the translation cache"));
 			}
 		}
 	}
@@ -2021,10 +2022,10 @@ Input text: "${inputText}"`;
 				}
 			}
 
-			new Notice("✅ 音频缓存已清理");
+			new Notice(tr("✅ 音频缓存已清理", "✅ Audio cache cleared"));
 		} catch (error) {
 			this.logger.error('清理音频缓存失败', error);
-			new Notice("❌ 清理音频缓存失败");
+			new Notice(tr("❌ 清理音频缓存失败", "❌ Could not clear the audio cache"));
 		}
 	}
 
@@ -2035,10 +2036,10 @@ Input text: "${inputText}"`;
 		try {
 			await this.clearTranslationCache();
 			await this.clearAudioCache();
-			new Notice("✅ 所有缓存已清理");
+			new Notice(tr("✅ 所有缓存已清理", "✅ All caches cleared"));
 		} catch (error) {
 			this.logger.error('清理所有缓存失败', error);
-			new Notice("❌ 清理缓存失败");
+			new Notice(tr("❌ 清理缓存失败", "❌ Could not clear the cache"));
 		}
 	}
 
@@ -2115,9 +2116,9 @@ Input text: "${inputText}"`;
 				}
 			}
 
-			new Notice(`✅ 已清理 ${deletedCount} 个过期缓存文件`);
+			new Notice(tr(`✅ 已清理 ${deletedCount} 个过期缓存文件`, `✅ Removed ${deletedCount} expired cache files`));
 		} catch {
-			new Notice("❌ 清理过期缓存失败");
+			new Notice(tr("❌ 清理过期缓存失败", "❌ Could not remove expired cache files"));
 		}
 	}
 

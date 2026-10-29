@@ -4,6 +4,7 @@ import PolyglotHelper from "./main";
 
 import { fire } from "./shared/fire";
 import { confirmAction } from "./shared/confirm-modal";
+import { tr } from './shared/i18n';
 export const SIMPLE_VOCAB_VIEW_TYPE = "simple-vocab-view";
 
 export class SimpleVocabView extends ItemView {
@@ -17,7 +18,7 @@ export class SimpleVocabView extends ItemView {
     }
 
     getViewType() { return SIMPLE_VOCAB_VIEW_TYPE; }
-    getDisplayText() { return "词汇库"; }
+    getDisplayText() { return tr("词汇库", "Word list"); }
     getIcon() { return "book-open"; }
 
     async onOpen() {
@@ -31,7 +32,7 @@ export class SimpleVocabView extends ItemView {
 
     private renderHeader() {
         const header = this.contentEl.createDiv({ cls: 'simple-vocab-header' });
-        header.createEl('h2', { text: '📚 我的词汇库' });
+        header.createEl('h2', { text: tr('📚 我的词汇库', '📚 My word list') });
         
         const stats = this.contentEl.createDiv({ cls: 'simple-vocab-stats' });
         const vocab = this.plugin.getSimpleVocabulary();
@@ -39,19 +40,19 @@ export class SimpleVocabView extends ItemView {
         const favoriteWords = Object.values(vocab).filter((item) => item.isFavorite).length;
         
         stats.empty();
-        stats.createSpan({ cls: 'stat-item', text: `📖 总词汇: ${totalWords}` });
-        stats.createSpan({ cls: 'stat-item', text: `⭐ 收藏: ${favoriteWords}` });
+        stats.createSpan({ cls: 'stat-item', text: tr(`📖 总词汇: ${totalWords}`, `📖 Total: ${totalWords}`) });
+        stats.createSpan({ cls: 'stat-item', text: tr(`⭐ 收藏: ${favoriteWords}`, `⭐ Favourites: ${favoriteWords}`) });
     }
 
     private renderSearchBar() {
         const searchContainer = this.contentEl.createDiv({ cls: 'simple-vocab-search' });
         
         this.searchInput = new TextComponent(searchContainer)
-            .setPlaceholder('搜索词汇...')
+            .setPlaceholder(tr('搜索词汇...', 'Search words...'))
             .onChange((value) => this.filterVocab(value));
         
         new ButtonComponent(searchContainer)
-            .setButtonText('➕ 添加词汇')
+            .setButtonText(tr('➕ 添加词汇', '➕ Add word'))
             .setCta()
             .onClick(() => this.showAddVocabModal());
     }
@@ -76,8 +77,8 @@ export class SimpleVocabView extends ItemView {
         if (filteredVocab.length === 0) {
             const emptyDiv = this.vocabList.createDiv({ cls: 'simple-vocab-empty' });
             emptyDiv.createDiv({ cls: 'empty-icon', text: '📚' });
-            emptyDiv.createEl('h3', { text: '词汇库为空' });
-            emptyDiv.createEl('p', { text: '点击"添加词汇"开始收集你的词汇吧！' });
+            emptyDiv.createEl('h3', { text: tr('词汇库为空', 'The word list is empty') });
+            emptyDiv.createEl('p', { text: tr('点击"添加词汇"开始收集你的词汇吧！', 'Press "Add word" to start collecting words.') });
             return;
         }
 
@@ -117,10 +118,10 @@ export class SimpleVocabView extends ItemView {
             .setButtonText('🗑️')
             .setClass('delete-btn')
             .onClick(async () => {
-                if (await confirmAction(this.app, `确定要删除词汇 "${word}" 吗？`)) {
+                if (await confirmAction(this.app, tr(`确定要删除词汇 "${word}" 吗？`, `Delete "${word}"?`))) {
                     await this.plugin.removeSimpleVocabularyItem(word);
                     this.updateVocabList(this.searchInput.getValue());
-                    new Notice(`已删除词汇 "${word}"`);
+                    new Notice(tr(`已删除词汇 "${word}"`, `Deleted "${word}"`));
                 }
             });
         
@@ -132,13 +133,13 @@ export class SimpleVocabView extends ItemView {
                 item.reviewCount++;
                 item.lastReviewed = Date.now();
                 await this.plugin.saveSettings();
-                new Notice(`已复习词汇 "${word}" (第${item.reviewCount}次)`);
+                new Notice(tr(`已复习词汇 "${word}" (第${item.reviewCount}次)`, `Reviewed "${word}" (${item.reviewCount} times)`));
             });
         
         // 显示统计信息
         const stats = footer.createDiv({ cls: 'vocab-stats' });
-        stats.createSpan({ cls: 'stat', text: `复习: ${item.reviewCount}次` });
-        stats.createSpan({ cls: 'stat', text: `添加: ${new Date(item.createdAt).toLocaleDateString()}` });
+        stats.createSpan({ cls: 'stat', text: tr(`复习: ${item.reviewCount}次`, `Reviews: ${item.reviewCount}`) });
+        stats.createSpan({ cls: 'stat', text: tr(`添加: ${new Date(item.createdAt).toLocaleDateString()}`, `Added: ${new Date(item.createdAt).toLocaleDateString()}`) });
     }
 
     private filterVocab(searchTerm: string) {
@@ -149,19 +150,19 @@ export class SimpleVocabView extends ItemView {
         const modal = createDiv();
         modal.className = 'simple-vocab-modal';
         const el1 = modal.createDiv({ cls: 'modal-content' });
-        el1.createEl('h3', { text: '➕ 添加新词汇' });
+        el1.createEl('h3', { text: tr('➕ 添加新词汇', '➕ Add a new word') });
         const el2 = el1.createDiv({ cls: 'form-group' });
-        el2.createEl('label', { text: '词汇:' });
-        el2.createEl('input', { attr: { type: 'text', id: 'vocab-word', placeholder: '输入词汇' } });
+        el2.createEl('label', { text: tr('词汇:', 'Word:') });
+        el2.createEl('input', { attr: { type: 'text', id: 'vocab-word', placeholder: tr('输入词汇', 'Type a word') } });
         const el3 = el1.createDiv({ cls: 'form-group' });
-        el3.createEl('label', { text: '翻译:' });
-        el3.createEl('input', { attr: { type: 'text', id: 'vocab-translation', placeholder: '输入翻译' } });
+        el3.createEl('label', { text: tr('翻译:', 'Translation:') });
+        el3.createEl('input', { attr: { type: 'text', id: 'vocab-translation', placeholder: tr('输入翻译', 'Type the translation') } });
         const el4 = el1.createDiv({ cls: 'form-group' });
-        el4.createEl('label', { text: '备注:' });
-        el4.createEl('textarea', { attr: { id: 'vocab-notes', placeholder: '可选备注' } });
+        el4.createEl('label', { text: tr('备注:', 'Notes:') });
+        el4.createEl('textarea', { attr: { id: 'vocab-notes', placeholder: tr('可选备注', 'Optional notes') } });
         const el5 = el1.createDiv({ cls: 'modal-actions' });
-        el5.createEl('button', { text: '取消', attr: { id: 'cancel-btn' } });
-        el5.createEl('button', { cls: 'primary', text: '保存', attr: { id: 'save-btn' } });
+        el5.createEl('button', { text: tr('取消', 'Cancel'), attr: { id: 'cancel-btn' } });
+        el5.createEl('button', { cls: 'primary', text: tr('保存', 'Save'), attr: { id: 'save-btn' } });
         
         document.body.appendChild(modal);
         
@@ -176,14 +177,14 @@ export class SimpleVocabView extends ItemView {
             const notes = (modal.querySelector('#vocab-notes') as HTMLTextAreaElement)?.value?.trim();
             
             if (!word || !translation) {
-                new Notice('请填写词汇和翻译');
+                new Notice(tr('请填写词汇和翻译', 'Fill in the word and its translation'));
                 return;
             }
             
             await this.plugin.addSimpleVocabularyItem(word, translation, notes);
             this.updateVocabList(this.searchInput.getValue());
             modal.remove();
-            new Notice(`已添加词汇 "${word}"`);
+            new Notice(tr(`已添加词汇 "${word}"`, `Added "${word}"`));
         }));
         
         // 自动聚焦到第一个输入框

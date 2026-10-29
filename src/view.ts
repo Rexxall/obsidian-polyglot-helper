@@ -85,11 +85,11 @@ export class PolyglotHelperView extends ItemView {
         try {
             if (destination === 'fixedFile') {
                 const fixedPath = this.plugin.settings.quickTranslationOutputSettings.fixedOutputFile;
-                if (!fixedPath) { new Notice('未设置"快捷翻译"固定输出文件'); return; }
+                if (!fixedPath) { new Notice(tr('未设置"快捷翻译"固定输出文件', 'No fixed output file is set for quick translation')); return; }
                 const file = this.app.vault.getAbstractFileByPath(fixedPath);
                 if (file instanceof TFile) {
                     await this.app.vault.append(file, `\n---\n${content}`);
-                    new Notice(`已追加到固定文件: ${file.name}`);
+                    new Notice(tr(`已追加到固定文件: ${file.name}`, `Appended to the fixed file: ${file.name}`));
                     return { destination: 'fixedFile', filePath: fixedPath, fileName: file.name, heading: headingText };
                 } else {
                     const folderPath = fixedPath.substring(0, fixedPath.lastIndexOf('/'));
@@ -97,7 +97,7 @@ export class PolyglotHelperView extends ItemView {
                         await this.app.vault.createFolder(folderPath);
                     }
                     await this.app.vault.create(fixedPath, `# 快捷翻译记录\n\n${content}`);
-                    new Notice('已创建固定文件并写入内容');
+                    new Notice(tr('已创建固定文件并写入内容', 'Created the fixed file and wrote the result'));
                     return { destination: 'fixedFile', filePath: fixedPath, fileName: fixedPath.split('/').pop(), heading: headingText };
                 }
             } else if (destination === 'newFile') {
@@ -111,35 +111,35 @@ export class PolyglotHelperView extends ItemView {
                 await this.app.vault.create(full, content);
                 const file = asTFile(this.app.vault.getAbstractFileByPath(full));
                 if (file) await this.app.workspace.getLeaf().openFile(file);
-                new Notice(`已创建新文件: ${fileName}`);
+                new Notice(tr(`已创建新文件: ${fileName}`, `Created a new file: ${fileName}`));
                 return { destination: 'newFile', filePath: full, fileName, heading: headingText };
             } else if (destination === 'appendCurrent' || destination === 'replace') {
                 const targetFile = this.getTargetFile();
-                if (!targetFile) { new Notice('未找到当前文件，已跳过文件输出'); return; }
+                if (!targetFile) { new Notice(tr('未找到当前文件，已跳过文件输出', 'No current file; skipped writing to a file')); return; }
                 if (destination === 'appendCurrent') {
                     await this.app.vault.append(targetFile, `\n---\n${content}`);
-                    new Notice(`已追加到当前文件: ${targetFile.name}`);
+                    new Notice(tr(`已追加到当前文件: ${targetFile.name}`, `Appended to the current file: ${targetFile.name}`));
                     return { destination: 'appendCurrent', filePath: targetFile.path, fileName: targetFile.name, heading: headingText };
                 } else {
                     const view = this.app.workspace.getActiveViewOfType(MarkdownView);
                     const editor = view?.editor;
                     if (editor && editor.somethingSelected()) {
                         editor.replaceSelection(content);
-                        new Notice('已替换选中内容');
+                        new Notice(tr('已替换选中内容', 'Replaced the selection'));
                         return { destination: 'replace', filePath: targetFile.path, fileName: targetFile.name, heading: headingText };
                     } else {
                         await this.app.vault.append(targetFile, `\n---\n${content}`);
-                        new Notice(`未选中文本，已追加到文件: ${targetFile.name}`);
+                        new Notice(tr(`未选中文本，已追加到文件: ${targetFile.name}`, `Nothing selected; appended to ${targetFile.name}`));
                         return { destination: 'appendCurrent', filePath: targetFile.path, fileName: targetFile.name, heading: headingText };
                     }
                 }
             }
         } catch (e) {
-            new Notice(`快速翻译输出失败: ${errorMessage(e)}`);
+            new Notice(tr(`快速翻译输出失败: ${errorMessage(e)}`, `Could not output the quick translation: ${errorMessage(e)}`));
         }
     }
     getViewType() { return POLYGLOT_HELPER_VIEW_TYPE; }
-    getDisplayText() { return "语言助手"; }
+    getDisplayText() { return tr("语言助手", "Polyglot Helper"); }
     getIcon() { return "book-open"; }
 
     async onOpen() {
@@ -149,20 +149,20 @@ export class PolyglotHelperView extends ItemView {
 
         // --- 顶部：标题、设置、两页切换 ---
         const head = root.createDiv({ cls: 'polyglot-view-head' });
-        head.createEl('h3', { text: '语言助手' });
-        const headMenu = head.createEl('button', { cls: 'polyglot-head-more clickable-icon', attr: { 'aria-label': '更多' } });
+        head.createEl('h3', { text: tr('语言助手', 'Polyglot Helper') });
+        const headMenu = head.createEl('button', { cls: 'polyglot-head-more clickable-icon', attr: { 'aria-label': tr('更多', 'More') } });
         setIcon(headMenu, 'more-horizontal');
         headMenu.addEventListener('click', (event) => {
             const menu = new Menu();
-            menu.addItem(item => item.setTitle('强制刷新（不用缓存）').setIcon('refresh-cw').setChecked(!!this.plugin.settings.forceRefresh).onClick(async () => {
+            menu.addItem(item => item.setTitle(tr('强制刷新（不用缓存）', 'Refresh (skip the cache)')).setIcon('refresh-cw').setChecked(!!this.plugin.settings.forceRefresh).onClick(async () => {
                 this.plugin.settings.forceRefresh = !this.plugin.settings.forceRefresh;
                 await this.plugin.saveSettings();
             }));
-            menu.addItem(item => item.setTitle('朗读输入框里的文字').setIcon('volume-2').onClick(() => this.handleVoiceSynthesis()));
-            menu.addItem(item => item.setTitle('语音选项…').setIcon('audio-lines').onClick(() => this.showSettingsPanel(headMenu)));
+            menu.addItem(item => item.setTitle(tr('朗读输入框里的文字', 'Read the text box aloud')).setIcon('volume-2').onClick(() => this.handleVoiceSynthesis()));
+            menu.addItem(item => item.setTitle(tr('语音选项…', 'Voice options…')).setIcon('audio-lines').onClick(() => this.showSettingsPanel(headMenu)));
             menu.addSeparator();
-            menu.addItem(item => item.setTitle('跳到上次输出位置').setIcon('external-link').onClick(() => this.jumpToLastOutputLocation()));
-            menu.addItem(item => item.setTitle('设置').setIcon('settings').onClick(() => {
+            menu.addItem(item => item.setTitle(tr('跳到上次输出位置', 'Go to the last output')).setIcon('external-link').onClick(() => this.jumpToLastOutputLocation()));
+            menu.addItem(item => item.setTitle(tr('设置', 'Settings')).setIcon('settings').onClick(() => {
                 const settings = (this.app as typeof this.app & { setting?: { open(): void; openTabById(id: string): void } }).setting;
                 settings?.open();
                 settings?.openTabById(this.plugin.manifest.id);
@@ -170,8 +170,8 @@ export class PolyglotHelperView extends ItemView {
             menu.showAtMouseEvent(event);
         });
         const tabs = root.createDiv({ cls: 'polyglot-tabs' });
-        this.tabButtons.look = tabs.createEl('button', { text: '查词' });
-        this.tabButtons.learn = tabs.createEl('button', { text: '学习' });
+        this.tabButtons.look = tabs.createEl('button', { text: tr('查词', 'Look up') });
+        this.tabButtons.learn = tabs.createEl('button', { text: tr('学习', 'Learn') });
         this.tabButtons.look.addEventListener('click', () => this.showPane('look'));
         this.tabButtons.learn.addEventListener('click', () => this.showPane('learn'));
 
@@ -200,7 +200,7 @@ export class PolyglotHelperView extends ItemView {
         const inputContainer = this.actionsContent.createDiv({ cls: 'polyglot-input-container' });
         
         this.queryInput = new TextAreaComponent(inputContainer)
-            .setPlaceholder("在此输入文本...");
+            .setPlaceholder(tr("在此输入文本...", "Type here..."));
         this.queryInput.inputEl.addClass('polyglot-query-input');
 
         // 右侧按钮容器
@@ -211,11 +211,11 @@ export class PolyglotHelperView extends ItemView {
             this.app,
             inputContainer.createDiv({ cls: 'polyglot-output-picker' }),
             [
-                { value: 'sidebar', label: '显示在侧栏' },
-                { value: 'replace', label: '替换选文' },
-                { value: 'appendCurrent', label: '追加到当前笔记' },
-                { value: 'newFile', label: '写入新笔记' },
-                { value: 'fixedFile', label: '写入固定文件' },
+                { value: 'sidebar', label: tr('显示在侧栏', 'Show in the side panel') },
+                { value: 'replace', label: tr('替换选文', 'Replace selection') },
+                { value: 'appendCurrent', label: tr('追加到当前笔记', 'Append to current note') },
+                { value: 'newFile', label: tr('写入新笔记', 'Write to a new note') },
+                { value: 'fixedFile', label: tr('写入固定文件', 'Write to a fixed file') },
             ],
             this.plugin.settings.outputDestination ?? 'sidebar',
             async (value) => {
@@ -225,31 +225,31 @@ export class PolyglotHelperView extends ItemView {
                 this.plugin.settings.quickTranslationOptions.outputDestination = value;
                 await this.plugin.saveSettings();
             },
-            '结果显示位置',
+            tr('结果显示位置', 'Where results go'),
         );
         outputPicker.button.addClass('is-plain');
 
         // 选词模式开关按钮
         const wordSelectionToggle = rightButtonsContainer.createEl('button', {
             cls: `polyglot-word-selection-toggle ${this.plugin.settings.wordSelectionMode ? 'active' : ''}`,
-            title: this.plugin.settings.wordSelectionMode ? '选词模式：已开启' : '选词模式：已关闭'
+            title: this.plugin.settings.wordSelectionMode ? tr('选词模式：已开启', 'Word-selection mode: on') : tr('选词模式：已关闭', 'Word-selection mode: off')
         });
         setIcon(wordSelectionToggle, 'mouse-pointer-click');
         wordSelectionToggle.addEventListener('click', fire(async () => {
             this.plugin.settings.wordSelectionMode = !this.plugin.settings.wordSelectionMode;
             wordSelectionToggle.toggleClass('active', this.plugin.settings.wordSelectionMode);
-            wordSelectionToggle.setAttribute('title', this.plugin.settings.wordSelectionMode ? '选词模式：已开启' : '选词模式：已关闭');
+            wordSelectionToggle.setAttribute('title', this.plugin.settings.wordSelectionMode ? tr('选词模式：已开启', 'Word-selection mode: on') : tr('选词模式：已关闭', 'Word-selection mode: off'));
             await this.plugin.saveSettings();
-            new Notice(this.plugin.settings.wordSelectionMode ? '✅ 选词模式已开启' : '❌ 选词模式已关闭');
+            new Notice(this.plugin.settings.wordSelectionMode ? tr('✅ 选词模式已开启', '✅ Word-selection mode on') : tr('❌ 选词模式已关闭', '❌ Word-selection mode off'));
         }));
 
         // 确认按钮（执行当前模式）
         const confirmButton = rightButtonsContainer.createEl('button', {
             cls: 'polyglot-confirm-button',
-            title: '执行当前模式（或按回车）'
+            title: tr('执行当前模式（或按回车）', 'Run the current mode (or press Enter)')
         });
-        confirmButton.setText('查询');
-        confirmButton.setAttribute('aria-label', '查询当前文本');
+        confirmButton.setText(tr('查询', 'Look up'));
+        confirmButton.setAttribute('aria-label', tr('查询当前文本', 'Look up the current text'));
         confirmButton.addEventListener('click', () => {
             this.runActiveMode();
         });
@@ -260,20 +260,20 @@ export class PolyglotHelperView extends ItemView {
         // 语种：一个分段控件选查词方式，旁边“…”是当前语种的选项；翻译成中文是单独的一步操作
         const buttonContainer = this.actionsContent.createDiv({ cls: "polyglot-mode-row" });
         const seg = buttonContainer.createDiv({ cls: 'ap-seg polyglot-mode-seg' });
-        const japBtn = seg.createEl("button", { text: "日语" });
-        const engBtn = seg.createEl("button", { text: "英语" });
-        const quickJpBtn = seg.createEl("button", { text: "译日语" });
+        const japBtn = seg.createEl("button", { text: tr("日语", "Japanese") });
+        const engBtn = seg.createEl("button", { text: tr("英语", "English") });
+        const quickJpBtn = seg.createEl("button", { text: tr("译日语", "To Japanese") });
         japBtn.addEventListener("click", () => this.setActiveMode('japanese'));
         engBtn.addEventListener("click", () => this.setActiveMode('english'));
         quickJpBtn.addEventListener("click", () => this.setActiveMode('quick_to_japanese'));
-        const modeOptions = buttonContainer.createEl("button", { cls: "polyglot-mode-options clickable-icon", attr: { 'aria-label': '当前语种的选项' } });
+        const modeOptions = buttonContainer.createEl("button", { cls: "polyglot-mode-options clickable-icon", attr: { 'aria-label': tr('当前语种的选项', 'Options for the current language') } });
         setIcon(modeOptions, 'sliders-horizontal');
         modeOptions.addEventListener('click', (event) => {
             if (this.activeMode === 'japanese') this.showJapaneseOptionsPanel(event);
             else if (this.activeMode === 'english') this.showEnglishOptionsPanel(event);
             else this.showQuickOptionsPanel(event);
         });
-        const quickZhBtn = buttonContainer.createEl("button", { text: "翻译成中文", cls: "ap-btn is-outline polyglot-to-chinese" });
+        const quickZhBtn = buttonContainer.createEl("button", { text: tr("翻译成中文", "To Chinese"), cls: "ap-btn is-outline polyglot-to-chinese" });
         quickZhBtn.addEventListener("click", fire(() => this.handleQuickProcess()));
 
         // 记录按钮引用，便于切换高亮
@@ -306,7 +306,7 @@ export class PolyglotHelperView extends ItemView {
                 // 更新选词模式开关状态
                 if (this.wordSelectionToggle) {
                     this.wordSelectionToggle.toggleClass('active', this.plugin.settings.wordSelectionMode || false);
-                    this.wordSelectionToggle.setAttribute('title', this.plugin.settings.wordSelectionMode ? '选词模式：已开启' : '选词模式：已关闭');
+                    this.wordSelectionToggle.setAttribute('title', this.plugin.settings.wordSelectionMode ? tr('选词模式：已开启', 'Word-selection mode: on') : tr('选词模式：已关闭', 'Word-selection mode: off'));
                 }
             })
         );
@@ -388,7 +388,7 @@ export class PolyglotHelperView extends ItemView {
 
         const top = el.createDiv({ cls: 'polyglot-word-top' });
         top.createDiv({ cls: 'polyglot-word-head', text: card.headword });
-        const more = top.createEl('button', { cls: 'polyglot-word-more clickable-icon', attr: { 'aria-label': '更多操作' } });
+        const more = top.createEl('button', { cls: 'polyglot-word-more clickable-icon', attr: { 'aria-label': tr('更多操作', 'More actions') } });
         setIcon(more, 'more-horizontal');
         more.addEventListener('click', (event) => this.showResultMenu(event, result, historyItem, card));
 
@@ -396,7 +396,7 @@ export class PolyglotHelperView extends ItemView {
         if (card.phonetic) meta.createSpan({ cls: 'polyglot-word-phonetic', text: card.phonetic });
         const audio = card.audio || (historyItem?.type !== 'japanese' && /^[A-Za-z][A-Za-z' -]*$/.test(card.headword) ? getAudioUrl(card.headword) : '');
         if (audio) {
-            const play = meta.createEl('button', { cls: 'polyglot-word-play', attr: { 'aria-label': '发音' } });
+            const play = meta.createEl('button', { cls: 'polyglot-word-play', attr: { 'aria-label': tr('发音', 'Pronunciation') } });
             setIcon(play, 'volume-2');
             play.addEventListener('click', () => this.playSource(audio));
         }
@@ -406,7 +406,7 @@ export class PolyglotHelperView extends ItemView {
         const setAdded = (done: boolean) => {
             add.empty();
             setIcon(add.createSpan(), done ? 'check' : 'bookmark-plus');
-            add.createSpan({ text: done ? '已在生词本' : '加入生词本' });
+            add.createSpan({ text: done ? tr('已在生词本', 'In word list') : tr('加入生词本', 'Add to word list') });
             add.toggleClass('is-done', done);
         };
         setAdded(!!saved);
@@ -442,7 +442,7 @@ export class PolyglotHelperView extends ItemView {
             }
         }
 
-        if (card.sources.length) el.createDiv({ cls: 'polyglot-word-source', text: `来源：${card.sources.join(' · ')}` });
+        if (card.sources.length) el.createDiv({ cls: 'polyglot-word-source', text: tr(`来源：${card.sources.join(' · ')}`, `Sources: ${card.sources.join(' · ')}`) });
     }
 
     private renderCardLine(list: HTMLElement, line: CardLine, index: number) {
@@ -453,7 +453,7 @@ export class PolyglotHelperView extends ItemView {
         this.renderInline(main.createDiv({ cls: 'polyglot-word-text' }), line.text);
         if (line.sub) this.renderInline(main.createDiv({ cls: 'polyglot-word-sub' }), line.sub);
         if (line.audio) {
-            const play = row.createEl('button', { cls: 'polyglot-word-play is-small', attr: { 'aria-label': '朗读这一句' } });
+            const play = row.createEl('button', { cls: 'polyglot-word-play is-small', attr: { 'aria-label': tr('朗读这一句', 'Read this sentence') } });
             setIcon(play, 'volume-2');
             const src = line.audio;
             play.addEventListener('click', () => this.playSource(src));
@@ -471,7 +471,7 @@ export class PolyglotHelperView extends ItemView {
 
     private playSource(src: string) {
         const url = /^(https?:|app:|data:|blob:)/.test(src) ? src : this.app.vault.adapter.getResourcePath(normalizePath(src));
-        new Audio(url).play().catch(() => new Notice('音频播放失败'));
+        new Audio(url).play().catch(() => new Notice(tr('音频播放失败', 'Could not play the audio')));
     }
 
     private findVocabItem(word: string) {
@@ -484,16 +484,16 @@ export class PolyglotHelperView extends ItemView {
     /** 结果的次要操作都收进“…”菜单。 */
     private showResultMenu(event: MouseEvent, result: string, historyItem?: HistoryItem, card?: WordCard) {
         const menu = new Menu();
-        menu.addItem(item => item.setTitle('插入到当前笔记').setIcon('file-plus-2').onClick(() => this.insertToCurrentNote(result)));
-        menu.addItem(item => item.setTitle('复制').setIcon('copy').onClick(() => this.copyToClipboard(result)));
-        menu.addItem(item => item.setTitle('输出到新笔记').setIcon('file-plus').onClick(() => this.createNewNote(result, historyItem)));
-        menu.addItem(item => item.setTitle('输出到固定文件').setIcon('file-text').onClick(() => this.outputToFixedFile(result, historyItem)));
+        menu.addItem(item => item.setTitle(tr('插入到当前笔记', 'Insert into current note')).setIcon('file-plus-2').onClick(() => this.insertToCurrentNote(result)));
+        menu.addItem(item => item.setTitle(tr('复制', 'Copy')).setIcon('copy').onClick(() => this.copyToClipboard(result)));
+        menu.addItem(item => item.setTitle(tr('输出到新笔记', 'Output to a new note')).setIcon('file-plus').onClick(() => this.createNewNote(result, historyItem)));
+        menu.addItem(item => item.setTitle(tr('输出到固定文件', 'Output to the fixed file')).setIcon('file-text').onClick(() => this.outputToFixedFile(result, historyItem)));
         if (card?.image) {
             const image = card.image;
-            menu.addItem(item => item.setTitle('查看图片').setIcon('image').onClick(() => window.open(image)));
+            menu.addItem(item => item.setTitle(tr('查看图片', 'View image')).setIcon('image').onClick(() => window.open(image)));
         }
         menu.addSeparator();
-        menu.addItem(item => item.setTitle('清空结果').setIcon('x').onClick(() => this.clearResults()));
+        menu.addItem(item => item.setTitle(tr('清空结果', 'Clear result')).setIcon('x').onClick(() => this.clearResults()));
         menu.showAtMouseEvent(event);
     }
 
@@ -598,13 +598,13 @@ export class PolyglotHelperView extends ItemView {
         const source = sourceNote(item.notes);
         if (source) foot.createDiv({ cls: 'polyglot-muted', text: source });
         const row = foot.createDiv({ cls: 'polyglot-vocab-foot-row' });
-        row.createSpan({ text: '掌握程度' });
+        row.createSpan({ text: tr('掌握程度', 'Mastery') });
         const level = row.createSpan({ cls: 'polyglot-level' });
         const filled = 4 - Math.min(4, Math.max(0, item.difficulty));
         for (let i = 0; i < 4; i++) level.createEl('i', { cls: i < filled ? 'is-on' : '' });
         const next = item.nextReview && item.nextReview > Date.now()
             ? `下次复习：${new Date(item.nextReview).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })}`
-            : '今天可以复习';
+            : tr('今天可以复习', 'Ready to review today');
         row.createSpan({ text: next });
     }
 
@@ -614,14 +614,14 @@ export class PolyglotHelperView extends ItemView {
         const elements = container.querySelectorAll('p, li, dt, dd');
         
         const posPatterns = [
-            { regex: /\b(n\.|noun|名词)\b/i, class: 'polyglot-pos-noun', text: '名词' },
-            { regex: /\b(v\.|verb|动词)\b/i, class: 'polyglot-pos-verb', text: '动词' },
-            { regex: /\b(adj\.|adjective|形容词)\b/i, class: 'polyglot-pos-adj', text: '形容词' },
-            { regex: /\b(adv\.|adverb|副词)\b/i, class: 'polyglot-pos-adv', text: '副词' },
-            { regex: /\b(prep\.|preposition|介词)\b/i, class: 'polyglot-pos-other', text: '介词' },
-            { regex: /\b(conj\.|conjunction|连词)\b/i, class: 'polyglot-pos-other', text: '连词' },
-            { regex: /\b(pron\.|pronoun|代词)\b/i, class: 'polyglot-pos-other', text: '代词' },
-            { regex: /\b(interj\.|interjection|感叹词)\b/i, class: 'polyglot-pos-other', text: '感叹词' }
+            { regex: /\b(n\.|noun|名词)\b/i, class: 'polyglot-pos-noun', text: tr('名词', 'Noun') },
+            { regex: /\b(v\.|verb|动词)\b/i, class: 'polyglot-pos-verb', text: tr('动词', 'Verb') },
+            { regex: /\b(adj\.|adjective|形容词)\b/i, class: 'polyglot-pos-adj', text: tr('形容词', 'Adjective') },
+            { regex: /\b(adv\.|adverb|副词)\b/i, class: 'polyglot-pos-adv', text: tr('副词', 'Adverb') },
+            { regex: /\b(prep\.|preposition|介词)\b/i, class: 'polyglot-pos-other', text: tr('介词', 'Preposition') },
+            { regex: /\b(conj\.|conjunction|连词)\b/i, class: 'polyglot-pos-other', text: tr('连词', 'Conjunction') },
+            { regex: /\b(pron\.|pronoun|代词)\b/i, class: 'polyglot-pos-other', text: tr('代词', 'Pronoun') },
+            { regex: /\b(interj\.|interjection|感叹词)\b/i, class: 'polyglot-pos-other', text: tr('感叹词', 'Interjection') }
         ];
         
         elements.forEach(element => {
@@ -656,28 +656,28 @@ export class PolyglotHelperView extends ItemView {
         );
 
         const header = historyContainer.createDiv({ cls: 'polyglot-history-header' });
-        header.createEl("h5", { text: "最近查询" });
+        header.createEl("h5", { text: tr("最近查询", "Recent lookups") });
 
         this.historySearchInput = new TextComponent(header)
-            .setPlaceholder('搜索...')
+            .setPlaceholder(tr('搜索...', 'Search...'))
             .setValue(searchTerm)
             .onChange((value) => {
                 this.renderHistory(value);
             });
         this.historySearchInput.inputEl.addClass('polyglot-history-search');
 
-        const clearButton = header.createEl('button', { text: '清空', cls: 'polyglot-history-clear' });
+        const clearButton = header.createEl('button', { text: tr('清空', 'Clear'), cls: 'polyglot-history-clear' });
         clearButton.addEventListener('click', fire(async () => {
             this.plugin.settings.queryHistory = [];
             await this.plugin.saveSettings();
             this.renderHistory('');
-            new Notice("查询历史已清空。");
+            new Notice(tr("查询历史已清空。", "History cleared."));
         }));
 
         const list = historyContainer.createDiv({ cls: "polyglot-history-list" });
 
         if (history.length === 0) {
-            list.createDiv({text: '无历史记录', cls: 'polyglot-history-empty'});
+            list.createDiv({text: tr('无历史记录', 'No history yet'), cls: 'polyglot-history-empty'});
             return;
         }
 
@@ -692,18 +692,18 @@ export class PolyglotHelperView extends ItemView {
             if (item.type === 'quick_to_japanese' && item.translation) {
                 const playBtn = historyItemEl.createEl('button', { cls: 'polyglot-history-play-btn' });
                 setIcon(playBtn, 'volume-2');
-                playBtn.setAttribute('aria-label', '播放日语语音');
-                playBtn.setAttribute('title', `播放: ${item.translation}`);
+                playBtn.setAttribute('aria-label', tr('播放日语语音', 'Play the Japanese'));
+                playBtn.setAttribute('title', tr(`播放: ${item.translation}`, `Play: ${item.translation}`));
 
                 playBtn.addEventListener('click', fire(async (event) => {
                     event.stopPropagation(); // 防止触发主项目点击事件
 
                     try {
                         await this.plugin.playJapaneseVoice(item.translation!, this.plugin.settings.forceRefreshAudio);
-                        new Notice(`🎵 播放: ${item.translation}`);
+                        new Notice(tr(`🎵 播放: ${item.translation}`, `🎵 Playing: ${item.translation}`));
                     } catch (error) {
                         console.error('History voice playback error:', error);
-                        new Notice(`❌ 语音播放失败: ${errorMessage(error)}`);
+                        new Notice(tr(`❌ 语音播放失败: ${errorMessage(error)}`, `❌ Could not play the audio: ${errorMessage(error)}`));
                     }
                 }));
             }
@@ -712,8 +712,8 @@ export class PolyglotHelperView extends ItemView {
             if (item.outputLocation && item.outputLocation.destination !== 'sidebar') {
                 const jumpBtn = historyItemEl.createEl('button', { cls: 'polyglot-history-item-jump' });
                 setIcon(jumpBtn, 'external-link');
-                jumpBtn.setAttribute('aria-label', '跳转到输出位置');
-                jumpBtn.setAttribute('title', '跳转到输出位置');
+                jumpBtn.setAttribute('aria-label', tr('跳转到输出位置', 'Go to where it was written'));
+                jumpBtn.setAttribute('title', tr('跳转到输出位置', 'Go to where it was written'));
 
                 jumpBtn.addEventListener('click', fire(async (event) => {
                     event.stopPropagation(); // 防止触发主项目点击事件
@@ -724,7 +724,7 @@ export class PolyglotHelperView extends ItemView {
             // 删除按钮保持现有功能
             const deleteBtn = historyItemEl.createEl('button', { cls: 'polyglot-history-item-delete' });
             setIcon(deleteBtn, 'trash-2');
-            deleteBtn.setAttribute('aria-label', '删除此条记录');
+            deleteBtn.setAttribute('aria-label', tr('删除此条记录', 'Delete this record'));
 
             // Add click listener for the delete button
             deleteBtn.addEventListener('click', fire(async (event) => {
@@ -751,7 +751,7 @@ export class PolyglotHelperView extends ItemView {
                             item.romaji
                         );
                     } else {
-                        new Notice(`原文: ${item.query}`);
+                        new Notice(tr(`原文: ${item.query}`, `Source: ${item.query}`));
                     }
                 } else if (item.type === 'quick_english') {
                     // 对于英汉翻译记录，优先使用保存的翻译结果
@@ -774,7 +774,7 @@ export class PolyglotHelperView extends ItemView {
                         void this.renderResult(cachedResult, true, item);
                     } else {
                         // 缓存未找到，重新处理日语分析并直接显示在面板中
-                        new Notice("缓存未找到，正在重新分析...");
+                        new Notice(tr("缓存未找到，正在重新分析...", "Not in the cache; analysing again..."));
                         try {
                             const resultObj = await this.plugin.japaneseProcessor.runJapaneseProcess(item.query, false);
                             if (resultObj) {
@@ -794,10 +794,10 @@ export class PolyglotHelperView extends ItemView {
                                 // 直接在面板中显示结果
                                 void this.renderResult(finalResult, true, item);
                             } else {
-                                new Notice("重新分析失败");
+                                new Notice(tr("重新分析失败", "Could not analyse again"));
                             }
                         } catch (error) {
-                            new Notice(`重新分析失败: ${errorMessage(error)}`);
+                            new Notice(tr(`重新分析失败: ${errorMessage(error)}`, `Could not analyse again: ${errorMessage(error)}`));
                         }
                     }
                 } else if (item.type === 'english') {
@@ -807,7 +807,7 @@ export class PolyglotHelperView extends ItemView {
                         void this.renderResult(cachedResult, true, item);
                     } else {
                         // 缓存未找到，重新处理英语分析并直接显示在面板中
-                        new Notice("缓存未找到，正在重新分析...");
+                        new Notice(tr("缓存未找到，正在重新分析...", "Not in the cache; analysing again..."));
                         try {
                             // 导入英语处理函数
                             const { runEnglishProcess } = await import('./english-processor');
@@ -824,15 +824,15 @@ export class PolyglotHelperView extends ItemView {
                                 // 直接在面板中显示结果
                                 void this.renderResult(result, true, item);
                             } else {
-                                new Notice("重新分析失败");
+                                new Notice(tr("重新分析失败", "Could not analyse again"));
                             }
                         } catch (error) {
-                            new Notice(`重新分析失败: ${errorMessage(error)}`);
+                            new Notice(tr(`重新分析失败: ${errorMessage(error)}`, `Could not analyse again: ${errorMessage(error)}`));
                         }
                     }
                 } else {
                     // 对于其他未知类型
-                    new Notice(`未知的历史记录类型: ${String(item.type)}`);
+                    new Notice(tr(`未知的历史记录类型: ${String(item.type)}`, `Unknown history type: ${String(item.type)}`));
                 }
             }));
         });
@@ -840,10 +840,10 @@ export class PolyglotHelperView extends ItemView {
 
     private getHistoryItemTypeName(type: HistoryItem['type']): string {
         switch (type) {
-            case 'english': return '英';
-            case 'japanese': return '日';
-            case 'quick_english': return '→汉';
-            case 'quick_to_japanese': return '→日';
+            case 'english': return tr('英', 'EN');
+            case 'japanese': return tr('日', 'JA');
+            case 'quick_english': return tr('→汉', '→ZH');
+            case 'quick_to_japanese': return tr('→日', '→JA');
             default: return '?';
         }
     }
@@ -861,7 +861,7 @@ export class PolyglotHelperView extends ItemView {
     private async handleProcess(type: "english" | "japanese") {
         const query = this.queryInput.getValue().trim();
         if (!query) {
-            new Notice("请在侧边栏输入或在编辑器中选中文本。");
+            new Notice(tr("请在侧边栏输入或在编辑器中选中文本。", "Type in the side panel or select text in the editor."));
             return;
         }
 
@@ -871,9 +871,9 @@ export class PolyglotHelperView extends ItemView {
 
         // 如果输出模式需要文件但没有活动文件，提前提示
         if (!targetFile && (outputDestination === 'appendCurrent' || outputDestination === 'replace')) {
-            new Notice("当前没有打开的文件，结果将在侧边栏显示。\n💡 提示：请打开一个文件，或更改输出位置。");
+            new Notice(tr("当前没有打开的文件，结果将在侧边栏显示。\n💡 提示：请打开一个文件，或更改输出位置。", "No file is open, so the result is shown in the side panel.\n💡 Open a file or change the output location."));
         } else if (targetFile && (outputDestination === 'appendCurrent' || outputDestination === 'replace')) {
-            new Notice(`🎯 目标文件已锁定：${targetFile.name}\n处理过程中可以自由切换文件。`);
+            new Notice(tr(`🎯 目标文件已锁定：${targetFile.name}\n处理过程中可以自由切换文件。`, `🎯 Target file locked: ${targetFile.name}\nYou can switch files while it runs.`));
         }
 
         const force = this.plugin.settings.forceRefresh;
@@ -1022,19 +1022,19 @@ export class PolyglotHelperView extends ItemView {
     private async handleQuickToJapanese() {
         const query = this.queryInput.getValue().trim();
         if (!query) {
-            new Notice("请输入文本。");
+            new Notice(tr("请输入文本。", "Type some text."));
             return;
         }
 
         // 创建一个持续的处理状态提示
-        const processingNotice = new Notice("🔄 正在翻译并生成语音...", 0); // 0表示不自动关闭
+        const processingNotice = new Notice(tr("🔄 正在翻译并生成语音...", "🔄 Translating and generating speech..."), 0); // 0表示不自动关闭
 
         try {
             // 检查API配置
             const { englishLlmApiKey, englishLlmBaseUrl, ttsEngine } = this.plugin.settings;
             if (!englishLlmApiKey || !englishLlmBaseUrl) {
                 processingNotice.hide();
-                new Notice("❌ 请先在设置中配置 LLM 的 API 密钥和接口地址");
+                new Notice(tr("❌ 请先在设置中配置 LLM 的 API 密钥和接口地址", "❌ Add an AI key and endpoint in settings first"));
                 return;
             }
 
@@ -1144,7 +1144,7 @@ export class PolyglotHelperView extends ItemView {
                             if (ttsEngine === 'gemini' && (!this.plugin.settings.geminiTtsApiKey || !this.plugin.settings.geminiTtsBaseUrl)) return;
 
                             await this.plugin.playJapaneseVoice(japaneseTranslation ?? '', this.plugin.settings.forceRefreshAudio);
-                            new Notice(`🎵 已播放: ${japaneseTranslation}`);
+                            new Notice(tr(`🎵 已播放: ${japaneseTranslation}`, `🎵 Played: ${japaneseTranslation}`));
                         } catch (voiceError) {
                             console.error('Voice playback error:', voiceError);
                         }
@@ -1166,7 +1166,7 @@ export class PolyglotHelperView extends ItemView {
     private async displayQuickTranslationFromHistory(item: HistoryItem) {
         try {
             // 显示加载状态
-            const loadingNotice = new Notice("🔄 正在加载历史翻译...", 0);
+            const loadingNotice = new Notice(tr("🔄 正在加载历史翻译...", "🔄 Loading the earlier translation..."), 0);
 
             // 重新获取翻译结果
             let translation: string | null = null;
@@ -1187,11 +1187,11 @@ export class PolyglotHelperView extends ItemView {
                     translationType
                 );
             } else {
-                new Notice("❌ 无法重新获取翻译结果，请检查API配置");
+                new Notice(tr("❌ 无法重新获取翻译结果，请检查API配置", "❌ Could not fetch the translation again; check the AI settings"));
             }
         } catch (error) {
             console.error('History translation display error:', error);
-            new Notice(`❌ 显示历史翻译失败：${errorMessage(error) || '未知错误'}`);
+            new Notice(tr(`❌ 显示历史翻译失败：${errorMessage(error) || '未知错误'}`, `❌ Could not show the earlier translation: ${errorMessage(error) || 'unknown error'}`));
         }
     }
 
@@ -1237,12 +1237,12 @@ export class PolyglotHelperView extends ItemView {
             translation,
             romajiText
         );
-        const bInsert = actions.createEl('button', { cls: 'polyglot-action-btn primary' }); setIcon(bInsert, 'file-plus-2'); bInsert.title = '插入到当前文档'; bInsert.addEventListener('click', () => this.insertToCurrentNote(compose()));
-        const bCopy = actions.createEl('button', { cls: 'polyglot-action-btn' }); setIcon(bCopy, 'copy'); bCopy.title = '复制结果'; bCopy.addEventListener('click', () => this.copyToClipboard(compose()));
-        const bPlay = actions.createEl('button', { cls: 'polyglot-action-btn' }); setIcon(bPlay, 'volume-2'); bPlay.title = '播放语音'; bPlay.addEventListener('click', fire(async () => { try { await this.plugin.playJapaneseVoice(translation, this.plugin.settings.forceRefreshAudio); } catch (e) { new Notice(`❌ 语音播放失败: ${errorMessage(e)}`);} }));
-        const bNew = actions.createEl('button', { cls: 'polyglot-action-btn secondary' }); setIcon(bNew, 'file-plus'); bNew.title = '输出到新笔记'; bNew.addEventListener('click', fire(() => this.createNewNote(compose())));
-        const bFixed = actions.createEl('button', { cls: 'polyglot-action-btn secondary' }); setIcon(bFixed, 'file-text'); bFixed.title = '输出到固定文件'; bFixed.addEventListener('click', fire(() => this.outputToFixedFile(compose())));
-        const bClear = actions.createEl('button', { cls: 'polyglot-action-btn danger' }); setIcon(bClear, 'trash-2'); bClear.title = '清空结果'; bClear.addEventListener('click', () => this.clearResults());
+        const bInsert = actions.createEl('button', { cls: 'polyglot-action-btn primary' }); setIcon(bInsert, 'file-plus-2'); bInsert.title = tr('插入到当前文档', 'Insert into the current note'); bInsert.addEventListener('click', () => this.insertToCurrentNote(compose()));
+        const bCopy = actions.createEl('button', { cls: 'polyglot-action-btn' }); setIcon(bCopy, 'copy'); bCopy.title = tr('复制结果', 'Copy result'); bCopy.addEventListener('click', () => this.copyToClipboard(compose()));
+        const bPlay = actions.createEl('button', { cls: 'polyglot-action-btn' }); setIcon(bPlay, 'volume-2'); bPlay.title = tr('播放语音', 'Play speech'); bPlay.addEventListener('click', fire(async () => { try { await this.plugin.playJapaneseVoice(translation, this.plugin.settings.forceRefreshAudio); } catch (e) { new Notice(tr(`❌ 语音播放失败: ${errorMessage(e)}`, `❌ Could not play the audio: ${errorMessage(e)}`));} }));
+        const bNew = actions.createEl('button', { cls: 'polyglot-action-btn secondary' }); setIcon(bNew, 'file-plus'); bNew.title = tr('输出到新笔记', 'Output to a new note'); bNew.addEventListener('click', fire(() => this.createNewNote(compose())));
+        const bFixed = actions.createEl('button', { cls: 'polyglot-action-btn secondary' }); setIcon(bFixed, 'file-text'); bFixed.title = tr('输出到固定文件', 'Output to the fixed file'); bFixed.addEventListener('click', fire(() => this.outputToFixedFile(compose())));
+        const bClear = actions.createEl('button', { cls: 'polyglot-action-btn danger' }); setIcon(bClear, 'trash-2'); bClear.title = tr('清空结果', 'Clear result'); bClear.addEventListener('click', () => this.clearResults());
 
         // 移除底部提示行（更简洁）
     }
@@ -1250,19 +1250,19 @@ export class PolyglotHelperView extends ItemView {
     private async handleQuickProcess() {
         const query = this.queryInput.getValue().trim();
         if (!query) {
-            new Notice("请输入文本。");
+            new Notice(tr("请输入文本。", "Type some text."));
             return;
         }
 
         // 创建一个持续的处理状态提示
-        const processingNotice = new Notice("🔄 正在翻译为中文...", 0); // 0表示不自动关闭
+        const processingNotice = new Notice(tr("🔄 正在翻译为中文...", "🔄 Translating into Chinese..."), 0); // 0表示不自动关闭
 
         try {
             // 检查API配置
             const { englishLlmApiKey, englishLlmBaseUrl } = this.plugin.settings;
             if (!englishLlmApiKey || !englishLlmBaseUrl) {
                 processingNotice.hide();
-                new Notice("❌ 请先在设置中配置 LLM 的 API 密钥和接口地址");
+                new Notice(tr("❌ 请先在设置中配置 LLM 的 API 密钥和接口地址", "❌ Add an AI key and endpoint in settings first"));
                 return;
             }
 
@@ -1299,7 +1299,7 @@ export class PolyglotHelperView extends ItemView {
 
                 // 处理完成，关闭处理提示，显示成功提示
                 processingNotice.hide();
-                new Notice(`✅ 翻译完成：${chineseTranslation}`);
+                new Notice(tr(`✅ 翻译完成：${chineseTranslation}`, `✅ Translated: ${chineseTranslation}`));
 
                 // 在显示区域显示翻译结果
                 this.displayQuickTranslationResult(query, chineseTranslation, false, "→汉");
@@ -1374,43 +1374,43 @@ export class PolyglotHelperView extends ItemView {
         // 插入按钮
         const insertButton = actionsRow.createEl('button', { cls: 'polyglot-action-btn primary' });
         setIcon(insertButton, 'file-plus-2');
-        insertButton.setAttribute('aria-label', '插入到当前笔记');
+        insertButton.setAttribute('aria-label', tr('插入到当前笔记', 'Insert into the current note'));
         insertButton.addEventListener('click', () => this.insertToCurrentNote(result));
 
         // 复制按钮
         const copyButton = actionsRow.createEl('button', { cls: 'polyglot-action-btn' });
         setIcon(copyButton, 'copy');
-        copyButton.setAttribute('aria-label', '复制到剪贴板');
+        copyButton.setAttribute('aria-label', tr('复制到剪贴板', 'Copy to the clipboard'));
         copyButton.addEventListener('click', () => this.copyToClipboard(result));
 
         // 语音播放按钮
         const audioButton = actionsRow.createEl('button', { cls: 'polyglot-action-btn' });
         setIcon(audioButton, 'volume-2');
-        audioButton.setAttribute('aria-label', '朗读内容');
+        audioButton.setAttribute('aria-label', tr('朗读内容', 'Read aloud'));
         audioButton.addEventListener('click', fire(() => this.playAudio(contentDiv)));
 
         // 添加到词汇库按钮
         const addToVocabButton = actionsRow.createEl('button', { cls: 'polyglot-action-btn secondary' });
         setIcon(addToVocabButton, 'bookmark-plus');
-        addToVocabButton.setAttribute('aria-label', '添加到词汇库');
+        addToVocabButton.setAttribute('aria-label', tr('添加到词汇库', 'Add to word list'));
         addToVocabButton.addEventListener('click', () => void this.addToVocabulary(result, historyItem));
 
         // 创建新笔记按钮
         const newNoteButton = actionsRow.createEl('button', { cls: 'polyglot-action-btn secondary' });
         setIcon(newNoteButton, 'file-plus');
-        newNoteButton.setAttribute('aria-label', '创建新笔记');
+        newNoteButton.setAttribute('aria-label', tr('创建新笔记', 'Create a new note'));
         newNoteButton.addEventListener('click', fire(() => this.createNewNote(result, historyItem)));
 
         // 输出到固定文件按钮
         const fixedFileButton = actionsRow.createEl('button', { cls: 'polyglot-action-btn secondary' });
         setIcon(fixedFileButton, 'file-text');
-        fixedFileButton.setAttribute('aria-label', '输出到固定文件');
+        fixedFileButton.setAttribute('aria-label', tr('输出到固定文件', 'Output to the fixed file'));
         fixedFileButton.addEventListener('click', fire(() => this.outputToFixedFile(result, historyItem)));
 
         // 清除按钮
         const clearButton = actionsRow.createEl('button', { cls: 'polyglot-action-btn danger' });
         setIcon(clearButton, 'trash-2');
-        clearButton.setAttribute('aria-label', '清除结果');
+        clearButton.setAttribute('aria-label', tr('清除结果', 'Clear result'));
         clearButton.addEventListener('click', () => this.clearResults());
     }
 
@@ -1420,14 +1420,14 @@ export class PolyglotHelperView extends ItemView {
     private insertToCurrentNote(result: string): void {
         // 优先使用开始处理时的文件，如果没有则使用最后活跃的文件
         const targetEditor = this.processingStartFile?.editor || this.lastActiveLeaf?.editor;
-        const targetFileName = this.processingStartFile?.file?.name || this.lastActiveLeaf?.file?.name || '未知文件';
+        const targetFileName = this.processingStartFile?.file?.name || this.lastActiveLeaf?.file?.name || tr('未知文件', 'unknown file');
 
         if (targetEditor) {
             targetEditor.replaceSelection(result);
-            new Notice(`✅ 结果已插入到 ${targetFileName}`);
+            new Notice(tr(`✅ 结果已插入到 ${targetFileName}`, `✅ Inserted into ${targetFileName}`));
             this.clearResults();
         } else {
-            new Notice('❌ 无法插入结果，请先点击您想操作的笔记');
+            new Notice(tr('❌ 无法插入结果，请先点击您想操作的笔记', '❌ Could not insert; click the note you want first'));
         }
     }
 
@@ -1437,8 +1437,8 @@ export class PolyglotHelperView extends ItemView {
     private copyToClipboard(result: string): void {
         // Obsidian 桌面端和手机端都提供 Clipboard API
         navigator.clipboard.writeText(result)
-            .then(() => new Notice('✅ 结果已复制到剪贴板'))
-            .catch(() => new Notice('❌ 复制失败，请手动复制'));
+            .then(() => new Notice(tr('✅ 结果已复制到剪贴板', '✅ Copied to the clipboard')))
+            .catch(() => new Notice(tr('❌ 复制失败，请手动复制', '❌ Could not copy; copy it by hand')));
     }
 
     /**
@@ -1452,19 +1452,19 @@ export class PolyglotHelperView extends ItemView {
             // 移动端兼容性：尝试播放，如果失败则提示用户
             try {
                 await audio.play();
-                new Notice('🔊 开始播放音频');
+                new Notice(tr('🔊 开始播放音频', '🔊 Playing audio'));
             } catch (playError) {
                 console.warn('Audio play failed, might need user interaction:', playError);
                 if ('ontouchstart' in window) {
-                    new Notice('请在移动端点击音频控件来播放');
+                    new Notice(tr('请在移动端点击音频控件来播放', 'On mobile, tap the audio control to play it'));
                     // 显示音频控件
                     audio.controls = true;
                 } else {
-                    new Notice('❌ 音频播放失败');
+                    new Notice(tr('❌ 音频播放失败', '❌ Could not play the audio'));
                 }
             }
         } else {
-            new Notice('❌ 未找到音频内容');
+            new Notice(tr('❌ 未找到音频内容', '❌ No audio found'));
         }
     }
 
@@ -1474,7 +1474,7 @@ export class PolyglotHelperView extends ItemView {
     private async addToVocabulary(result: string, historyItem?: HistoryItem, card?: WordCard): Promise<void> {
         const word = (historyItem?.query || this.lastQuery?.text || this.queryInput.getValue()).trim();
         if (!word) {
-            new Notice('❌ 无法确定要添加的词汇');
+            new Notice(tr('❌ 无法确定要添加的词汇', '❌ Cannot tell which word to add'));
             return;
         }
         const japanese = historyItem
@@ -1494,7 +1494,7 @@ export class PolyglotHelperView extends ItemView {
             // 词卡已经拆好了词头、音标、词性与释义，直接用
             const senses = card.sections.flatMap(section => section.groups.flatMap(group => group.lines.map(line => line.text))).slice(0, 3);
             await tracker.addEnglishVocabularyItem(card.headword.toLowerCase(), card.gloss || senses[0] || '', card.phonetic, card.pos.join(', '), senses, '收自语言助手', [], ['查词']);
-            new Notice(`已把 "${card.headword}" 加入生词本`);
+            new Notice(tr(`已把 "${card.headword}" 加入生词本`, `Added "${card.headword}" to the word list`));
             return;
         }
         if (japanese) {
@@ -1502,7 +1502,7 @@ export class PolyglotHelperView extends ItemView {
         } else {
             await tracker.addEnglishVocabularyItem(word.toLowerCase(), definitions[0] ?? '', '', '', definitions, '收自语言助手', [], ['查词']);
         }
-        new Notice(`✅ "${word}" 已添加到词汇库`);
+        new Notice(tr(`✅ "${word}" 已添加到词汇库`, `✅ "${word}" added to the word list`));
     }
 
     /**
@@ -1547,9 +1547,9 @@ export class PolyglotHelperView extends ItemView {
         try {
             const file = await this.app.vault.create(fullPath, result);
             await this.app.workspace.getLeaf().openFile(file);
-            new Notice(`✅ 已创建新笔记: ${fileName}`);
+            new Notice(tr(`✅ 已创建新笔记: ${fileName}`, `✅ Created a new note: ${fileName}`));
         } catch {
-            new Notice('❌ 创建笔记失败');
+            new Notice(tr('❌ 创建笔记失败', '❌ Could not create the note'));
         }
     }
 
@@ -1573,7 +1573,7 @@ export class PolyglotHelperView extends ItemView {
         const fixedOutputFile = languageSettings?.fixedOutputFile || this.plugin.settings.fixedOutputFile;
         
         if (!fixedOutputFile) {
-            new Notice("错误：未设置固定输出文件路径。请在设置中配置。");
+            new Notice(tr("错误：未设置固定输出文件路径。请在设置中配置。", "Error: no fixed output file is set. Set one in settings."));
             return;
         }
 
@@ -1583,7 +1583,7 @@ export class PolyglotHelperView extends ItemView {
             const timestamp = new Date().toLocaleString('zh-CN');
             const content = `\n\n---\n**${timestamp}**\n\n${result}\n\n\n`;
             await this.app.vault.append(fixedFile, content);
-            new Notice(`结果已追加到固定文件: ${fixedFile.name}`);
+            new Notice(tr(`结果已追加到固定文件: ${fixedFile.name}`, `Appended to the fixed file: ${fixedFile.name}`));
         } else {
             // 文件不存在，创建文件
             try {
@@ -1597,9 +1597,9 @@ export class PolyglotHelperView extends ItemView {
                 }
 
                 const newFile = await this.app.vault.create(fixedOutputFile, content);
-                new Notice(`固定文件已创建并保存结果: ${newFile.name}`);
+                new Notice(tr(`固定文件已创建并保存结果: ${newFile.name}`, `Created the fixed file and saved the result: ${newFile.name}`));
             } catch (e) {
-                new Notice(`创建固定文件失败: ${errorMessage(e)}`);
+                new Notice(tr(`创建固定文件失败: ${errorMessage(e)}`, `Could not create the fixed file: ${errorMessage(e)}`));
             }
         }
     }
@@ -1622,7 +1622,7 @@ export class PolyglotHelperView extends ItemView {
 
         const sections = this.plugin.settings.japaneseSections;
         if (!sections) {
-            new Notice("错误：找不到日语设置。");
+            new Notice(tr("错误：找不到日语设置。", "Error: Japanese settings not found."));
             return;
         }
 
@@ -1635,11 +1635,11 @@ export class PolyglotHelperView extends ItemView {
         panel.setCssStyles({ left: `${rect.left}px`, top: `${rect.bottom + 5}px` });
 
         const sectionNames: Record<keyof typeof sections, string> = {
-            vocabAnalysis: '词汇分析',
-            relatedVocab: '相关词汇解析',
-            sentences: '例句生成',
-            exercise: '翻译练习',
-            jisho: 'Jisho 词典'
+            vocabAnalysis: tr('词汇分析', 'Vocabulary analysis'),
+            relatedVocab: tr('相关词汇解析', 'Related vocabulary'),
+            sentences: tr('例句生成', 'Example sentences'),
+            exercise: tr('翻译练习', 'Translation exercise'),
+            jisho: tr('Jisho 词典', 'Jisho dictionary')
         };
 
         // 过滤掉不在 sectionNames 中的键
@@ -1671,7 +1671,7 @@ export class PolyglotHelperView extends ItemView {
 
         const voiceCheckbox = voiceItem.createEl('input', { type: 'checkbox' });
         voiceCheckbox.checked = !this.plugin.settings.disableJapaneseVoiceDuringAnalysis;
-        voiceItem.createSpan({ text: '生成语音' });
+        voiceItem.createSpan({ text: tr('生成语音', 'Generate speech') });
 
         voiceItem.addEventListener('click', fire(async (e) => {
             e.stopPropagation();
@@ -1716,11 +1716,11 @@ export class PolyglotHelperView extends ItemView {
             definitions: '词典释义',
             example: '例句',
             usage: '用法助记',
-            etymology: '词源',
-            medical: '医学专用',
+            etymology: tr('词源', 'Etymology'),
+            medical: tr('医学专用', 'Medical'),
             slang: '俚语',
             tatoeba: 'Tatoeba 例句',
-            idioms: '相关习语'
+            idioms: tr('相关习语', 'Related idioms')
         };
 
         (Object.keys(sections) as Array<keyof typeof sections>).forEach(key => {
@@ -1772,8 +1772,8 @@ export class PolyglotHelperView extends ItemView {
         panel.setCssStyles({ left: `${rect.left}px`, top: `${rect.bottom + 5}px` });
 
         const entries: Array<{ key: 'showRomaji' | 'playAudio'; label: string; }> = [
-            { key: 'showRomaji', label: '罗马音标注' },
-            { key: 'playAudio', label: '播放音频' }
+            { key: 'showRomaji', label: tr('罗马音标注', 'Romaji') },
+            { key: 'playAudio', label: tr('播放音频', 'Play audio') }
         ];
 
         entries.forEach(({ key, label }) => {
@@ -1839,16 +1839,16 @@ export class PolyglotHelperView extends ItemView {
     private async handleVoiceSynthesis(): Promise<void> {
         const query = this.queryInput.getValue().trim();
         if (!query) {
-            new Notice("请先输入要合成语音的文本。");
+            new Notice(tr("请先输入要合成语音的文本。", "Type the text to synthesise first."));
             return;
         }
 
         try {
-            new Notice("🎵 正在生成语音...");
+            new Notice(tr("🎵 正在生成语音...", "🎵 Generating speech..."));
             // 使用TTS API直接播放
             await this.plugin.playJapaneseVoice(query, this.plugin.settings.forceRefreshAudio);
         } catch (error) {
-            new Notice(`语音合成失败: ${errorMessage(error)}`);
+            new Notice(tr(`语音合成失败: ${errorMessage(error)}`, `Speech failed: ${errorMessage(error)}`));
             this.plugin.logger.error("语音合成失败", error);
         }
     }
@@ -1868,11 +1868,11 @@ export class PolyglotHelperView extends ItemView {
 
         // 添加面板标题
         const header = panel.createDiv({ cls: 'polyglot-settings-header' });
-        header.createSpan({ text: '语音', cls: 'polyglot-settings-title' });
+        header.createSpan({ text: tr('语音', 'Speech'), cls: 'polyglot-settings-title' });
 
         // TTS引擎选择
         const ttsSection = panel.createDiv({ cls: 'polyglot-settings-section' });
-        ttsSection.createEl('label', { text: '引擎', cls: 'polyglot-settings-label' });
+        ttsSection.createEl('label', { text: tr('引擎', 'Engine'), cls: 'polyglot-settings-label' });
         const ttsSelect = ttsSection.createEl('select', { cls: 'polyglot-settings-select' });
         for (const [value, label] of [['openai', '🤖 OpenAI'], ['youdao', '📚 有道'], ['gemini', '💎 Gemini']]) {
             ttsSelect.createEl('option', { value, text: label });
@@ -1889,7 +1889,7 @@ export class PolyglotHelperView extends ItemView {
         // 语音速度
         const speedSection = panel.createDiv({ cls: 'polyglot-settings-section' });
         const speedHeader = speedSection.createDiv({ cls: 'polyglot-settings-speed-header' });
-        speedHeader.createEl('label', { text: '速度', cls: 'polyglot-settings-label' });
+        speedHeader.createEl('label', { text: tr('速度', 'Speed'), cls: 'polyglot-settings-label' });
         const speedValue = speedHeader.createSpan({
             text: `${this.plugin.settings.openaiTtsSpeed || 1.0}x`,
             cls: 'polyglot-settings-value'
@@ -1914,7 +1914,7 @@ export class PolyglotHelperView extends ItemView {
         // 语音选择（OpenAI和Gemini）
         if (this.plugin.settings.ttsEngine === 'openai') {
             const voiceSection = panel.createDiv({ cls: 'polyglot-settings-section' });
-            voiceSection.createEl('label', { text: '声音', cls: 'polyglot-settings-label' });
+            voiceSection.createEl('label', { text: tr('声音', 'Voice'), cls: 'polyglot-settings-label' });
             const voiceSelect = voiceSection.createEl('select', { cls: 'polyglot-settings-select' });
             for (const [value, label] of [
                 ['alloy', '🎭 Alloy'], ['echo', '🔊 Echo'], ['fable', '📖 Fable'],
@@ -1929,41 +1929,41 @@ export class PolyglotHelperView extends ItemView {
             }));
         } else if (this.plugin.settings.ttsEngine === 'gemini') {
             const voiceSection = panel.createDiv({ cls: 'polyglot-settings-section' });
-            voiceSection.createEl('label', { text: '声音', cls: 'polyglot-settings-label' });
+            voiceSection.createEl('label', { text: tr('声音', 'Voice'), cls: 'polyglot-settings-label' });
             const voiceSelect = voiceSection.createEl('select', { cls: 'polyglot-settings-select' });
 
             // Gemini TTS 完整语音选项（与设置页面保持一致）
             const geminiVoices = [
-                { value: 'Zephyr', label: 'Zephyr (明亮)' },
-                { value: 'Puck', label: 'Puck (欢快)' },
-                { value: 'Charon', label: 'Charon (信息丰富)' },
-                { value: 'Kore', label: 'Kore (坚定)' },
-                { value: 'Fenrir', label: 'Fenrir (易激动)' },
-                { value: 'Leda', label: 'Leda (年轻)' },
-                { value: 'Orus', label: 'Orus (坚定)' },
-                { value: 'Aoede', label: 'Aoede (轻松)' },
-                { value: 'Callirhoe', label: 'Callirhoe (随和)' },
-                { value: 'Autonoe', label: 'Autonoe (明亮)' },
-                { value: 'Enceladus', label: 'Enceladus (呼吸感)' },
-                { value: 'Iapetus', label: 'Iapetus (清晰)' },
-                { value: 'Umbriel', label: 'Umbriel (随和)' },
-                { value: 'Algieba', label: 'Algieba (平滑)' },
-                { value: 'Despina', label: 'Despina (平滑)' },
-                { value: 'Erinome', label: 'Erinome (清晰)' },
-                { value: 'Algenib', label: 'Algenib (沙哑)' },
-                { value: 'Rasalgethi', label: 'Rasalgethi (信息丰富)' },
-                { value: 'Laomedeia', label: 'Laomedeia (欢快)' },
-                { value: 'Achernar', label: 'Achernar (轻柔)' },
-                { value: 'Alnilam', label: 'Alnilam (坚定)' },
-                { value: 'Schedar', label: 'Schedar (平稳)' },
-                { value: 'Gacrux', label: 'Gacrux (成熟)' },
-                { value: 'Pulcherrima', label: 'Pulcherrima (向前)' },
-                { value: 'Achird', label: 'Achird (友好)' },
-                { value: 'Zubenelgenubi', label: 'Zubenelgenubi (休闲)' },
-                { value: 'Vindematrix', label: 'Vindematrix (温柔)' },
-                { value: 'Sadachbia', label: 'Sadachbia (活泼)' },
-                { value: 'Sadaltager', label: 'Sadaltager (博学)' },
-                { value: 'Sulafat', label: 'Sulafat (温暖)' }
+                { value: 'Zephyr', label: tr('Zephyr (明亮)', 'Zephyr (bright)') },
+                { value: 'Puck', label: tr('Puck (欢快)', 'Puck (upbeat)') },
+                { value: 'Charon', label: tr('Charon (信息丰富)', 'Charon (informative)') },
+                { value: 'Kore', label: tr('Kore (坚定)', 'Kore (firm)') },
+                { value: 'Fenrir', label: tr('Fenrir (易激动)', 'Fenrir (excitable)') },
+                { value: 'Leda', label: tr('Leda (年轻)', 'Leda (youthful)') },
+                { value: 'Orus', label: tr('Orus (坚定)', 'Orus (firm)') },
+                { value: 'Aoede', label: tr('Aoede (轻松)', 'Aoede (breezy)') },
+                { value: 'Callirhoe', label: tr('Callirhoe (随和)', 'Callirhoe (easy-going)') },
+                { value: 'Autonoe', label: tr('Autonoe (明亮)', 'Autonoe (bright)') },
+                { value: 'Enceladus', label: tr('Enceladus (呼吸感)', 'Enceladus (breathy)') },
+                { value: 'Iapetus', label: tr('Iapetus (清晰)', 'Iapetus (clear)') },
+                { value: 'Umbriel', label: tr('Umbriel (随和)', 'Umbriel (easy-going)') },
+                { value: 'Algieba', label: tr('Algieba (平滑)', 'Algieba (smooth)') },
+                { value: 'Despina', label: tr('Despina (平滑)', 'Despina (smooth)') },
+                { value: 'Erinome', label: tr('Erinome (清晰)', 'Erinome (clear)') },
+                { value: 'Algenib', label: tr('Algenib (沙哑)', 'Algenib (gravelly)') },
+                { value: 'Rasalgethi', label: tr('Rasalgethi (信息丰富)', 'Rasalgethi (informative)') },
+                { value: 'Laomedeia', label: tr('Laomedeia (欢快)', 'Laomedeia (upbeat)') },
+                { value: 'Achernar', label: tr('Achernar (轻柔)', 'Achernar (soft)') },
+                { value: 'Alnilam', label: tr('Alnilam (坚定)', 'Alnilam (firm)') },
+                { value: 'Schedar', label: tr('Schedar (平稳)', 'Schedar (even)') },
+                { value: 'Gacrux', label: tr('Gacrux (成熟)', 'Gacrux (mature)') },
+                { value: 'Pulcherrima', label: tr('Pulcherrima (向前)', 'Pulcherrima (forward)') },
+                { value: 'Achird', label: tr('Achird (友好)', 'Achird (friendly)') },
+                { value: 'Zubenelgenubi', label: tr('Zubenelgenubi (休闲)', 'Zubenelgenubi (casual)') },
+                { value: 'Vindematrix', label: tr('Vindematrix (温柔)', 'Vindematrix (gentle)') },
+                { value: 'Sadachbia', label: tr('Sadachbia (活泼)', 'Sadachbia (lively)') },
+                { value: 'Sadaltager', label: tr('Sadaltager (博学)', 'Sadaltager (knowledgeable)') },
+                { value: 'Sulafat', label: tr('Sulafat (温暖)', 'Sulafat (warm)') }
             ];
 
             for (const voice of geminiVoices) {
@@ -1979,7 +1979,7 @@ export class PolyglotHelperView extends ItemView {
 
         // 强制刷新音频选项
         const refreshSection = panel.createDiv({ cls: 'polyglot-settings-section' });
-        refreshSection.createEl('label', { text: '音频缓存', cls: 'polyglot-settings-label' });
+        refreshSection.createEl('label', { text: tr('音频缓存', 'Audio cache'), cls: 'polyglot-settings-label' });
 
         const refreshContainer = refreshSection.createDiv({ cls: 'polyglot-settings-refresh-container' });
 
@@ -1990,7 +1990,7 @@ export class PolyglotHelperView extends ItemView {
 
         const refreshLabel = refreshContainer.createEl('label');
         refreshLabel.setAttribute('for', 'polyglot-force-refresh-audio');
-        refreshLabel.textContent = '🔄 强制刷新音频';
+        refreshLabel.textContent = tr('🔄 强制刷新音频', '🔄 Regenerate audio');
 
         refreshCheckbox.addEventListener('change', fire(async () => {
             this.plugin.settings.forceRefreshAudio = refreshCheckbox.checked;
@@ -1999,7 +1999,7 @@ export class PolyglotHelperView extends ItemView {
 
         // 添加说明文字
         const refreshHint = refreshSection.createDiv({ cls: 'polyglot-settings-hint' });
-        refreshHint.textContent = '勾选后，相同文字会重新生成音频';
+        refreshHint.textContent = tr('勾选后，相同文字会重新生成音频', 'When checked, the same text gets fresh audio');
 
         document.body.appendChild(panel);
 
@@ -2036,20 +2036,20 @@ export class PolyglotHelperView extends ItemView {
         let targetFile: TFile | null = null;
 
         if (outputDestination === 'sidebar') {
-            new Notice("已在侧边栏显示");
+            new Notice(tr("已在侧边栏显示", "Shown in the side panel"));
             return;
         } else if (outputDestination === 'replace') {
             const activeEditor = this.app.workspace.activeEditor;
             targetFile = activeEditor?.file || null;
             if (!targetFile) {
-                new Notice("❌ 当前无打开文件");
+                new Notice(tr("❌ 当前无打开文件", "❌ No file is open"));
                 return;
             }
         } else if (outputDestination === 'appendCurrent') {
             const activeEditor = this.app.workspace.activeEditor;
             targetFile = activeEditor?.file || null;
             if (!targetFile) {
-                new Notice("❌ 当前无打开文件");
+                new Notice(tr("❌ 当前无打开文件", "❌ No file is open"));
                 return;
             }
         } else if (outputDestination === 'newFile') {
@@ -2084,9 +2084,9 @@ export class PolyglotHelperView extends ItemView {
                 const file = await this.app.vault.create(fullPath, '');
                 targetFile = file;
                 await this.app.workspace.getLeaf().openFile(file);
-                new Notice('✅ 已创建新文件');
+                new Notice(tr('✅ 已创建新文件', '✅ Created a new file'));
             } catch {
-                new Notice('❌ 创建失败');
+                new Notice(tr('❌ 创建失败', '❌ Could not create it'));
                 return;
             }
         } else if (outputDestination === 'fixedFile') {
@@ -2106,7 +2106,7 @@ export class PolyglotHelperView extends ItemView {
             }
             
             if (!fixedOutputFile) {
-                new Notice('❌ 未设置固定文件');
+                new Notice(tr('❌ 未设置固定文件', '❌ No fixed file is set'));
                 return;
             }
             
@@ -2114,16 +2114,16 @@ export class PolyglotHelperView extends ItemView {
             if (abstractFile instanceof TFile) {
                 targetFile = abstractFile;
                 await this.app.workspace.getLeaf().openFile(targetFile);
-                new Notice('✅ 已跳转');
+                new Notice(tr('✅ 已跳转', '✅ Opened'));
             } else {
-                new Notice('❌ 找不到固定文件');
+                new Notice(tr('❌ 找不到固定文件', '❌ Fixed file not found'));
             }
             return;
         }
 
         if (targetFile) {
             await this.app.workspace.getLeaf().openFile(targetFile);
-            new Notice('✅ 已跳转');
+            new Notice(tr('✅ 已跳转', '✅ Opened'));
         }
     }
 
@@ -2133,7 +2133,7 @@ export class PolyglotHelperView extends ItemView {
     private async jumpToLastOutputLocation(): Promise<void> {
         const history = this.plugin.settings.queryHistory || [];
         const last = history.find(h => h.outputLocation && h.outputLocation.destination !== 'sidebar');
-        if (!last) { new Notice('没有可用的输出位置记录'); return; }
+        if (!last) { new Notice(tr('没有可用的输出位置记录', 'No output location recorded')); return; }
         await this.jumpToHistoryItemLocation(last);
     }
 
@@ -2142,7 +2142,7 @@ export class PolyglotHelperView extends ItemView {
      */
     private async jumpToHistoryItemLocation(item: HistoryItem): Promise<void> {
         if (!item.outputLocation) {
-            new Notice('❌ 无输出位置信息');
+            new Notice(tr('❌ 无输出位置信息', '❌ No output location'));
             return;
         }
 
@@ -2150,39 +2150,39 @@ export class PolyglotHelperView extends ItemView {
         let targetFile: TFile | null = null;
 
         if (destination === 'sidebar') {
-            new Notice('已在侧边栏显示');
+            new Notice(tr('已在侧边栏显示', 'Shown in the side panel'));
             return;
         } else if (destination === 'replace' || destination === 'appendCurrent') {
             if (filePath) {
                 targetFile = asTFile(this.app.vault.getAbstractFileByPath(filePath));
                 if (!targetFile) {
-                    new Notice('❌ 找不到文件');
+                    new Notice(tr('❌ 找不到文件', '❌ File not found'));
                     return;
                 }
             } else {
-                new Notice('❌ 记录无文件路径');
+                new Notice(tr('❌ 记录无文件路径', '❌ The record has no file path'));
                 return;
             }
         } else if (destination === 'newFile') {
             if (filePath) {
                 targetFile = asTFile(this.app.vault.getAbstractFileByPath(filePath));
                 if (!targetFile) {
-                    new Notice('❌ 找不到新文件');
+                    new Notice(tr('❌ 找不到新文件', '❌ New file not found'));
                     return;
                 }
             } else {
-                new Notice('❌ 记录无新文件路径');
+                new Notice(tr('❌ 记录无新文件路径', '❌ The record has no new file path'));
                 return;
             }
         } else if (destination === 'fixedFile') {
             if (filePath) {
                 targetFile = asTFile(this.app.vault.getAbstractFileByPath(filePath));
                 if (!targetFile) {
-                    new Notice('❌ 找不到固定文件');
+                    new Notice(tr('❌ 找不到固定文件', '❌ Fixed file not found'));
                     return;
                 }
             } else {
-                new Notice('❌ 记录无固定文件路径');
+                new Notice(tr('❌ 记录无固定文件路径', '❌ The record has no fixed file path'));
                 return;
             }
         }
@@ -2225,7 +2225,7 @@ export class PolyglotHelperView extends ItemView {
                             if (editor) {
                                 editor.setCursor({ line: targetLine, ch: 0 });
                                 editor.scrollIntoView({ from: { line: targetLine, ch: 0 }, to: { line: targetLine, ch: 0 } }, true);
-                                new Notice('✅ 已定位');
+                                new Notice(tr('✅ 已定位', '✅ Found it'));
                                 return;
                             }
                         }
@@ -2236,7 +2236,7 @@ export class PolyglotHelperView extends ItemView {
             }
             
             // 如果没有标题信息或定位失败，只跳转到文件
-            new Notice('✅ 已跳转');
+            new Notice(tr('✅ 已跳转', '✅ Opened'));
         }
     }
 

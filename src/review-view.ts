@@ -3,6 +3,7 @@ import PolyglotHelper from "./main";
 import { LearningTracker } from "./learning-tracker";
 import { ReviewSession } from "./review-session";
 
+import { tr } from './shared/i18n';
 export const POLYGLOT_REVIEW_VIEW_TYPE = "polyglot-review-view";
 
 // 单独标签页里的复习，与侧栏“学习”页是同一个界面。
@@ -16,7 +17,7 @@ export class PolyglotReviewView extends ItemView {
     }
 
     getViewType() { return POLYGLOT_REVIEW_VIEW_TYPE; }
-    getDisplayText() { return "复习单词"; }
+    getDisplayText() { return tr("复习单词", "Review words"); }
     getIcon() { return "brain"; }
 
     async onOpen() {

@@ -10,6 +10,7 @@ import { cleanFileName } from './file-utils';
 import { AudioCacheManager } from './audio-cache';
 
 import { errorMessage } from './shared/errors';
+import { tr } from './shared/i18n';
 export class JapaneseProcessor {
     constructor(
         private app: App,
@@ -107,7 +108,7 @@ export class JapaneseProcessor {
     async runJapaneseProcess(query: string, force: boolean, apiConfig?: ApiConfig, saveSettings?: () => Promise<void>, currentFilePath?: string): Promise<{ original: string; colloquial: string; markdown: string } | null> {
         const sentence = query;
         if (!sentence) {
-            new Notice("查询内容为空。");
+            new Notice(tr("查询内容为空。", "Nothing to look up."));
             return null;
         }
 
@@ -120,7 +121,7 @@ export class JapaneseProcessor {
         }
 
         // 单行处理（原有逻辑）
-        const notice = new Notice("正在处理日语翻译和分析...", 0);
+        const notice = new Notice(tr("正在处理日语翻译和分析...", "Translating and analysing the Japanese..."), 0);
         try {
             const activeJapaneseSections = Object.entries(this.settings.japaneseSections)
                 .filter(([, isActive]) => isActive)
@@ -136,7 +137,7 @@ export class JapaneseProcessor {
                 if (cachedResult) {
                     notice.hide();
                     this.logger.info(`使用缓存结果: "${sentence}"`);
-                    new Notice("从缓存加载日语分析。");
+                    new Notice(tr("从缓存加载日语分析。", "Japanese analysis loaded from cache."));
                     return cachedResult;
                 }
             }
@@ -164,7 +165,7 @@ export class JapaneseProcessor {
         } catch (error) {
             notice.hide();
             this.logger.error("处理日语时出错", error);
-            new Notice(`处理失败: ${errorMessage(error)}`);
+            new Notice(tr(`处理失败: ${errorMessage(error)}`, `Failed: ${errorMessage(error)}`));
             return null;
         }
     }
@@ -176,7 +177,7 @@ export class JapaneseProcessor {
         const total = lines.length;
         
         // 创建进度通知
-        const progressNotice = new Notice(`正在处理 ${total} 个日语单词/短语... (0/${total})`, 0);
+        const progressNotice = new Notice(tr(`正在处理 ${total} 个日语单词/短语... (0/${total})`, `Processing ${total} Japanese words or phrases... (0/${total})`), 0);
         
         try {
             for (let i = 0; i < total; i++) {
@@ -215,7 +216,7 @@ export class JapaneseProcessor {
             }
             
             progressNotice.hide();
-            new Notice(`✅ 已完成 ${total} 个日语单词/短语的处理`);
+            new Notice(tr(`✅ 已完成 ${total} 个日语单词/短语的处理`, `✅ Processed ${total} Japanese words or phrases`));
             
             // 不返回合并结果，因为每个结果都已经单独输出了
             return {
@@ -227,7 +228,7 @@ export class JapaneseProcessor {
         } catch (error) {
             progressNotice.hide();
             this.logger.error("处理多行日语时出错", error);
-            new Notice(`处理失败: ${errorMessage(error)}`);
+            new Notice(tr(`处理失败: ${errorMessage(error)}`, `Failed: ${errorMessage(error)}`));
             return null;
         }
     }
@@ -370,13 +371,13 @@ export class JapaneseProcessor {
     }
 
     async runQuickJapaneseTranslation(query: string, force: boolean, apiConfig?: ApiConfig): Promise<{ translation: string; reading: string; audioFilePath: string | null } | null> {
-        const notice = new Notice("正在获取日语快捷翻译...", 0);
+        const notice = new Notice(tr("正在获取日语快捷翻译...", "Getting a quick Japanese translation..."), 0);
         try {
             if (!force) {
                 const cachedResult = await getFromCache<{ translation: string; reading: string; audioFilePath: string | null }>(this.app, this.pluginDir, 'japanese', `quick_${query}`);
                 if (cachedResult) {
                     notice.hide();
-                    new Notice("从缓存加载快捷翻译。");
+                    new Notice(tr("从缓存加载快捷翻译。", "Quick translation loaded from cache."));
                     this.logger.info(`快捷翻译命中缓存: ${query}`);
                     return cachedResult;
                 }
@@ -386,7 +387,7 @@ export class JapaneseProcessor {
             if (!result || !result.translation) {
                 // throw new Error("从 LLM 获取翻译失败。");
                 notice.hide();
-                new Notice("从 LLM 获取翻译失败。");
+                new Notice(tr("从 LLM 获取翻译失败。", "Could not get a translation from the model."));
                 return null;
             }
 
@@ -406,7 +407,7 @@ export class JapaneseProcessor {
         } catch (error) {
             notice.hide();
             this.logger.error("处理日语快捷翻译时出错", error);
-            new Notice(`处理失败: ${errorMessage(error)}`);
+            new Notice(tr(`处理失败: ${errorMessage(error)}`, `Failed: ${errorMessage(error)}`));
             return null;
         }
     }

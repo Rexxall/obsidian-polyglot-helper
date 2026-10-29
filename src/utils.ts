@@ -5,6 +5,7 @@ import { MarkdownView } from 'obsidian';
 
 import { errorMessage } from './shared/errors';
 import { asTFile } from './file-utils';
+import { tr } from './shared/i18n';
 export function sleep(ms: number) {
     return new Promise(resolve => window.setTimeout(resolve, ms));
 }
@@ -134,7 +135,7 @@ async function createNewFileWithResult(
         try {
             await app.vault.createFolder(folderPath);
         } catch (e) {
-            new Notice(`创建目录失败: ${folderPath}`);
+            new Notice(tr(`创建目录失败: ${folderPath}`, `Could not create the folder: ${folderPath}`));
             logger.error(`Failed to create folder: ${folderPath}`, e);
             return;
         }
@@ -144,13 +145,13 @@ async function createNewFileWithResult(
         const existingFile = app.vault.getAbstractFileByPath(fullPath);
         if (existingFile instanceof TFile) {
             await app.vault.append(existingFile, `\n\n---\n${result}`);
-            new Notice(`结果已追加到现有文件: ${fullPath}`);
+            new Notice(tr(`结果已追加到现有文件: ${fullPath}`, `Appended to the existing file: ${fullPath}`));
         } else {
             const newFile = await app.vault.create(fullPath, result);
-            new Notice(`结果已保存到新文件: ${newFile.path}`);
+            new Notice(tr(`结果已保存到新文件: ${newFile.path}`, `Saved to a new file: ${newFile.path}`));
         }
     } catch (e) {
-        new Notice(`创建或写入文件失败: ${errorMessage(e)}`);
+        new Notice(tr(`创建或写入文件失败: ${errorMessage(e)}`, `Could not create or write the file: ${errorMessage(e)}`));
         logger.error(`Failed to create/write file: ${fullPath}`, e);
     }
 }
@@ -206,14 +207,14 @@ export async function handleSpecificOutput(
 
     if (destination === 'sidebar') {
         app.workspace.trigger('polyglot-query-success', finalResult);
-        new Notice("结果已在语言助手侧栏显示。");
+        new Notice(tr("结果已在语言助手侧栏显示。", "Shown in the Polyglot Helper side panel."));
         return;
     }
 
     // 对于新文件和固定文件模式，不需要当前文件路径
     if (!filePath && (destination === 'replace' || destination === 'appendCurrent')) {
         app.workspace.trigger('polyglot-query-success', finalResult);
-        new Notice("当前没有打开的文件，结果已在语言助手侧栏显示。\n💡 提示：请打开一个文件，或在设置中更改输出位置。");
+        new Notice(tr("当前没有打开的文件，结果已在语言助手侧栏显示。\n💡 提示：请打开一个文件，或在设置中更改输出位置。", "No file is open, so the result is shown in the side panel.\n💡 Open a file, or change the output location in settings."));
         return;
     }
 
@@ -234,10 +235,10 @@ export async function handleSpecificOutput(
 
                         const newContent = beforeSelection + result + afterSelection;
                         await app.vault.modify(file, newContent);
-                        new Notice("结果已替换选中内容。");
+                        new Notice(tr("结果已替换选中内容。", "Replaced the selection."));
                     }
                 } else {
-                    new Notice("没有选中内容可替换。");
+                    new Notice(tr("没有选中内容可替换。", "Nothing selected to replace."));
                 }
                 break;
 
@@ -245,7 +246,7 @@ export async function handleSpecificOutput(
                 const currentFile = app.vault.getAbstractFileByPath(filePath);
                 if (currentFile instanceof TFile) {
                     await app.vault.append(currentFile, finalResult);
-                    new Notice(`结果已追加到当前文件: ${currentFile.name}`);
+                    new Notice(tr(`结果已追加到当前文件: ${currentFile.name}`, `Appended to the current file: ${currentFile.name}`));
                 }
                 break;
             }
@@ -257,7 +258,7 @@ export async function handleSpecificOutput(
                     const timestamp = new Date().toLocaleString('zh-CN');
                     const content = `\n\n---\n**${timestamp}**\n\n${result}\n\n\n`;
                     await app.vault.append(fixedFile, content);
-                    new Notice(`结果已追加到固定文件: ${fixedFile.name}`);
+                    new Notice(tr(`结果已追加到固定文件: ${fixedFile.name}`, `Appended to the fixed file: ${fixedFile.name}`));
                 } else {
                     // 文件不存在，创建文件
                     try {
@@ -271,9 +272,9 @@ export async function handleSpecificOutput(
                         }
 
                         const newFile = await app.vault.create(outputSettings.fixedOutputFile, content);
-                        new Notice(`固定文件已创建并保存结果: ${newFile.name}`);
+                        new Notice(tr(`固定文件已创建并保存结果: ${newFile.name}`, `Created the fixed file and saved the result: ${newFile.name}`));
                     } catch (e) {
-                        new Notice(`创建固定文件失败: ${errorMessage(e)}`);
+                        new Notice(tr(`创建固定文件失败: ${errorMessage(e)}`, `Could not create the fixed file: ${errorMessage(e)}`));
                         logger.error(`Failed to create fixed output file: ${outputSettings.fixedOutputFile}`, e);
                     }
                 }
@@ -288,7 +289,7 @@ export async function handleSpecificOutput(
         }
     } catch (error) {
         logger.error('输出处理失败', error);
-        new Notice(`输出失败: ${errorMessage(error)}`);
+        new Notice(tr(`输出失败: ${errorMessage(error)}`, `Output failed: ${errorMessage(error)}`));
         // 失败时回退到侧边栏
         app.workspace.trigger('polyglot-query-success', finalResult);
     }
@@ -316,7 +317,7 @@ export async function handlePriorityOutput(
 
     if (destination === 'sidebar') {
         app.workspace.trigger('polyglot-query-success', finalResult);
-        new Notice("结果已在语言助手侧栏显示。");
+        new Notice(tr("结果已在语言助手侧栏显示。", "Shown in the Polyglot Helper side panel."));
         return { destination: 'sidebar' };
     }
 
@@ -327,7 +328,7 @@ export async function handlePriorityOutput(
     // 对于新文件和固定文件模式，不需要当前文件路径
     if (!filePath && (destination === 'replace' || destination === 'appendCurrent')) {
         app.workspace.trigger('polyglot-query-success', finalResult);
-        new Notice("当前没有打开的文件，结果已在语言助手侧栏显示。\n💡 提示：请打开一个文件，或在设置中更改输出位置。");
+        new Notice(tr("当前没有打开的文件，结果已在语言助手侧栏显示。\n💡 提示：请打开一个文件，或在设置中更改输出位置。", "No file is open, so the result is shown in the side panel.\n💡 Open a file, or change the output location in settings."));
         return { destination: 'sidebar' };
     }
 
@@ -336,7 +337,7 @@ export async function handlePriorityOutput(
     if (filePath && (destination === 'replace' || destination === 'appendCurrent')) {
         file = asTFile(app.vault.getAbstractFileByPath(filePath));
         if (!file || !(file instanceof TFile)) {
-            new Notice(`错误：找不到原始文件 ${filePath}。`);
+            new Notice(tr(`错误：找不到原始文件 ${filePath}。`, `Error: cannot find the original file ${filePath}.`));
             logger.error(`handlePriorityOutput failed: Could not find original file at path ${filePath}`);
             // Fallback to creating a new file in case the original is gone.
             destination = 'newFile';
@@ -344,7 +345,7 @@ export async function handlePriorityOutput(
     }
 
     if (destination === 'replace' && !selection) {
-        new Notice("\"替换\"模式需要有效的选区，但未提供。将追加到文件末尾。");
+        new Notice(tr("\"替换\"模式需要有效的选区，但未提供。将追加到文件末尾。", '"Replace" needs a selection, but there is none. Appending to the end of the file instead.'));
         destination = 'appendCurrent';
     }
 
@@ -356,14 +357,14 @@ export async function handlePriorityOutput(
                     await app.vault.process(file, (content) =>
                         replaceSelectionInText(content, selection, finalResult.trim())
                     );
-                    new Notice(`已替换选中内容并保存到 ${file.name}`);
+                    new Notice(tr(`已替换选中内容并保存到 ${file.name}`, `Replaced the selection and saved ${file.name}`));
                 }
                 return { destination: 'replace', filePath: file?.path, heading };
 
             case 'appendCurrent':
                 if (file) {
                     await app.vault.append(file, finalResult);
-                    new Notice(`结果已追加到 ${file.name}`);
+                    new Notice(tr(`结果已追加到 ${file.name}`, `Appended to ${file.name}`));
                 }
                 return { destination: 'appendCurrent', filePath: file?.path, heading };
 
@@ -376,7 +377,7 @@ export async function handlePriorityOutput(
                     const timestamp = new Date().toLocaleString('zh-CN');
                     const content = `\n\n---\n**${timestamp}**\n\n${result}\n\n\n`;
                     await app.vault.append(fixedFile, content);
-                    new Notice(`结果已追加到固定文件: ${fixedFile.name}`);
+                    new Notice(tr(`结果已追加到固定文件: ${fixedFile.name}`, `Appended to the fixed file: ${fixedFile.name}`));
                 } else {
                     try {
                         const timestamp = new Date().toLocaleString('zh-CN');
@@ -389,9 +390,9 @@ export async function handlePriorityOutput(
                         }
 
                         const newFile = await app.vault.create(fixedFilePath, content);
-                        new Notice(`固定文件已创建并保存结果: ${newFile.name}`);
+                        new Notice(tr(`固定文件已创建并保存结果: ${newFile.name}`, `Created the fixed file and saved the result: ${newFile.name}`));
                     } catch (e) {
-                        new Notice(`创建固定文件失败: ${errorMessage(e)}`);
+                        new Notice(tr(`创建固定文件失败: ${errorMessage(e)}`, `Could not create the fixed file: ${errorMessage(e)}`));
                         logger.error(`Failed to create fixed output file: ${fixedFilePath}`, e);
                     }
                 }
@@ -409,7 +410,7 @@ export async function handlePriorityOutput(
         }
     } catch (error) {
         logger.error('优先级输出处理失败', error);
-        new Notice(`输出失败: ${errorMessage(error)}`);
+        new Notice(tr(`输出失败: ${errorMessage(error)}`, `Output failed: ${errorMessage(error)}`));
         // 失败时回退到侧边栏
         app.workspace.trigger('polyglot-query-success', finalResult);
         return { destination: 'sidebar' };
@@ -433,14 +434,14 @@ export async function handleOutput(
 
     if (destination === 'sidebar') {
         app.workspace.trigger('polyglot-query-success', finalResult);
-        new Notice("结果已在语言助手侧栏显示。");
+        new Notice(tr("结果已在语言助手侧栏显示。", "Shown in the Polyglot Helper side panel."));
         return;
     }
 
     // 对于新文件和固定文件模式，不需要当前文件路径
     if (!filePath && (destination === 'replace' || destination === 'appendCurrent')) {
         app.workspace.trigger('polyglot-query-success', finalResult);
-        new Notice("当前没有打开的文件，结果已在语言助手侧栏显示。\n💡 提示：请打开一个文件，或在设置中更改输出位置。");
+        new Notice(tr("当前没有打开的文件，结果已在语言助手侧栏显示。\n💡 提示：请打开一个文件，或在设置中更改输出位置。", "No file is open, so the result is shown in the side panel.\n💡 Open a file, or change the output location in settings."));
         return;
     }
 
@@ -449,7 +450,7 @@ export async function handleOutput(
     if (filePath && (destination === 'replace' || destination === 'appendCurrent')) {
         file = asTFile(app.vault.getAbstractFileByPath(filePath));
         if (!file || !(file instanceof TFile)) {
-            new Notice(`错误：找不到原始文件 ${filePath}。`);
+            new Notice(tr(`错误：找不到原始文件 ${filePath}。`, `Error: cannot find the original file ${filePath}.`));
             logger.error(`handleOutput failed: Could not find original file at path ${filePath}`);
             // Fallback to creating a new file in case the original is gone.
             destination = 'newFile';
@@ -457,7 +458,7 @@ export async function handleOutput(
     }
 
     if (destination === 'replace' && !selection) {
-        new Notice("\"替换\"模式需要有效的选区，但未提供。将追加到文件末尾。");
+        new Notice(tr("\"替换\"模式需要有效的选区，但未提供。将追加到文件末尾。", '"Replace" needs a selection, but there is none. Appending to the end of the file instead.'));
         destination = 'appendCurrent';
     }
 
@@ -472,10 +473,10 @@ export async function handleOutput(
                 if (markdownLeaf && selection) {
                     const view = markdownLeaf.view as MarkdownView;
                     view.editor.replaceRange(finalResult, selection.from, selection.to);
-                    new Notice(`结果已在文件 ${file.name} 中替换。`);
+                    new Notice(tr(`结果已在文件 ${file.name} 中替换。`, `Replaced in ${file.name}.`));
                 } else {
                     // 如果不是Markdown文件或没有选区，直接追加到文件
-                    new Notice(`结果已追加到文件 ${file.name}。`);
+                    new Notice(tr(`结果已追加到文件 ${file.name}。`, `Appended to ${file.name}.`));
                     await app.vault.append(file, `\n\n---\n${finalResult}`);
                 }
             }
@@ -484,13 +485,13 @@ export async function handleOutput(
         case 'appendCurrent':
             if (file instanceof TFile) {
                 await app.vault.append(file, `\n\n---\n${finalResult}`);
-                new Notice(`结果已追加到文件: ${file.name}`);
+                new Notice(tr(`结果已追加到文件: ${file.name}`, `Appended to: ${file.name}`));
             }
             break;
 
         case 'fixedFile': {
             if (!settings.fixedOutputFile) {
-                new Notice("错误：未设置固定输出文件路径。请在设置中配置。");
+                new Notice(tr("错误：未设置固定输出文件路径。请在设置中配置。", "Error: no fixed output file is set. Set one in settings."));
                 logger.error("Fixed output file path not configured");
                 return;
             }
@@ -501,7 +502,7 @@ export async function handleOutput(
                 const timestamp = new Date().toLocaleString('zh-CN');
                 const content = `\n\n---\n**${timestamp}**\n**查询:** ${query}\n\n${result}\n\n\n`;
                 await app.vault.append(fixedFile, content);
-                new Notice(`结果已追加到固定文件: ${fixedFile.name}`);
+                new Notice(tr(`结果已追加到固定文件: ${fixedFile.name}`, `Appended to the fixed file: ${fixedFile.name}`));
             } else {
                 // 文件不存在，创建文件
                 try {
@@ -515,9 +516,9 @@ export async function handleOutput(
                     }
 
                     const newFile = await app.vault.create(settings.fixedOutputFile, content);
-                    new Notice(`固定文件已创建并保存结果: ${newFile.name}`);
+                    new Notice(tr(`固定文件已创建并保存结果: ${newFile.name}`, `Created the fixed file and saved the result: ${newFile.name}`));
                 } catch (e) {
-                    new Notice(`创建固定文件失败: ${errorMessage(e)}`);
+                    new Notice(tr(`创建固定文件失败: ${errorMessage(e)}`, `Could not create the fixed file: ${errorMessage(e)}`));
                     logger.error(`Failed to create fixed output file: ${settings.fixedOutputFile}`, e);
                 }
             }

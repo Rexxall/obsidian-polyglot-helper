@@ -1,6 +1,7 @@
 import { App, Notice } from "obsidian";
 import PolyglotHelper from "./main";
 import { Logger } from './shared/Logger';
+import { tr } from './shared/i18n';
 // CacheManager已移除，使用内置缓存
 
 /**
@@ -35,7 +36,7 @@ export class PerformanceOptimizer {
 
         } catch (error) {
             this.logger.error('性能优化组件初始化失败', error);
-            new Notice('性能优化初始化失败，部分功能可能受影响');
+            new Notice(tr('性能优化初始化失败，部分功能可能受影响', 'Performance optimisation failed to start; some features may be affected'));
         }
     }
 
@@ -129,7 +130,7 @@ export class PerformanceOptimizer {
      */
     clearCache(): void {
         this.simpleCache.clear();
-        new Notice('缓存已清理');
+        new Notice(tr('缓存已清理', 'Cache cleared'));
     }
 
     /**

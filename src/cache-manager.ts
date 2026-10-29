@@ -1,6 +1,7 @@
 import { App } from 'obsidian';
 import { Logger } from './shared/Logger';
 
+import { tr } from './shared/i18n';
 export interface CacheItem {
     path: string;
     name: string;
@@ -292,15 +293,15 @@ export class CacheManager {
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
         if (diffDays === 0) {
-            return '今天';
+            return tr('今天', 'Today');
         } else if (diffDays === 1) {
-            return '昨天';
+            return tr('昨天', 'Yesterday');
         } else if (diffDays < 7) {
-            return `${diffDays}天前`;
+            return tr(`${diffDays}天前`, `${diffDays} days ago`);
         } else if (diffDays < 30) {
-            return `${Math.floor(diffDays / 7)}周前`;
+            return tr(`${Math.floor(diffDays / 7)}周前`, `${Math.floor(diffDays / 7)} weeks ago`);
         } else {
-            return `${Math.floor(diffDays / 30)}个月前`;
+            return tr(`${Math.floor(diffDays / 30)}个月前`, `${Math.floor(diffDays / 30)} months ago`);
         }
     }
 }

@@ -4,6 +4,7 @@ import { ApiConfig, PolyglotHelperSettings } from '../types';
 import { Logger } from '../logger';
 
 import { errorMessage } from '../shared/errors';
+import { tr } from '../shared/i18n';
 export async function getJapaneseTranslationTS(
     text: string,
     settings: PolyglotHelperSettings,
@@ -22,7 +23,7 @@ export async function getJapaneseTranslationTS(
         apiKey = apiConfig.apiKey;
         model = apiConfig.model;
         if (!apiKey || !apiUrl) {
-            return "错误：API 配置不完整，请检查 API 密钥和接口地址。";
+            return tr("错误：API 配置不完整，请检查 API 密钥和接口地址。", "Error: the API configuration is incomplete. Check the API key and endpoint.");
         }
     } else {
         // 回退到旧的设置方式
@@ -31,17 +32,17 @@ export async function getJapaneseTranslationTS(
             apiKey = settings.openaiApiKey;
             model = settings.englishModelName || 'gpt-4o';
             if (!apiKey) {
-                return "错误：请在设置中提供 OpenAI API 密钥。";
+                return tr("错误：请在设置中提供 OpenAI API 密钥。", "Error: add an OpenAI API key in settings.");
             }
         } else if (settings.llmProvider === 'ollama') {
             if (!settings.ollamaUrl || !settings.ollamaModel) {
-                return "错误：请在设置中填写本地模型服务的地址和模型名称。";
+                return tr("错误：请在设置中填写本地模型服务的地址和模型名称。", "Error: fill in the local model server address and model name in settings.");
             }
             apiUrl = settings.ollamaUrl.replace(/\/$/, '') + '/api/chat';
             model = settings.ollamaModel;
             apiKey = undefined;
         } else {
-            return "错误：未知的 LLM 提供商。";
+            return tr("错误：未知的 LLM 提供商。", "Error: unknown LLM provider.");
         }
     }
 
@@ -136,11 +137,11 @@ export async function getJapaneseTranslationTS(
         }
         
         logger.error('获取日语分析时LLM API返回错误状态', { status: response.status, response: response.text });
-        return "从LLM获取分析失败。";
+        return tr("从LLM获取分析失败。", "Could not get an analysis from the model.");
 
     } catch (error) {
         logger.error("调用LLM进行日语分析时出错", error);
-        return `调用LLM API时出错: ${errorMessage(error)}`;
+        return tr(`调用LLM API时出错: ${errorMessage(error)}`, `Error calling the model API: ${errorMessage(error)}`);
     }
 }
 
@@ -164,7 +165,7 @@ export async function getJapaneseSimpleTranslationTS(
         apiKey = apiConfig.apiKey;
         model = apiConfig.model;
         if (!apiKey || !apiUrl) {
-            new Notice("错误：API 配置不完整，请检查 API 密钥和接口地址。");
+            new Notice(tr("错误：API 配置不完整，请检查 API 密钥和接口地址。", "Error: the API configuration is incomplete. Check the API key and endpoint."));
             return null;
         }
     } else {
@@ -174,19 +175,19 @@ export async function getJapaneseSimpleTranslationTS(
             apiKey = settings.openaiApiKey;
             model = settings.englishModelName || 'gpt-4o';
             if (!apiKey) {
-                new Notice("错误：请在设置中提供 OpenAI API 密钥。");
+                new Notice(tr("错误：请在设置中提供 OpenAI API 密钥。", "Error: add an OpenAI API key in settings."));
                 return null;
             }
         } else if (settings.llmProvider === 'ollama') {
             if (!settings.ollamaUrl || !settings.ollamaModel) {
-                new Notice("错误：请在设置中填写本地模型服务的地址和模型名称。");
+                new Notice(tr("错误：请在设置中填写本地模型服务的地址和模型名称。", "Error: fill in the local model server address and model name in settings."));
                 return null;
             }
             apiUrl = settings.ollamaUrl.replace(/\/$/, '') + '/api/chat';
             model = settings.ollamaModel;
             apiKey = undefined;
         } else {
-            new Notice("错误：未知的 LLM 提供商。");
+            new Notice(tr("错误：未知的 LLM 提供商。", "Error: unknown LLM provider."));
             return null;
         }
     }
@@ -241,7 +242,7 @@ export async function getJapaneseSimpleTranslationTS(
 
     } catch (error) {
         logger.error("调用LLM进行快捷翻译时出错", error);
-        new Notice(`调用快捷翻译API时出错: ${errorMessage(error)}`);
+        new Notice(tr(`调用快捷翻译API时出错: ${errorMessage(error)}`, `Error calling the quick translation API: ${errorMessage(error)}`));
         return null;
     }
 } 

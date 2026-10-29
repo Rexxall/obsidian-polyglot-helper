@@ -2,6 +2,7 @@ import { App, Notice } from "obsidian";
 import { PolyglotHelperSettings, VocabularyItem, JapaneseVocabularyItem, EnglishVocabularyItem, ReviewRecord } from "./types";
 
 import { errorMessage } from "./shared/errors";
+import { tr } from './shared/i18n';
 /**
  * 学习进度追踪器
  * 实现间隔重复系统(SRS)和学习统计功能
@@ -30,7 +31,7 @@ export class LearningTracker {
             if (notes) existingItem.notes = notes;
             if (examples) existingItem.examples = examples;
             if (tags) existingItem.tags = tags;
-            new Notice(`已更新单词 "${word}"`);
+            new Notice(tr(`已更新单词 "${word}"`, `Updated "${word}"`));
         } else {
             // 创建新单词条目
             const newItem: VocabularyItem = {
@@ -66,7 +67,7 @@ export class LearningTracker {
             delete this.settings.vocabItems[word];
             this.settings.learningStats.totalWords--;
             await this.saveSettings();
-            new Notice(`已删除单词 "${word}"`);
+            new Notice(tr(`已删除单词 "${word}"`, `Deleted "${word}"`));
         }
     }
 
@@ -156,7 +157,7 @@ export class LearningTracker {
                 }
             }
 
-            new Notice(`导入完成: ${result.success} 成功, ${result.skipped} 跳过, ${result.errors.length} 错误`);
+            new Notice(tr(`导入完成: ${result.success} 成功, ${result.skipped} 跳过, ${result.errors.length} 错误`, `Import finished: ${result.success} added, ${result.skipped} skipped, ${result.errors.length} errors`));
         } catch (error) {
             result.errors.push(`解析JSON失败: ${errorMessage(error)}`);
         }
@@ -371,7 +372,7 @@ export class LearningTracker {
      */
     getLearningProgressSummary(): string {
         if (!this.settings.enableLearningTracker) {
-            return "学习进度追踪未启用。";
+            return tr("学习进度追踪未启用。", "Learning progress tracking is off.");
         }
         
         const stats = this.settings.learningStats;
@@ -486,9 +487,9 @@ export class LearningTracker {
         yesterday.setDate(yesterday.getDate() - 1);
 
         if (dateStr === today.toISOString().split('T')[0]) {
-            return '今天';
+            return tr('今天', 'Today');
         } else if (dateStr === yesterday.toISOString().split('T')[0]) {
-            return '昨天';
+            return tr('昨天', 'Yesterday');
         } else {
             return `${date.getMonth() + 1}/${date.getDate()}`;
         }
@@ -545,52 +546,52 @@ export class LearningTracker {
 
         // 词汇量成就
         achievements.push({
-            name: "词汇新手",
-            description: "学习10个单词",
+            name: tr("词汇新手", "Vocabulary starter"),
+            description: tr("学习10个单词", "Learn 10 words"),
             achieved: totalWords >= 10,
             progress: Math.min(totalWords / 10 * 100, 100)
         });
 
         achievements.push({
-            name: "词汇达人",
-            description: "学习100个单词",
+            name: tr("词汇达人", "Vocabulary expert"),
+            description: tr("学习100个单词", "Learn 100 words"),
             achieved: totalWords >= 100,
             progress: Math.min(totalWords / 100 * 100, 100)
         });
 
         achievements.push({
-            name: "词汇大师",
-            description: "学习500个单词",
+            name: tr("词汇大师", "Vocabulary master"),
+            description: tr("学习500个单词", "Learn 500 words"),
             achieved: totalWords >= 500,
             progress: Math.min(totalWords / 500 * 100, 100)
         });
 
         // 连续学习成就
         achievements.push({
-            name: "坚持不懈",
-            description: "连续学习7天",
+            name: tr("坚持不懈", "Persistent"),
+            description: tr("连续学习7天", "Study 7 days in a row"),
             achieved: streakDays >= 7,
             progress: Math.min(streakDays / 7 * 100, 100)
         });
 
         achievements.push({
-            name: "学习达人",
-            description: "连续学习30天",
+            name: tr("学习达人", "Dedicated learner"),
+            description: tr("连续学习30天", "Study 30 days in a row"),
             achieved: streakDays >= 30,
             progress: Math.min(streakDays / 30 * 100, 100)
         });
 
         // 复习成就
         achievements.push({
-            name: "复习新手",
-            description: "完成50次复习",
+            name: tr("复习新手", "Review starter"),
+            description: tr("完成50次复习", "Finish 50 reviews"),
             achieved: totalReviews >= 50,
             progress: Math.min(totalReviews / 50 * 100, 100)
         });
 
         achievements.push({
-            name: "复习达人",
-            description: "完成500次复习",
+            name: tr("复习达人", "Review expert"),
+            description: tr("完成500次复习", "Finish 500 reviews"),
             achieved: totalReviews >= 500,
             progress: Math.min(totalReviews / 500 * 100, 100)
         });
@@ -654,7 +655,7 @@ export class LearningTracker {
             lastStudyDate: '',
         };
         await this.saveSettings();
-        new Notice("学习数据已重置");
+        new Notice(tr("学习数据已重置", "Learning data reset"));
     }
 
     /**
@@ -718,7 +719,7 @@ export class LearningTracker {
             if (examples.length > 0) existingItem.examples = examples;
             if (tags.length > 0) existingItem.tags = tags;
             if (reading) existingItem.reading = reading;
-            new Notice(`已更新日语词汇 "${originalText}"`);
+            new Notice(tr(`已更新日语词汇 "${originalText}"`, `Updated Japanese entry "${originalText}"`));
         } else {
             // 创建新词汇条目
             const newItem: JapaneseVocabularyItem = {
@@ -771,7 +772,7 @@ export class LearningTracker {
             if (phonetics) existingItem.phonetics = phonetics;
             if (partOfSpeech) existingItem.partOfSpeech = partOfSpeech;
             if (definitions.length > 0) existingItem.definitions = definitions;
-            new Notice(`已更新英语单词 "${word}"`);
+            new Notice(tr(`已更新英语单词 "${word}"`, `Updated English word "${word}"`));
         } else {
             // 创建新词汇条目
             const newItem: EnglishVocabularyItem = {

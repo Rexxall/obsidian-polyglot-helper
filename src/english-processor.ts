@@ -13,6 +13,7 @@ import { getCambridgeInfoTS } from './apis/cambridge';
 import { getFromCache, saveToCache } from './cache';
 
 import { errorMessage } from './shared/errors';
+import { tr } from './shared/i18n';
 async function _processSingleWordOrPhrase(
     word: string,
     forceRefresh: boolean,
@@ -209,7 +210,7 @@ export async function runEnglishProcess(
     saveSettings: () => Promise<void>,
     apiConfig?: ApiConfig
 ): Promise<string | null> {
-    const notice = new Notice("正在处理...", 0);
+    const notice = new Notice(tr("正在处理...", "Working..."), 0);
     try {
         const potentialWords = query
             .split(/[\n\s,;]+/)
@@ -245,7 +246,7 @@ export async function runEnglishProcess(
 
     } catch (e) {
         notice.hide();
-        new Notice(`处理失败: ${errorMessage(e)}`);
+        new Notice(tr(`处理失败: ${errorMessage(e)}`, `Failed: ${errorMessage(e)}`));
         logger.error("Error during English processing (TS)", e);
         return null;
     }

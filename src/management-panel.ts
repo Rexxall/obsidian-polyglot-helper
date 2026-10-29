@@ -6,6 +6,7 @@ import { CacheCleanupModal } from "./cache-cleanup-modal";
 import { fire } from "./shared/fire";
 import { errorMessage } from "./shared/errors";
 import { confirmAction } from "./shared/confirm-modal";
+import { tr } from './shared/i18n';
 // 复习视图类型常量
 export const POLYGLOT_REVIEW_VIEW_TYPE = "polyglot-review-view";
 
@@ -29,7 +30,7 @@ export class ManagementPanelView extends ItemView {
     }
 
     getDisplayText() {
-        return "Polyglot 管理面板";
+        return tr("Polyglot 管理面板", "Polyglot management panel");
     }
 
     getIcon() {
@@ -56,19 +57,19 @@ export class ManagementPanelView extends ItemView {
         const tabNav = container.createDiv({ cls: 'polyglot-tab-nav' });
         
         const vocabularyTab = tabNav.createEl('button', { 
-            text: '📚 词汇库', 
+            text: tr('📚 词汇库', '📚 Word list'), 
             cls: this.currentTab === 'vocabulary' ? 'active' : '' 
         });
         vocabularyTab.addEventListener('click', () => this.switchTab('vocabulary'));
 
         const learningTab = tabNav.createEl('button', { 
-            text: '📊 学习统计', 
+            text: tr('📊 学习统计', '📊 Statistics'), 
             cls: this.currentTab === 'learning' ? 'active' : '' 
         });
         learningTab.addEventListener('click', () => this.switchTab('learning'));
 
         const cacheTab = tabNav.createEl('button', { 
-            text: '🗄️ 缓存管理', 
+            text: tr('🗄️ 缓存管理', '🗄️ Cache'), 
             cls: this.currentTab === 'cache' ? 'active' : '' 
         });
         cacheTab.addEventListener('click', () => this.switchTab('cache'));
@@ -95,25 +96,25 @@ export class ManagementPanelView extends ItemView {
     }
 
     private renderVocabularyTab(container: HTMLElement) {
-        container.createEl('h3', { text: '📚 词汇库管理' });
+        container.createEl('h3', { text: tr('📚 词汇库管理', '📚 Word list management') });
 
         // 词库选择标签
         const vocabTabNav = container.createDiv({ cls: 'polyglot-vocab-tab-nav' });
 
         const allTabBtn = vocabTabNav.createEl('button', {
-            text: '📚 全部词汇',
+            text: tr('📚 全部词汇', '📚 All words'),
             cls: 'polyglot-vocab-tab-button active'
         });
         const japaneseTabBtn = vocabTabNav.createEl('button', {
-            text: '🇯🇵 日语词库',
+            text: tr('🇯🇵 日语词库', '🇯🇵 Japanese'),
             cls: 'polyglot-vocab-tab-button'
         });
         const englishTabBtn = vocabTabNav.createEl('button', {
-            text: '🇺🇸 英语词库',
+            text: tr('🇺🇸 英语词库', '🇺🇸 English'),
             cls: 'polyglot-vocab-tab-button'
         });
         const favoritesTabBtn = vocabTabNav.createEl('button', {
-            text: '💖 收藏词汇',
+            text: tr('💖 收藏词汇', '💖 Favourites'),
             cls: 'polyglot-vocab-tab-button'
         });
 
@@ -180,60 +181,60 @@ export class ManagementPanelView extends ItemView {
             const host = statsGrid.createDiv({ cls: 'polyglot-stat-card' });
             host.createDiv({ cls: 'stat-icon', text: '📚' });
             host.createDiv({ cls: 'stat-number', text: `${totalWords + japaneseWords + englishWords}` });
-            host.createDiv({ cls: 'stat-label', text: '总词汇量' });
+            host.createDiv({ cls: 'stat-label', text: tr('总词汇量', 'Total words') });
         }
 
         {
             const host = statsGrid.createDiv({ cls: 'polyglot-stat-card' });
             host.createDiv({ cls: 'stat-icon', text: '🇯🇵' });
             host.createDiv({ cls: 'stat-number', text: `${japaneseWords}` });
-            host.createDiv({ cls: 'stat-label', text: '日语词汇' });
+            host.createDiv({ cls: 'stat-label', text: tr('日语词汇', 'Japanese words') });
         }
 
         {
             const host = statsGrid.createDiv({ cls: 'polyglot-stat-card' });
             host.createDiv({ cls: 'stat-icon', text: '🇺🇸' });
             host.createDiv({ cls: 'stat-number', text: `${englishWords}` });
-            host.createDiv({ cls: 'stat-label', text: '英语词汇' });
+            host.createDiv({ cls: 'stat-label', text: tr('英语词汇', 'English words') });
         }
 
         {
             const host = statsGrid.createDiv({ cls: 'polyglot-stat-card' });
             host.createDiv({ cls: 'stat-icon', text: '⏰' });
             host.createDiv({ cls: 'stat-number', text: `${dueWords}` });
-            host.createDiv({ cls: 'stat-label', text: '待复习' });
+            host.createDiv({ cls: 'stat-label', text: tr('待复习', 'To review') });
         }
 
         {
             const host = statsGrid.createDiv({ cls: 'polyglot-stat-card' });
             host.createDiv({ cls: 'stat-icon', text: '🆕' });
             host.createDiv({ cls: 'stat-number', text: `${newWords}` });
-            host.createDiv({ cls: 'stat-label', text: '新单词' });
+            host.createDiv({ cls: 'stat-label', text: tr('新单词', 'New') });
         }
 
         {
             const host = statsGrid.createDiv({ cls: 'polyglot-stat-card' });
             host.createDiv({ cls: 'stat-icon', text: '⭐' });
             host.createDiv({ cls: 'stat-number', text: `${masteredWords}` });
-            host.createDiv({ cls: 'stat-label', text: '已掌握' });
+            host.createDiv({ cls: 'stat-label', text: tr('已掌握', 'Mastered') });
         }
 
         // 操作按钮
         const actions = container.createDiv({ cls: 'polyglot-vocab-actions' });
 
-        const addBtn = actions.createEl('button', { text: '➕ 添加单词', cls: 'polyglot-btn-primary' });
+        const addBtn = actions.createEl('button', { text: tr('➕ 添加单词', '➕ Add word'), cls: 'polyglot-btn-primary' });
         addBtn.addEventListener('click', () => this.addVocabularyItem());
 
-        const reviewBtn = actions.createEl('button', { text: '📖 开始复习', cls: 'polyglot-btn-success' });
+        const reviewBtn = actions.createEl('button', { text: tr('📖 开始复习', '📖 Start review'), cls: 'polyglot-btn-success' });
         reviewBtn.addEventListener('click', () => this.startReview());
 
-        const exportBtn = actions.createEl('button', { text: '📤 导出词汇库', cls: 'polyglot-btn-secondary' });
+        const exportBtn = actions.createEl('button', { text: tr('📤 导出词汇库', '📤 Export word list'), cls: 'polyglot-btn-secondary' });
         exportBtn.addEventListener('click', fire(() => this.exportVocabulary()));
 
-        const importBtn = actions.createEl('button', { text: '📥 导入词汇库', cls: 'polyglot-btn-secondary' });
+        const importBtn = actions.createEl('button', { text: tr('📥 导入词汇库', '📥 Import word list'), cls: 'polyglot-btn-secondary' });
         importBtn.addEventListener('click', () => this.importVocabulary());
 
-        const clearBtn = actions.createEl('button', { text: '🗑️ 清空词汇库', cls: 'polyglot-btn-danger' });
+        const clearBtn = actions.createEl('button', { text: tr('🗑️ 清空词汇库', '🗑️ Clear word list'), cls: 'polyglot-btn-danger' });
         clearBtn.addEventListener('click', fire(() => this.clearVocabulary()));
 
         // 搜索和筛选区域
@@ -243,7 +244,7 @@ export class ManagementPanelView extends ItemView {
         const searchContainer = filterSection.createDiv({ cls: 'polyglot-search-container' });
         const searchInput = searchContainer.createEl('input', {
             type: 'text',
-            placeholder: '搜索词汇...',
+            placeholder: tr('搜索词汇...', 'Search words...'),
             cls: 'polyglot-search-input'
         });
 
@@ -252,24 +253,24 @@ export class ManagementPanelView extends ItemView {
 
         // 状态筛选
         const statusFilter = filterContainer.createEl('select', { cls: 'polyglot-status-filter' });
-        statusFilter.createEl('option', { text: '所有状态', value: '' });
-        statusFilter.createEl('option', { text: '新单词', value: 'new' });
-        statusFilter.createEl('option', { text: '学习中', value: 'learning' });
-        statusFilter.createEl('option', { text: '已掌握', value: 'mastered' });
-        statusFilter.createEl('option', { text: '待复习', value: 'due' });
+        statusFilter.createEl('option', { text: tr('所有状态', 'All states'), value: '' });
+        statusFilter.createEl('option', { text: tr('新单词', 'New'), value: 'new' });
+        statusFilter.createEl('option', { text: tr('学习中', 'Learning'), value: 'learning' });
+        statusFilter.createEl('option', { text: tr('已掌握', 'Mastered'), value: 'mastered' });
+        statusFilter.createEl('option', { text: tr('待复习', 'To review'), value: 'due' });
 
         // 难度筛选
         const difficultyFilter = filterContainer.createEl('select', { cls: 'polyglot-difficulty-filter' });
-        difficultyFilter.createEl('option', { text: '所有难度', value: '' });
-        difficultyFilter.createEl('option', { text: '简单 (0)', value: '0' });
-        difficultyFilter.createEl('option', { text: '容易 (1)', value: '1' });
-        difficultyFilter.createEl('option', { text: '中等 (2)', value: '2' });
-        difficultyFilter.createEl('option', { text: '困难 (3)', value: '3' });
-        difficultyFilter.createEl('option', { text: '很难 (4)', value: '4' });
+        difficultyFilter.createEl('option', { text: tr('所有难度', 'All levels'), value: '' });
+        difficultyFilter.createEl('option', { text: tr('简单 (0)', 'Very easy (0)'), value: '0' });
+        difficultyFilter.createEl('option', { text: tr('容易 (1)', 'Easy (1)'), value: '1' });
+        difficultyFilter.createEl('option', { text: tr('中等 (2)', 'Medium (2)'), value: '2' });
+        difficultyFilter.createEl('option', { text: tr('困难 (3)', 'Hard (3)'), value: '3' });
+        difficultyFilter.createEl('option', { text: tr('很难 (4)', 'Very hard (4)'), value: '4' });
 
         // 标签筛选
         const tagFilter = filterContainer.createEl('select', { cls: 'polyglot-tag-filter' });
-        tagFilter.createEl('option', { text: '所有标签', value: '' });
+        tagFilter.createEl('option', { text: tr('所有标签', 'All tags'), value: '' });
 
         const tags = this.plugin.learningTracker.getAllTags();
         tags.forEach(tag => {
@@ -279,15 +280,15 @@ export class ManagementPanelView extends ItemView {
         // 排序选项
         const sortContainer = filterSection.createDiv({ cls: 'polyglot-sort-container' });
         const sortSelect = sortContainer.createEl('select', { cls: 'polyglot-sort-select' });
-        sortSelect.createEl('option', { text: '按添加时间', value: 'created' });
-        sortSelect.createEl('option', { text: '按字母顺序', value: 'alphabetical' });
-        sortSelect.createEl('option', { text: '按复习次数', value: 'reviews' });
-        sortSelect.createEl('option', { text: '按难度', value: 'difficulty' });
-        sortSelect.createEl('option', { text: '按下次复习时间', value: 'nextReview' });
+        sortSelect.createEl('option', { text: tr('按添加时间', 'By date added'), value: 'created' });
+        sortSelect.createEl('option', { text: tr('按字母顺序', 'Alphabetical'), value: 'alphabetical' });
+        sortSelect.createEl('option', { text: tr('按复习次数', 'By review count'), value: 'reviews' });
+        sortSelect.createEl('option', { text: tr('按难度', 'By difficulty'), value: 'difficulty' });
+        sortSelect.createEl('option', { text: tr('按下次复习时间', 'By next review'), value: 'nextReview' });
 
         const sortOrder = sortContainer.createEl('select', { cls: 'polyglot-sort-order' });
-        sortOrder.createEl('option', { text: '升序', value: 'asc' });
-        sortOrder.createEl('option', { text: '降序', value: 'desc' });
+        sortOrder.createEl('option', { text: tr('升序', 'Ascending'), value: 'asc' });
+        sortOrder.createEl('option', { text: tr('降序', 'Descending'), value: 'desc' });
 
         // 词汇列表
         const vocabList = container.createDiv({ cls: 'polyglot-vocab-list' });
@@ -381,14 +382,14 @@ export class ManagementPanelView extends ItemView {
         if (words.length === 0) {
             const emptyState = container.createDiv({ cls: 'polyglot-empty-state' });
             emptyState.createDiv({ cls: 'empty-icon', text: '📚' });
-            emptyState.createDiv({ cls: 'empty-title', text: '没有找到词汇' });
-            emptyState.createDiv({ cls: 'empty-subtitle', text: '尝试调整筛选条件或添加新单词' });
+            emptyState.createDiv({ cls: 'empty-title', text: tr('没有找到词汇', 'No words found') });
+            emptyState.createDiv({ cls: 'empty-subtitle', text: tr('尝试调整筛选条件或添加新单词', 'Change the filters or add a new word') });
             return;
         }
 
         // 显示结果统计
         const resultInfo = container.createDiv({ cls: 'polyglot-result-info' });
-        resultInfo.textContent = `显示 ${words.length} 个词汇`;
+        resultInfo.textContent = tr(`显示 ${words.length} 个词汇`, `Showing ${words.length} words`);
 
         // 分页显示（每页20个）
         const pageSize = 20;
@@ -415,7 +416,7 @@ export class ManagementPanelView extends ItemView {
 
                 // 上一页按钮
                 const prevBtn = pagination.createEl('button', {
-                    text: '‹ 上一页',
+                    text: tr('‹ 上一页', '‹ Previous'),
                     cls: 'polyglot-page-btn'
                 });
                 prevBtn.disabled = page === 0;
@@ -426,13 +427,13 @@ export class ManagementPanelView extends ItemView {
 
                 // 页码信息
                 pagination.createSpan({
-                    text: `第 ${page + 1} 页，共 ${totalPages} 页`,
+                    text: tr(`第 ${page + 1} 页，共 ${totalPages} 页`, `Page ${page + 1} of ${totalPages}`),
                     cls: 'polyglot-page-info'
                 });
 
                 // 下一页按钮
                 const nextBtn = pagination.createEl('button', {
-                    text: '下一页 ›',
+                    text: tr('下一页 ›', 'Next ›'),
                     cls: 'polyglot-page-btn'
                 });
                 nextBtn.disabled = page === totalPages - 1;
@@ -481,14 +482,14 @@ export class ManagementPanelView extends ItemView {
 
         // 元数据
         const wordMeta = wordContent.createDiv({ cls: 'polyglot-vocab-meta' });
-        wordMeta.createSpan({ cls: 'meta-item', text: `📊 复习 ${item.reviewCount} 次` });
-        wordMeta.createSpan({ cls: 'meta-item', text: `🎯 难度 ${item.difficulty}/4` });
-        wordMeta.createSpan({ cls: 'meta-item', text: `📅 添加于 ${new Date(item.createdAt).toLocaleDateString()}` });
+        wordMeta.createSpan({ cls: 'meta-item', text: tr(`📊 复习 ${item.reviewCount} 次`, `📊 Reviewed ${item.reviewCount} times`) });
+        wordMeta.createSpan({ cls: 'meta-item', text: tr(`🎯 难度 ${item.difficulty}/4`, `🎯 Difficulty ${item.difficulty}/4`) });
+        wordMeta.createSpan({ cls: 'meta-item', text: tr(`📅 添加于 ${new Date(item.createdAt).toLocaleDateString()}`, `📅 Added ${new Date(item.createdAt).toLocaleDateString()}`) });
 
         if (item.nextReview) {
             const nextReviewDate = new Date(item.nextReview);
             const isOverdue = nextReviewDate.getTime() <= now;
-            wordMeta.createSpan({ cls: `meta-item ${isOverdue ? 'overdue' : ''}`, text: `⏰ ${isOverdue ? '已到期' : '下次复习'}: ${nextReviewDate.toLocaleDateString()}` });
+            wordMeta.createSpan({ cls: `meta-item ${isOverdue ? 'overdue' : ''}`, text: tr(`⏰ ${isOverdue ? '已到期' : '下次复习'}: ${nextReviewDate.toLocaleDateString()}`, `⏰ ${isOverdue ? 'Overdue' : 'Next review'}: ${nextReviewDate.toLocaleDateString()}`) });
         }
 
         // 标签
@@ -510,21 +511,21 @@ export class ManagementPanelView extends ItemView {
 
         const reviewBtn = actions.createEl('button', {
             text: '📖',
-            title: '立即复习',
+            title: tr('立即复习', 'Review now'),
             cls: 'polyglot-btn-small polyglot-btn-primary'
         });
         reviewBtn.addEventListener('click', () => this.reviewSingleWord(item));
 
         const editBtn = actions.createEl('button', {
             text: '✏️',
-            title: '编辑',
+            title: tr('编辑', 'Edit'),
             cls: 'polyglot-btn-small polyglot-btn-secondary'
         });
         editBtn.addEventListener('click', () => this.editVocabularyItem(item));
 
         const deleteBtn = actions.createEl('button', {
             text: '🗑️',
-            title: '删除',
+            title: tr('删除', 'Delete'),
             cls: 'polyglot-btn-small polyglot-btn-danger'
         });
         deleteBtn.addEventListener('click', fire(() => this.deleteVocabularyItem(item.word)));
@@ -536,9 +537,9 @@ export class ManagementPanelView extends ItemView {
             const fileName = `polyglot-vocabulary-${new Date().toISOString().split('T')[0]}.json`;
             
             await this.plugin.app.vault.create(fileName, exportData);
-            new Notice(`✅ 词汇库已导出到 ${fileName}`);
+            new Notice(tr(`✅ 词汇库已导出到 ${fileName}`, `✅ Word list exported to ${fileName}`));
         } catch (error) {
-            new Notice(`❌ 导出失败: ${errorMessage(error)}`);
+            new Notice(tr(`❌ 导出失败: ${errorMessage(error)}`, `❌ Export failed: ${errorMessage(error)}`));
         }
     }
 
@@ -570,7 +571,7 @@ export class ManagementPanelView extends ItemView {
     }
 
     private async clearVocabulary() {
-        const confirmed = await confirmAction(this.app, '确定要清空所有词汇库数据吗？此操作不可恢复！');
+        const confirmed = await confirmAction(this.app, tr('确定要清空所有词汇库数据吗？此操作不可恢复！', 'Clear the whole word list? This cannot be undone.'));
         if (confirmed) {
             await this.plugin.learningTracker.resetLearningData();
             this.renderPanel();
@@ -584,7 +585,7 @@ export class ManagementPanelView extends ItemView {
     }
 
     private async deleteVocabularyItem(word: string) {
-        const confirmed = await confirmAction(this.app, `确定要删除单词 "${word}" 吗？`);
+        const confirmed = await confirmAction(this.app, tr(`确定要删除单词 "${word}" 吗？`, `Delete "${word}"?`));
         if (confirmed) {
             await this.plugin.learningTracker.removeVocabularyItem(word);
             this.renderPanel();
@@ -592,28 +593,28 @@ export class ManagementPanelView extends ItemView {
     }
 
     private renderLearningTab(container: HTMLElement) {
-        container.createEl('h3', { text: '📊 学习统计' });
+        container.createEl('h3', { text: tr('📊 学习统计', '📊 Statistics') });
 
         // 基础统计
         const basicStats = container.createDiv({ cls: 'polyglot-learning-stats' });
         const stats = this.plugin.settings.learningStats;
 
         basicStats.createDiv({
-            text: `📚 总词汇量: ${stats.totalWords}`,
+            text: tr(`📚 总词汇量: ${stats.totalWords}`, `📚 Total words: ${stats.totalWords}`),
             cls: 'polyglot-stat-card'
         });
         basicStats.createDiv({
-            text: `🔥 连续学习: ${stats.streakDays} 天`,
+            text: tr(`🔥 连续学习: ${stats.streakDays} 天`, `🔥 Streak: ${stats.streakDays} days`),
             cls: 'polyglot-stat-card'
         });
         basicStats.createDiv({
-            text: `📝 总复习次数: ${stats.totalReviews}`,
+            text: tr(`📝 总复习次数: ${stats.totalReviews}`, `📝 Total reviews: ${stats.totalReviews}`),
             cls: 'polyglot-stat-card'
         });
 
         // 成就系统
         const achievementsSection = container.createDiv({ cls: 'polyglot-achievements' });
-        achievementsSection.createEl('h4', { text: '🏆 学习成就' });
+        achievementsSection.createEl('h4', { text: tr('🏆 学习成就', '🏆 Achievements') });
 
         const achievements = this.plugin.learningTracker.getAchievements();
         const achievementsList = achievementsSection.createDiv({ cls: 'polyglot-achievements-list' });
@@ -639,7 +640,7 @@ export class ManagementPanelView extends ItemView {
 
         // 掌握度分布
         const masterySection = container.createDiv({ cls: 'polyglot-mastery' });
-        masterySection.createEl('h4', { text: '📈 词汇掌握度分布' });
+        masterySection.createEl('h4', { text: tr('📈 词汇掌握度分布', '📈 Mastery distribution') });
 
         const mastery = this.plugin.learningTracker.getMasteryDistribution();
         const masteryChart = masterySection.createDiv({ cls: 'polyglot-mastery-chart' });
@@ -658,7 +659,7 @@ export class ManagementPanelView extends ItemView {
 
         // 学习建议
         const recommendationsSection = container.createDiv({ cls: 'polyglot-recommendations' });
-        recommendationsSection.createEl('h4', { text: '💡 学习建议' });
+        recommendationsSection.createEl('h4', { text: tr('💡 学习建议', '💡 Suggestions') });
 
         const recommendations = this.plugin.learningTracker.getLearningRecommendations();
         const recommendationsList = recommendationsSection.createDiv({ cls: 'polyglot-recommendations-list' });
@@ -670,14 +671,14 @@ export class ManagementPanelView extends ItemView {
         // 操作按钮
         const actions = container.createDiv({ cls: 'polyglot-learning-actions' });
 
-        const reviewBtn = actions.createEl('button', { text: '📚 开始复习' });
+        const reviewBtn = actions.createEl('button', { text: tr('📚 开始复习', '📚 Start review') });
         reviewBtn.addEventListener('click', () => {
             void this.plugin.activateReviewView();
         });
 
-        const resetBtn = actions.createEl('button', { text: '🔄 重置学习数据', cls: 'danger' });
+        const resetBtn = actions.createEl('button', { text: tr('🔄 重置学习数据', '🔄 Reset learning data'), cls: 'danger' });
         resetBtn.addEventListener('click', fire(async () => {
-            const confirmed = await confirmAction(this.app, '确定要重置所有学习数据吗？此操作不可恢复！');
+            const confirmed = await confirmAction(this.app, tr('确定要重置所有学习数据吗？此操作不可恢复！', 'Reset all learning data? This cannot be undone.'));
             if (confirmed) {
                 await this.plugin.learningTracker.resetLearningData();
                 this.renderPanel();
@@ -686,7 +687,7 @@ export class ManagementPanelView extends ItemView {
     }
 
     private renderCacheTab(container: HTMLElement) {
-        container.createEl('h3', { text: '🗄️ 缓存管理' });
+        container.createEl('h3', { text: tr('🗄️ 缓存管理', '🗄️ Cache') });
 
         // 缓存统计
         const statsSection = container.createDiv({ cls: 'polyglot-cache-stats' });
@@ -698,73 +699,73 @@ export class ManagementPanelView extends ItemView {
         const actions = container.createDiv({ cls: 'polyglot-cache-actions' });
 
         // 清理翻译缓存按钮
-        const clearTranslationBtn = actions.createEl('button', { text: '📝 清理翻译缓存' });
+        const clearTranslationBtn = actions.createEl('button', { text: tr('📝 清理翻译缓存', '📝 Clear translation cache') });
         clearTranslationBtn.addEventListener('click', fire(async () => {
             try {
                 await this.plugin.clearTranslationCache();
                 void this.updateCacheStats(statsSection);
             } catch (error) {
-                new Notice(`清理翻译缓存失败: ${errorMessage(error)}`);
+                new Notice(tr(`清理翻译缓存失败: ${errorMessage(error)}`, `Could not clear the translation cache: ${errorMessage(error)}`));
             }
         }));
 
         // 清理音频缓存按钮
-        const clearAudioBtn = actions.createEl('button', { text: '🎵 清理音频缓存' });
+        const clearAudioBtn = actions.createEl('button', { text: tr('🎵 清理音频缓存', '🎵 Clear audio cache') });
         clearAudioBtn.addEventListener('click', fire(async () => {
             try {
                 await this.plugin.clearAudioCache();
                 void this.updateCacheStats(statsSection);
             } catch (error) {
-                new Notice(`清理音频缓存失败: ${errorMessage(error)}`);
+                new Notice(tr(`清理音频缓存失败: ${errorMessage(error)}`, `Could not clear the audio cache: ${errorMessage(error)}`));
             }
         }));
 
         // 智能清理按钮
-        const smartCleanBtn = actions.createEl('button', { text: '🧠 智能清理' });
+        const smartCleanBtn = actions.createEl('button', { text: tr('🧠 智能清理', '🧠 Smart cleanup') });
         smartCleanBtn.addEventListener('click', () => {
             const modal = new CacheCleanupModal(this.app, this.plugin.logger, this.plugin.manifest.dir || '');
             modal.open();
         });
 
         // 清理所有缓存按钮
-        const clearAllBtn = actions.createEl('button', { text: '🗑️ 清理所有缓存' });
+        const clearAllBtn = actions.createEl('button', { text: tr('🗑️ 清理所有缓存', '🗑️ Clear all caches') });
         clearAllBtn.addEventListener('click', fire(async () => {
             try {
                 await this.plugin.clearAllCache();
                 void this.updateCacheStats(statsSection);
             } catch (error) {
-                new Notice(`清理失败: ${errorMessage(error)}`);
+                new Notice(tr(`清理失败: ${errorMessage(error)}`, `Cleanup failed: ${errorMessage(error)}`));
             }
         }));
 
-        const clearExpiredBtn = actions.createEl('button', { text: '🗑️ 清理过期缓存' });
+        const clearExpiredBtn = actions.createEl('button', { text: tr('🗑️ 清理过期缓存', '🗑️ Remove expired cache') });
         clearExpiredBtn.addEventListener('click', fire(async () => {
             try {
                 await this.plugin.clearExpiredCache(24);
                 void this.updateCacheStats(statsSection);
             } catch (error) {
-                new Notice(`清理失败: ${errorMessage(error)}`);
+                new Notice(tr(`清理失败: ${errorMessage(error)}`, `Cleanup failed: ${errorMessage(error)}`));
             }
         }));
 
-        const refreshBtn = actions.createEl('button', { text: '🔄 刷新统计' });
+        const refreshBtn = actions.createEl('button', { text: tr('🔄 刷新统计', '🔄 Refresh statistics') });
         refreshBtn.addEventListener('click', () => {
             void this.updateCacheStats(statsSection);
         });
 
         // 缓存设置
         const settingsSection = container.createDiv({ cls: 'polyglot-cache-settings' });
-        settingsSection.createEl('h4', { text: '⚙️ 缓存设置' });
+        settingsSection.createEl('h4', { text: tr('⚙️ 缓存设置', '⚙️ Cache settings') });
 
         const autoCleanSetting = settingsSection.createDiv({ cls: 'polyglot-setting-item' });
-        autoCleanSetting.createEl('label', { text: '自动清理过期缓存 (小时):' });
+        autoCleanSetting.createEl('label', { text: tr('自动清理过期缓存 (小时):', 'Remove expired cache after (hours):') });
         const autoCleanInput = autoCleanSetting.createEl('input', {
             type: 'number',
             value: '24',
             attr: { min: '1', max: '168' }
         });
 
-        const applyBtn = autoCleanSetting.createEl('button', { text: '应用' });
+        const applyBtn = autoCleanSetting.createEl('button', { text: tr('应用', 'Apply') });
         applyBtn.addEventListener('click', fire(async () => {
             const hours = parseInt(autoCleanInput.value);
             if (hours > 0) {
@@ -776,7 +777,7 @@ export class ManagementPanelView extends ItemView {
 
     private async updateCacheStats(container: HTMLElement) {
         container.empty();
-        container.createEl('h4', { text: '📊 缓存统计' });
+        container.createEl('h4', { text: tr('📊 缓存统计', '📊 Cache statistics') });
 
         try {
             // 使用缓存管理器获取详细统计
@@ -786,25 +787,25 @@ export class ManagementPanelView extends ItemView {
 
             // 总体统计
             const overviewSection = container.createDiv({ cls: 'polyglot-cache-overview' });
-            overviewSection.createEl('h5', { text: '📋 总体概览' });
+            overviewSection.createEl('h5', { text: tr('📋 总体概览', '📋 Overview') });
 
             const overviewGrid = overviewSection.createDiv({ cls: 'polyglot-stats-grid' });
 
             {
                 const host = overviewGrid.createDiv({ cls: 'polyglot-stat-card' });
                 host.createDiv({ cls: 'stat-number', text: `${stats.total}` });
-                host.createDiv({ cls: 'stat-label', text: '总文件数' });
+                host.createDiv({ cls: 'stat-label', text: tr('总文件数', 'Files') });
             }
 
             {
                 const host = overviewGrid.createDiv({ cls: 'polyglot-stat-card' });
                 host.createDiv({ cls: 'stat-number', text: `${this.formatFileSize(stats.totalSize)}` });
-                host.createDiv({ cls: 'stat-label', text: '总大小' });
+                host.createDiv({ cls: 'stat-label', text: tr('总大小', 'Total size') });
             }
 
             // 类型分布统计
             const typeSection = container.createDiv({ cls: 'polyglot-cache-section' });
-            typeSection.createEl('h5', { text: '📂 类型分布' });
+            typeSection.createEl('h5', { text: tr('📂 类型分布', '📂 By type') });
 
             const typeGrid = typeSection.createDiv({ cls: 'polyglot-stats-grid' });
 
@@ -825,7 +826,7 @@ export class ManagementPanelView extends ItemView {
 
             // 分类统计
             const categorySection = container.createDiv({ cls: 'polyglot-cache-section' });
-            categorySection.createEl('h5', { text: '🏷️ 分类统计' });
+            categorySection.createEl('h5', { text: tr('🏷️ 分类统计', '🏷️ By category') });
 
             const categoryList = categorySection.createDiv({ cls: 'polyglot-category-list' });
 
@@ -835,13 +836,13 @@ export class ManagementPanelView extends ItemView {
 
                 const categoryItem = categoryList.createDiv({ cls: 'polyglot-category-item' });
                 categoryItem.createSpan({ cls: 'category-name', text: `${category}` });
-                categoryItem.createSpan({ cls: 'category-count', text: `${count} 个文件` });
+                categoryItem.createSpan({ cls: 'category-count', text: tr(`${count} 个文件`, `${count} files`) });
                 categoryItem.createSpan({ cls: 'category-size', text: `${this.formatFileSize(categorySize)}` });
             });
 
             // 时间分布统计
             const timeSection = container.createDiv({ cls: 'polyglot-cache-section' });
-            timeSection.createEl('h5', { text: '⏰ 时间分布' });
+            timeSection.createEl('h5', { text: tr('⏰ 时间分布', '⏰ By age') });
 
             const timeStats = this.calculateTimeDistribution(allItems);
             const timeList = timeSection.createDiv({ cls: 'polyglot-time-list' });
@@ -849,35 +850,35 @@ export class ManagementPanelView extends ItemView {
             Object.entries(timeStats).forEach(([period, count]) => {
                 const timeItem = timeList.createDiv({ cls: 'polyglot-time-item' });
                 timeItem.createSpan({ cls: 'time-period', text: `${period}` });
-                timeItem.createSpan({ cls: 'time-count', text: `${count} 个文件` });
+                timeItem.createSpan({ cls: 'time-count', text: tr(`${count} 个文件`, `${count} files`) });
             });
 
             // 内存缓存统计
             const memoryStats = this.plugin.performanceOptimizer.getCacheStats();
             const memorySection = container.createDiv({ cls: 'polyglot-cache-section' });
-            memorySection.createEl('h5', { text: '💾 内存缓存' });
+            memorySection.createEl('h5', { text: tr('💾 内存缓存', '💾 Memory cache') });
 
             const memoryGrid = memorySection.createDiv({ cls: 'polyglot-stats-grid' });
             {
                 const host = memoryGrid.createDiv({ cls: 'polyglot-stat-card' });
                 host.createDiv({ cls: 'stat-number', text: `${memoryStats.size}` });
-                host.createDiv({ cls: 'stat-label', text: '缓存项数' });
+                host.createDiv({ cls: 'stat-label', text: tr('缓存项数', 'Entries') });
             }
 
             // 音频缓存统计
             const audioStats = this.plugin.audioCacheManager.getCacheStats();
             const audioSection = container.createDiv({ cls: 'polyglot-cache-section' });
-            audioSection.createEl('h5', { text: '🎵 音频内存缓存' });
+            audioSection.createEl('h5', { text: tr('🎵 音频内存缓存', '🎵 Audio memory cache') });
 
             const audioGrid = audioSection.createDiv({ cls: 'polyglot-stats-grid' });
             {
                 const host = audioGrid.createDiv({ cls: 'polyglot-stat-card' });
                 host.createDiv({ cls: 'stat-number', text: `${audioStats.size}` });
-                host.createDiv({ cls: 'stat-label', text: '音频缓存项' });
+                host.createDiv({ cls: 'stat-label', text: tr('音频缓存项', 'Audio entries') });
             }
 
         } catch (error) {
-            container.createDiv({ text: '获取缓存统计失败', cls: 'polyglot-error' });
+            container.createDiv({ text: tr('获取缓存统计失败', 'Could not read cache statistics'), cls: 'polyglot-error' });
             this.plugin.logger.error('获取缓存统计失败', error);
         }
     }
@@ -936,7 +937,7 @@ class AddVocabularyModal extends Modal {
 
         this.modalEl.addClass('ap', 'ap-modal');
         const { contentEl } = this;
-        contentEl.createEl('h2', { text: '添加新单词' });
+        contentEl.createEl('h2', { text: tr('添加新单词', 'Add a word') });
 
         let wordInput: TextComponent;
         let translationInput: TextComponent;
@@ -944,40 +945,40 @@ class AddVocabularyModal extends Modal {
         let tagsInput: TextComponent;
 
         new Setting(contentEl)
-            .setName('单词')
-            .setDesc('要添加的单词或短语')
+            .setName(tr('单词', 'Word'))
+            .setDesc(tr('要添加的单词或短语', 'The word or phrase to add'))
             .addText(text => {
                 wordInput = text;
-                text.setPlaceholder('输入单词...');
+                text.setPlaceholder(tr('输入单词...', 'Type a word...'));
             });
 
         new Setting(contentEl)
-            .setName('翻译')
-            .setDesc('单词的中文翻译')
+            .setName(tr('翻译', 'Translation'))
+            .setDesc(tr('单词的中文翻译', "The word's translation"))
             .addText(text => {
                 translationInput = text;
-                text.setPlaceholder('输入翻译...');
+                text.setPlaceholder(tr('输入翻译...', 'Type the translation...'));
             });
 
         new Setting(contentEl)
-            .setName('备注')
-            .setDesc('可选的备注信息')
+            .setName(tr('备注', 'Notes'))
+            .setDesc(tr('可选的备注信息', 'Optional notes'))
             .addText(text => {
                 notesInput = text;
-                text.setPlaceholder('输入备注...');
+                text.setPlaceholder(tr('输入备注...', 'Type notes...'));
             });
 
         new Setting(contentEl)
-            .setName('标签')
-            .setDesc('用逗号分隔的标签')
+            .setName(tr('标签', 'Tags'))
+            .setDesc(tr('用逗号分隔的标签', 'Comma-separated tags'))
             .addText(text => {
                 tagsInput = text;
-                text.setPlaceholder('标签1, 标签2...');
+                text.setPlaceholder(tr('标签1, 标签2...', 'tag1, tag2...'));
             });
 
         new Setting(contentEl)
             .addButton(btn => btn
-                .setButtonText('添加')
+                .setButtonText(tr('添加', 'Add'))
                 .setCta()
                 .onClick(async () => {
                     const word = wordInput.getValue().trim();
@@ -987,7 +988,7 @@ class AddVocabularyModal extends Modal {
                     const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(t => t) : [];
 
                     if (!word || !translation) {
-                        new Notice('请填写单词和翻译');
+                        new Notice(tr('请填写单词和翻译', 'Fill in the word and its translation'));
                         return;
                     }
 
@@ -996,7 +997,7 @@ class AddVocabularyModal extends Modal {
                     this.onSubmit();
                 }))
             .addButton(btn => btn
-                .setButtonText('取消')
+                .setButtonText(tr('取消', 'Cancel'))
                 .onClick(() => this.close()));
     }
 
@@ -1022,7 +1023,7 @@ class SingleWordReviewModal extends Modal {
 
         this.modalEl.addClass('ap', 'ap-modal');
         const { contentEl } = this;
-        contentEl.createEl('h2', { text: '单词复习' });
+        contentEl.createEl('h2', { text: tr('单词复习', 'Word review') });
 
         // 显示单词
         const wordDiv = contentEl.createDiv({ cls: 'polyglot-review-word' });
@@ -1030,7 +1031,7 @@ class SingleWordReviewModal extends Modal {
 
         // 显示翻译按钮
         const showTranslationBtn = contentEl.createEl('button', {
-            text: '显示翻译',
+            text: tr('显示翻译', 'Show translation'),
             cls: 'polyglot-btn-primary'
         });
 
@@ -1039,7 +1040,7 @@ class SingleWordReviewModal extends Modal {
         translationDiv.createEl('p', { text: this.item.translation });
 
         if (this.item.notes) {
-            translationDiv.createEl('p', { text: `备注: ${this.item.notes}`, cls: 'polyglot-review-notes' });
+            translationDiv.createEl('p', { text: tr(`备注: ${this.item.notes}`, `Notes: ${this.item.notes}`), cls: 'polyglot-review-notes' });
         }
 
         showTranslationBtn.addEventListener('click', () => {
@@ -1051,15 +1052,15 @@ class SingleWordReviewModal extends Modal {
 
     private showRatingButtons(container: HTMLElement) {
         const ratingDiv = container.createDiv({ cls: 'polyglot-review-rating' });
-        ratingDiv.createEl('h4', { text: '你对这个单词的掌握程度如何？' });
+        ratingDiv.createEl('h4', { text: tr('你对这个单词的掌握程度如何？', 'How well do you know this word?') });
 
         const ratings = [
-            { text: '完全不认识', value: 0, cls: 'polyglot-btn-danger' },
-            { text: '有印象', value: 1, cls: 'polyglot-btn-warning' },
-            { text: '基本认识', value: 2, cls: 'polyglot-btn-secondary' },
-            { text: '比较熟悉', value: 3, cls: 'polyglot-btn-primary' },
-            { text: '非常熟悉', value: 4, cls: 'polyglot-btn-success' },
-            { text: '完全掌握', value: 5, cls: 'polyglot-btn-success' }
+            { text: tr('完全不认识', 'Not at all'), value: 0, cls: 'polyglot-btn-danger' },
+            { text: tr('有印象', 'Seen it'), value: 1, cls: 'polyglot-btn-warning' },
+            { text: tr('基本认识', 'Roughly'), value: 2, cls: 'polyglot-btn-secondary' },
+            { text: tr('比较熟悉', 'Fairly well'), value: 3, cls: 'polyglot-btn-primary' },
+            { text: tr('非常熟悉', 'Very well'), value: 4, cls: 'polyglot-btn-success' },
+            { text: tr('完全掌握', 'Mastered'), value: 5, cls: 'polyglot-btn-success' }
         ];
 
         const buttonsDiv = ratingDiv.createDiv({ cls: 'polyglot-rating-buttons' });
@@ -1070,7 +1071,7 @@ class SingleWordReviewModal extends Modal {
             });
             btn.addEventListener('click', fire(async () => {
                 await this.plugin.learningTracker.recordReview(this.item.word, rating.value);
-                new Notice(`已记录复习结果: ${rating.text}`);
+                new Notice(tr(`已记录复习结果: ${rating.text}`, `Review saved: ${rating.text}`));
                 this.close();
                 this.onSubmit();
             }));
@@ -1098,34 +1099,34 @@ class ImportVocabularyModal extends Modal {
 
         this.modalEl.addClass('ap', 'ap-modal');
         const { contentEl } = this;
-        contentEl.createEl('h2', { text: '导入词汇库' });
-        contentEl.createEl('p', { text: '请选择要导入的JSON文件' });
+        contentEl.createEl('h2', { text: tr('导入词汇库', 'Import word list') });
+        contentEl.createEl('p', { text: tr('请选择要导入的JSON文件', 'Choose a JSON file to import') });
 
         const fileInput = contentEl.createEl('input', { type: 'file', attr: { accept: '.json' } });
 
         new Setting(contentEl)
             .addButton(btn => btn
-                .setButtonText('导入')
+                .setButtonText(tr('导入', 'Import'))
                 .setCta()
                 .onClick(async () => {
                     const file = fileInput.files?.[0];
                     if (!file) {
-                        new Notice('请选择文件');
+                        new Notice(tr('请选择文件', 'Choose a file'));
                         return;
                     }
 
                     try {
                         const text = await file.text();
                         await this.plugin.learningTracker.importVocabulary(text);
-                        new Notice('导入成功');
+                        new Notice(tr('导入成功', 'Imported'));
                         this.close();
                         this.onSubmit();
                     } catch (error) {
-                        new Notice(`导入失败: ${errorMessage(error)}`);
+                        new Notice(tr(`导入失败: ${errorMessage(error)}`, `Import failed: ${errorMessage(error)}`));
                     }
                 }))
             .addButton(btn => btn
-                .setButtonText('取消')
+                .setButtonText(tr('取消', 'Cancel'))
                 .onClick(() => this.close()));
     }
 
@@ -1151,36 +1152,36 @@ class EditVocabularyModal extends Modal {
 
         this.modalEl.addClass('ap', 'ap-modal');
         const { contentEl } = this;
-        contentEl.createEl('h2', { text: '编辑单词' });
+        contentEl.createEl('h2', { text: tr('编辑单词', 'Edit word') });
 
         let translationInput: TextComponent;
         let notesInput: TextComponent;
         let tagsInput: TextComponent;
 
         new Setting(contentEl)
-            .setName('单词')
-            .setDesc('单词内容（不可编辑）')
+            .setName(tr('单词', 'Word'))
+            .setDesc(tr('单词内容（不可编辑）', 'Word (cannot be changed)'))
             .addText(text => {
                 text.setValue(this.item.word);
                 text.setDisabled(true);
             });
 
         new Setting(contentEl)
-            .setName('翻译')
+            .setName(tr('翻译', 'Translation'))
             .addText(text => {
                 translationInput = text;
                 text.setValue(this.item.translation);
             });
 
         new Setting(contentEl)
-            .setName('备注')
+            .setName(tr('备注', 'Notes'))
             .addText(text => {
                 notesInput = text;
                 text.setValue(this.item.notes || '');
             });
 
         new Setting(contentEl)
-            .setName('标签')
+            .setName(tr('标签', 'Tags'))
             .addText(text => {
                 tagsInput = text;
                 text.setValue(this.item.tags?.join(', ') || '');
@@ -1188,7 +1189,7 @@ class EditVocabularyModal extends Modal {
 
         new Setting(contentEl)
             .addButton(btn => btn
-                .setButtonText('保存')
+                .setButtonText(tr('保存', 'Save'))
                 .setCta()
                 .onClick(async () => {
                     const translation = translationInput.getValue().trim();
@@ -1197,7 +1198,7 @@ class EditVocabularyModal extends Modal {
                     const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(t => t) : [];
 
                     if (!translation) {
-                        new Notice('请填写翻译');
+                        new Notice(tr('请填写翻译', 'Fill in the translation'));
                         return;
                     }
 
@@ -1212,7 +1213,7 @@ class EditVocabularyModal extends Modal {
                     this.onSubmit();
                 }))
             .addButton(btn => btn
-                .setButtonText('取消')
+                .setButtonText(tr('取消', 'Cancel'))
                 .onClick(() => this.close()));
     }
 
@@ -1237,7 +1238,7 @@ class AddJapaneseVocabularyModal extends Modal {
 
         this.modalEl.addClass('ap', 'ap-modal');
         const { contentEl } = this;
-        contentEl.createEl('h2', { text: '添加日语词汇' });
+        contentEl.createEl('h2', { text: tr('添加日语词汇', 'Add a Japanese entry') });
 
         let originalTextInput: TextComponent;
         let japaneseTextInput: TextComponent;
@@ -1247,56 +1248,56 @@ class AddJapaneseVocabularyModal extends Modal {
         let tagsInput: TextComponent;
 
         new Setting(contentEl)
-            .setName('原文（中文）')
-            .setDesc('用作标题的原文')
+            .setName(tr('原文（中文）', 'Source text (Chinese)'))
+            .setDesc(tr('用作标题的原文', 'The source text used as the title'))
             .addText(text => {
                 originalTextInput = text;
-                text.setPlaceholder('输入中文原文...');
+                text.setPlaceholder(tr('输入中文原文...', 'Type the Chinese source...'));
             });
 
         new Setting(contentEl)
-            .setName('日文')
-            .setDesc('对应的日文表达')
+            .setName(tr('日文', 'Japanese'))
+            .setDesc(tr('对应的日文表达', 'The Japanese expression'))
             .addText(text => {
                 japaneseTextInput = text;
-                text.setPlaceholder('输入日文...');
+                text.setPlaceholder(tr('输入日文...', 'Type the Japanese...'));
             });
 
         new Setting(contentEl)
-            .setName('读音')
-            .setDesc('日文的读音（平假名）')
+            .setName(tr('读音', 'Reading'))
+            .setDesc(tr('日文的读音（平假名）', 'Reading in hiragana'))
             .addText(text => {
                 readingInput = text;
-                text.setPlaceholder('输入读音...');
+                text.setPlaceholder(tr('输入读音...', 'Type the reading...'));
             });
 
         new Setting(contentEl)
-            .setName('翻译')
-            .setDesc('详细的中文翻译')
+            .setName(tr('翻译', 'Translation'))
+            .setDesc(tr('详细的中文翻译', 'Detailed Chinese translation'))
             .addText(text => {
                 translationInput = text;
-                text.setPlaceholder('输入翻译...');
+                text.setPlaceholder(tr('输入翻译...', 'Type the translation...'));
             });
 
         new Setting(contentEl)
-            .setName('备注')
-            .setDesc('可选的备注信息')
+            .setName(tr('备注', 'Notes'))
+            .setDesc(tr('可选的备注信息', 'Optional notes'))
             .addText(text => {
                 notesInput = text;
-                text.setPlaceholder('输入备注...');
+                text.setPlaceholder(tr('输入备注...', 'Type notes...'));
             });
 
         new Setting(contentEl)
-            .setName('标签')
-            .setDesc('用逗号分隔的标签')
+            .setName(tr('标签', 'Tags'))
+            .setDesc(tr('用逗号分隔的标签', 'Comma-separated tags'))
             .addText(text => {
                 tagsInput = text;
-                text.setPlaceholder('标签1, 标签2...');
+                text.setPlaceholder(tr('标签1, 标签2...', 'tag1, tag2...'));
             });
 
         new Setting(contentEl)
             .addButton(btn => btn
-                .setButtonText('添加')
+                .setButtonText(tr('添加', 'Add'))
                 .setCta()
                 .onClick(async () => {
                     const originalText = originalTextInput.getValue().trim();
@@ -1308,7 +1309,7 @@ class AddJapaneseVocabularyModal extends Modal {
                     const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(t => t) : [];
 
                     if (!originalText || !japaneseText || !translation) {
-                        new Notice('请填写原文、日文和翻译');
+                        new Notice(tr('请填写原文、日文和翻译', 'Fill in the source, Japanese and translation'));
                         return;
                     }
 
@@ -1319,7 +1320,7 @@ class AddJapaneseVocabularyModal extends Modal {
                     this.onSubmit();
                 }))
             .addButton(btn => btn
-                .setButtonText('取消')
+                .setButtonText(tr('取消', 'Cancel'))
                 .onClick(() => this.close()));
     }
 
@@ -1344,7 +1345,7 @@ class AddEnglishVocabularyModal extends Modal {
 
         this.modalEl.addClass('ap', 'ap-modal');
         const { contentEl } = this;
-        contentEl.createEl('h2', { text: '添加英语词汇' });
+        contentEl.createEl('h2', { text: tr('添加英语词汇', 'Add an English word') });
 
         let wordInput: TextComponent;
         let translationInput: TextComponent;
@@ -1354,56 +1355,56 @@ class AddEnglishVocabularyModal extends Modal {
         let tagsInput: TextComponent;
 
         new Setting(contentEl)
-            .setName('英语单词')
-            .setDesc('要添加的英语单词')
+            .setName(tr('英语单词', 'English word'))
+            .setDesc(tr('要添加的英语单词', 'The English word to add'))
             .addText(text => {
                 wordInput = text;
-                text.setPlaceholder('输入英语单词...');
+                text.setPlaceholder(tr('输入英语单词...', 'Type an English word...'));
             });
 
         new Setting(contentEl)
-            .setName('中文翻译')
-            .setDesc('单词的中文翻译')
+            .setName(tr('中文翻译', 'Chinese translation'))
+            .setDesc(tr('单词的中文翻译', "The word's translation"))
             .addText(text => {
                 translationInput = text;
-                text.setPlaceholder('输入中文翻译...');
+                text.setPlaceholder(tr('输入中文翻译...', 'Type the Chinese translation...'));
             });
 
         new Setting(contentEl)
-            .setName('音标')
-            .setDesc('单词的音标')
+            .setName(tr('音标', 'Phonetics'))
+            .setDesc(tr('单词的音标', "The word's phonetic transcription"))
             .addText(text => {
                 phoneticsInput = text;
-                text.setPlaceholder('输入音标...');
+                text.setPlaceholder(tr('输入音标...', 'Type the phonetics...'));
             });
 
         new Setting(contentEl)
-            .setName('词性')
-            .setDesc('单词的词性')
+            .setName(tr('词性', 'Part of speech'))
+            .setDesc(tr('单词的词性', "The word's part of speech"))
             .addText(text => {
                 partOfSpeechInput = text;
-                text.setPlaceholder('如：名词、动词、形容词');
+                text.setPlaceholder(tr('如：名词、动词、形容词', 'For example noun, verb, adjective'));
             });
 
         new Setting(contentEl)
-            .setName('备注')
-            .setDesc('可选的备注信息')
+            .setName(tr('备注', 'Notes'))
+            .setDesc(tr('可选的备注信息', 'Optional notes'))
             .addText(text => {
                 notesInput = text;
-                text.setPlaceholder('输入备注...');
+                text.setPlaceholder(tr('输入备注...', 'Type notes...'));
             });
 
         new Setting(contentEl)
-            .setName('标签')
-            .setDesc('用逗号分隔的标签')
+            .setName(tr('标签', 'Tags'))
+            .setDesc(tr('用逗号分隔的标签', 'Comma-separated tags'))
             .addText(text => {
                 tagsInput = text;
-                text.setPlaceholder('标签1, 标签2...');
+                text.setPlaceholder(tr('标签1, 标签2...', 'tag1, tag2...'));
             });
 
         new Setting(contentEl)
             .addButton(btn => btn
-                .setButtonText('添加')
+                .setButtonText(tr('添加', 'Add'))
                 .setCta()
                 .onClick(async () => {
                     const word = wordInput.getValue().trim();
@@ -1415,7 +1416,7 @@ class AddEnglishVocabularyModal extends Modal {
                     const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(t => t) : [];
 
                     if (!word || !translation) {
-                        new Notice('请填写单词和翻译');
+                        new Notice(tr('请填写单词和翻译', 'Fill in the word and its translation'));
                         return;
                     }
 
@@ -1426,7 +1427,7 @@ class AddEnglishVocabularyModal extends Modal {
                     this.onSubmit();
                 }))
             .addButton(btn => btn
-                .setButtonText('取消')
+                .setButtonText(tr('取消', 'Cancel'))
                 .onClick(() => this.close()));
     }
 
@@ -1453,7 +1454,7 @@ class JapaneseReviewModal extends Modal {
 
         this.modalEl.addClass('ap', 'ap-modal');
         const { contentEl } = this;
-        contentEl.createEl('h2', { text: '日语词汇复习' });
+        contentEl.createEl('h2', { text: tr('日语词汇复习', 'Japanese review') });
 
         // 显示原文（中文）
         const originalDiv = contentEl.createDiv({ cls: 'polyglot-review-word' });
@@ -1461,20 +1462,20 @@ class JapaneseReviewModal extends Modal {
 
         // 显示翻译按钮
         const showTranslationBtn = contentEl.createEl('button', {
-            text: '显示日文',
+            text: tr('显示日文', 'Show the Japanese'),
             cls: 'polyglot-btn-primary'
         });
 
         const translationDiv = contentEl.createDiv({ cls: 'polyglot-review-translation' });
         translationDiv.hide();
-        translationDiv.createEl('p', { text: `日文: ${this.item.japaneseText}` });
+        translationDiv.createEl('p', { text: tr(`日文: ${this.item.japaneseText}`, `Japanese: ${this.item.japaneseText}`) });
         if (this.item.reading) {
-            translationDiv.createEl('p', { text: `读音: ${this.item.reading}` });
+            translationDiv.createEl('p', { text: tr(`读音: ${this.item.reading}`, `Reading: ${this.item.reading}`) });
         }
-        translationDiv.createEl('p', { text: `翻译: ${this.item.translation}` });
+        translationDiv.createEl('p', { text: tr(`翻译: ${this.item.translation}`, `Translation: ${this.item.translation}`) });
 
         if (this.item.notes) {
-            translationDiv.createEl('p', { text: `备注: ${this.item.notes}`, cls: 'polyglot-review-notes' });
+            translationDiv.createEl('p', { text: tr(`备注: ${this.item.notes}`, `Notes: ${this.item.notes}`), cls: 'polyglot-review-notes' });
         }
 
         showTranslationBtn.addEventListener('click', () => {
@@ -1486,15 +1487,15 @@ class JapaneseReviewModal extends Modal {
 
     private showRatingButtons(container: HTMLElement) {
         const ratingDiv = container.createDiv({ cls: 'polyglot-review-rating' });
-        ratingDiv.createEl('h4', { text: '你对这个日语词汇的掌握程度如何？' });
+        ratingDiv.createEl('h4', { text: tr('你对这个日语词汇的掌握程度如何？', 'How well do you know this Japanese entry?') });
 
         const ratings = [
-            { text: '完全不认识', value: 0, cls: 'polyglot-btn-danger' },
-            { text: '有印象', value: 1, cls: 'polyglot-btn-warning' },
-            { text: '基本认识', value: 2, cls: 'polyglot-btn-secondary' },
-            { text: '比较熟悉', value: 3, cls: 'polyglot-btn-primary' },
-            { text: '非常熟悉', value: 4, cls: 'polyglot-btn-success' },
-            { text: '完全掌握', value: 5, cls: 'polyglot-btn-success' }
+            { text: tr('完全不认识', 'Not at all'), value: 0, cls: 'polyglot-btn-danger' },
+            { text: tr('有印象', 'Seen it'), value: 1, cls: 'polyglot-btn-warning' },
+            { text: tr('基本认识', 'Roughly'), value: 2, cls: 'polyglot-btn-secondary' },
+            { text: tr('比较熟悉', 'Fairly well'), value: 3, cls: 'polyglot-btn-primary' },
+            { text: tr('非常熟悉', 'Very well'), value: 4, cls: 'polyglot-btn-success' },
+            { text: tr('完全掌握', 'Mastered'), value: 5, cls: 'polyglot-btn-success' }
         ];
 
         const buttonsDiv = ratingDiv.createDiv({ cls: 'polyglot-rating-buttons' });
@@ -1509,7 +1510,7 @@ class JapaneseReviewModal extends Modal {
                     this.item.japaneseText,
                     rating.value
                 );
-                new Notice(`已记录复习结果: ${rating.text}`);
+                new Notice(tr(`已记录复习结果: ${rating.text}`, `Review saved: ${rating.text}`));
                 this.close();
                 this.onSubmit();
             }));
@@ -1539,7 +1540,7 @@ class EnglishReviewModal extends Modal {
 
         this.modalEl.addClass('ap', 'ap-modal');
         const { contentEl } = this;
-        contentEl.createEl('h2', { text: '英语词汇复习' });
+        contentEl.createEl('h2', { text: tr('英语词汇复习', 'English review') });
 
         // 显示英语单词
         const wordDiv = contentEl.createDiv({ cls: 'polyglot-review-word' });
@@ -1547,22 +1548,22 @@ class EnglishReviewModal extends Modal {
 
         // 显示翻译按钮
         const showTranslationBtn = contentEl.createEl('button', {
-            text: '显示翻译',
+            text: tr('显示翻译', 'Show translation'),
             cls: 'polyglot-btn-primary'
         });
 
         const translationDiv = contentEl.createDiv({ cls: 'polyglot-review-translation' });
         translationDiv.hide();
-        translationDiv.createEl('p', { text: `翻译: ${this.item.translation}` });
+        translationDiv.createEl('p', { text: tr(`翻译: ${this.item.translation}`, `Translation: ${this.item.translation}`) });
         if (this.item.phonetics) {
-            translationDiv.createEl('p', { text: `音标: ${this.item.phonetics}` });
+            translationDiv.createEl('p', { text: tr(`音标: ${this.item.phonetics}`, `Phonetics: ${this.item.phonetics}`) });
         }
         if (this.item.partOfSpeech) {
-            translationDiv.createEl('p', { text: `词性: ${this.item.partOfSpeech}` });
+            translationDiv.createEl('p', { text: tr(`词性: ${this.item.partOfSpeech}`, `Part of speech: ${this.item.partOfSpeech}`) });
         }
 
         if (this.item.notes) {
-            translationDiv.createEl('p', { text: `备注: ${this.item.notes}`, cls: 'polyglot-review-notes' });
+            translationDiv.createEl('p', { text: tr(`备注: ${this.item.notes}`, `Notes: ${this.item.notes}`), cls: 'polyglot-review-notes' });
         }
 
         showTranslationBtn.addEventListener('click', () => {
@@ -1574,15 +1575,15 @@ class EnglishReviewModal extends Modal {
 
     private showRatingButtons(container: HTMLElement) {
         const ratingDiv = container.createDiv({ cls: 'polyglot-review-rating' });
-        ratingDiv.createEl('h4', { text: '你对这个英语单词的掌握程度如何？' });
+        ratingDiv.createEl('h4', { text: tr('你对这个英语单词的掌握程度如何？', 'How well do you know this English word?') });
 
         const ratings = [
-            { text: '完全不认识', value: 0, cls: 'polyglot-btn-danger' },
-            { text: '有印象', value: 1, cls: 'polyglot-btn-warning' },
-            { text: '基本认识', value: 2, cls: 'polyglot-btn-secondary' },
-            { text: '比较熟悉', value: 3, cls: 'polyglot-btn-primary' },
-            { text: '非常熟悉', value: 4, cls: 'polyglot-btn-success' },
-            { text: '完全掌握', value: 5, cls: 'polyglot-btn-success' }
+            { text: tr('完全不认识', 'Not at all'), value: 0, cls: 'polyglot-btn-danger' },
+            { text: tr('有印象', 'Seen it'), value: 1, cls: 'polyglot-btn-warning' },
+            { text: tr('基本认识', 'Roughly'), value: 2, cls: 'polyglot-btn-secondary' },
+            { text: tr('比较熟悉', 'Fairly well'), value: 3, cls: 'polyglot-btn-primary' },
+            { text: tr('非常熟悉', 'Very well'), value: 4, cls: 'polyglot-btn-success' },
+            { text: tr('完全掌握', 'Mastered'), value: 5, cls: 'polyglot-btn-success' }
         ];
 
         const buttonsDiv = ratingDiv.createDiv({ cls: 'polyglot-rating-buttons' });
@@ -1593,7 +1594,7 @@ class EnglishReviewModal extends Modal {
             });
             btn.addEventListener('click', fire(async () => {
                 await this.plugin.learningTracker.recordEnglishReview(this.item.word, rating.value);
-                new Notice(`已记录复习结果: ${rating.text}`);
+                new Notice(tr(`已记录复习结果: ${rating.text}`, `Review saved: ${rating.text}`));
                 this.close();
                 this.onSubmit();
             }));
@@ -1609,7 +1610,7 @@ class EnglishReviewModal extends Modal {
 // 扩展 ManagementPanelView 类，添加缺失的方法
 ManagementPanelView.prototype.renderJapaneseVocabulary = function(this: ManagementPanelView, container: HTMLElement) {
     container.empty();
-    container.createEl('h3', { text: '🇯🇵 日语词汇库' });
+    container.createEl('h3', { text: tr('🇯🇵 日语词汇库', '🇯🇵 Japanese word list') });
 
     // 获取日语词汇
     const japaneseVocab = this.plugin.learningTracker.getJapaneseVocabulary();
@@ -1617,14 +1618,14 @@ ManagementPanelView.prototype.renderJapaneseVocabulary = function(this: Manageme
     // 操作按钮
     const actions = container.createDiv({ cls: 'polyglot-vocab-actions' });
 
-    const addBtn = actions.createEl('button', { text: '➕ 添加日语词汇', cls: 'polyglot-btn-primary' });
+    const addBtn = actions.createEl('button', { text: tr('➕ 添加日语词汇', '➕ Add Japanese entry'), cls: 'polyglot-btn-primary' });
     addBtn.addEventListener('click', () => {
         new AddJapaneseVocabularyModal(this.plugin.app, this.plugin, () => {
             this.renderJapaneseVocabulary(container);
         }).open();
     });
 
-    const reviewBtn = actions.createEl('button', { text: '📖 开始日语复习', cls: 'polyglot-btn-success' });
+    const reviewBtn = actions.createEl('button', { text: tr('📖 开始日语复习', '📖 Review Japanese'), cls: 'polyglot-btn-success' });
     reviewBtn.addEventListener('click', () => {
         // 打开复习视图并设置为日语模式
         void this.plugin.app.workspace.getLeaf(false).setViewState({
@@ -1637,13 +1638,13 @@ ManagementPanelView.prototype.renderJapaneseVocabulary = function(this: Manageme
     const stats = container.createDiv({ cls: 'polyglot-vocab-stats' });
     const el1 = stats.createDiv({ cls: 'polyglot-stat-card' });
     el1.createDiv({ cls: 'stat-number', text: `${japaneseVocab.length}` });
-    el1.createDiv({ cls: 'stat-label', text: '日语词汇总数' });
+    el1.createDiv({ cls: 'stat-label', text: tr('日语词汇总数', 'Japanese entries') });
     const el2 = stats.createDiv({ cls: 'polyglot-stat-card' });
     el2.createDiv({ cls: 'stat-number', text: `${japaneseVocab.filter(item => !item.nextReview || item.nextReview <= Date.now()).length}` });
-    el2.createDiv({ cls: 'stat-label', text: '待复习' });
+    el2.createDiv({ cls: 'stat-label', text: tr('待复习', 'To review') });
     const el3 = stats.createDiv({ cls: 'polyglot-stat-card' });
     el3.createDiv({ cls: 'stat-number', text: `${japaneseVocab.filter(item => item.reviewCount === 0).length}` });
-    el3.createDiv({ cls: 'stat-label', text: '新词汇' });
+    el3.createDiv({ cls: 'stat-label', text: tr('新词汇', 'New entries') });
 
     // 词汇列表
     const vocabList = container.createDiv({ cls: 'polyglot-vocab-list' });
@@ -1651,8 +1652,8 @@ ManagementPanelView.prototype.renderJapaneseVocabulary = function(this: Manageme
     if (japaneseVocab.length === 0) {
         const emptyState = vocabList.createDiv({ cls: 'polyglot-empty-state' });
         emptyState.createDiv({ cls: 'empty-icon', text: '🇯🇵' });
-        emptyState.createDiv({ cls: 'empty-title', text: '还没有日语词汇' });
-        emptyState.createDiv({ cls: 'empty-subtitle', text: '开始分析日语文本来自动添加词汇吧！' });
+        emptyState.createDiv({ cls: 'empty-title', text: tr('还没有日语词汇', 'No Japanese entries yet') });
+        emptyState.createDiv({ cls: 'empty-subtitle', text: tr('开始分析日语文本来自动添加词汇吧！', 'Analyse some Japanese text to add entries automatically.') });
         return;
     }
 
@@ -1681,13 +1682,13 @@ ManagementPanelView.prototype.renderJapaneseVocabulary = function(this: Manageme
         // 复习状态
         const statusSpan = metaDiv.createSpan({ cls: 'polyglot-vocab-status' });
         if (item.reviewCount === 0) {
-            statusSpan.setText('新词汇');
+            statusSpan.setText(tr('新词汇', 'New entries'));
             statusSpan.addClass('status-new');
         } else if (!item.nextReview || item.nextReview <= Date.now()) {
-            statusSpan.setText('待复习');
+            statusSpan.setText(tr('待复习', 'To review'));
             statusSpan.addClass('status-due');
         } else {
-            statusSpan.setText('已复习');
+            statusSpan.setText(tr('已复习', 'Reviewed'));
             statusSpan.addClass('status-reviewed');
         }
 
@@ -1699,7 +1700,7 @@ ManagementPanelView.prototype.renderJapaneseVocabulary = function(this: Manageme
             try {
                 await this.plugin.playJapaneseVoice(item.japaneseText, false);
             } catch {
-                new Notice('音频播放失败');
+                new Notice(tr('音频播放失败', 'Could not play the audio'));
             }
         }));
 
@@ -1712,7 +1713,7 @@ ManagementPanelView.prototype.renderJapaneseVocabulary = function(this: Manageme
 
         const deleteBtn = actionsDiv.createEl('button', { text: '🗑️', cls: 'polyglot-btn-icon danger' });
         deleteBtn.addEventListener('click', fire(async () => {
-            const confirmed = await confirmAction(this.app, `确定要删除日语词汇 "${item.originalText}" 吗？`);
+            const confirmed = await confirmAction(this.app, tr(`确定要删除日语词汇 "${item.originalText}" 吗？`, `Delete the Japanese entry "${item.originalText}"?`));
             if (confirmed) {
                 await this.plugin.learningTracker.removeJapaneseVocabularyItem(item.originalText, item.japaneseText);
                 this.renderJapaneseVocabulary(container);
@@ -1723,7 +1724,7 @@ ManagementPanelView.prototype.renderJapaneseVocabulary = function(this: Manageme
 
 ManagementPanelView.prototype.renderEnglishVocabulary = function(this: ManagementPanelView, container: HTMLElement) {
     container.empty();
-    container.createEl('h3', { text: '🇺🇸 英语词汇库' });
+    container.createEl('h3', { text: tr('🇺🇸 英语词汇库', '🇺🇸 English word list') });
 
     // 获取英语词汇
     const englishVocab = this.plugin.learningTracker.getEnglishVocabulary();
@@ -1731,14 +1732,14 @@ ManagementPanelView.prototype.renderEnglishVocabulary = function(this: Managemen
     // 操作按钮
     const actions = container.createDiv({ cls: 'polyglot-vocab-actions' });
 
-    const addBtn = actions.createEl('button', { text: '➕ 添加英语单词', cls: 'polyglot-btn-primary' });
+    const addBtn = actions.createEl('button', { text: tr('➕ 添加英语单词', '➕ Add English word'), cls: 'polyglot-btn-primary' });
     addBtn.addEventListener('click', () => {
         new AddEnglishVocabularyModal(this.plugin.app, this.plugin, () => {
             this.renderEnglishVocabulary(container);
         }).open();
     });
 
-    const reviewBtn = actions.createEl('button', { text: '📖 开始英语复习', cls: 'polyglot-btn-success' });
+    const reviewBtn = actions.createEl('button', { text: tr('📖 开始英语复习', '📖 Review English'), cls: 'polyglot-btn-success' });
     reviewBtn.addEventListener('click', () => {
         // 打开复习视图并设置为英语模式
         void this.plugin.app.workspace.getLeaf(false).setViewState({
@@ -1751,13 +1752,13 @@ ManagementPanelView.prototype.renderEnglishVocabulary = function(this: Managemen
     const stats = container.createDiv({ cls: 'polyglot-vocab-stats' });
     const el1 = stats.createDiv({ cls: 'polyglot-stat-card' });
     el1.createDiv({ cls: 'stat-number', text: `${englishVocab.length}` });
-    el1.createDiv({ cls: 'stat-label', text: '英语单词总数' });
+    el1.createDiv({ cls: 'stat-label', text: tr('英语单词总数', 'English words') });
     const el2 = stats.createDiv({ cls: 'polyglot-stat-card' });
     el2.createDiv({ cls: 'stat-number', text: `${englishVocab.filter(item => !item.nextReview || item.nextReview <= Date.now()).length}` });
-    el2.createDiv({ cls: 'stat-label', text: '待复习' });
+    el2.createDiv({ cls: 'stat-label', text: tr('待复习', 'To review') });
     const el3 = stats.createDiv({ cls: 'polyglot-stat-card' });
     el3.createDiv({ cls: 'stat-number', text: `${englishVocab.filter(item => item.reviewCount === 0).length}` });
-    el3.createDiv({ cls: 'stat-label', text: '新单词' });
+    el3.createDiv({ cls: 'stat-label', text: tr('新单词', 'New') });
 
     // 词汇列表
     const vocabList = container.createDiv({ cls: 'polyglot-vocab-list' });
@@ -1765,8 +1766,8 @@ ManagementPanelView.prototype.renderEnglishVocabulary = function(this: Managemen
     if (englishVocab.length === 0) {
         const emptyState = vocabList.createDiv({ cls: 'polyglot-empty-state' });
         emptyState.createDiv({ cls: 'empty-icon', text: '🇺🇸' });
-        emptyState.createDiv({ cls: 'empty-title', text: '还没有英语单词' });
-        emptyState.createDiv({ cls: 'empty-subtitle', text: '开始分析英语文本来自动添加单词吧！' });
+        emptyState.createDiv({ cls: 'empty-title', text: tr('还没有英语单词', 'No English words yet') });
+        emptyState.createDiv({ cls: 'empty-subtitle', text: tr('开始分析英语文本来自动添加单词吧！', 'Analyse some English text to add words automatically.') });
         return;
     }
 
@@ -1798,13 +1799,13 @@ ManagementPanelView.prototype.renderEnglishVocabulary = function(this: Managemen
         // 复习状态
         const statusSpan = metaDiv.createSpan({ cls: 'polyglot-vocab-status' });
         if (item.reviewCount === 0) {
-            statusSpan.setText('新单词');
+            statusSpan.setText(tr('新单词', 'New'));
             statusSpan.addClass('status-new');
         } else if (!item.nextReview || item.nextReview <= Date.now()) {
-            statusSpan.setText('待复习');
+            statusSpan.setText(tr('待复习', 'To review'));
             statusSpan.addClass('status-due');
         } else {
-            statusSpan.setText('已复习');
+            statusSpan.setText(tr('已复习', 'Reviewed'));
             statusSpan.addClass('status-reviewed');
         }
 
@@ -1816,7 +1817,7 @@ ManagementPanelView.prototype.renderEnglishVocabulary = function(this: Managemen
             try {
                 await this.plugin.playEnglishVoice(item.word, false);
             } catch {
-                new Notice('音频播放失败');
+                new Notice(tr('音频播放失败', 'Could not play the audio'));
             }
         }));
 
@@ -1829,7 +1830,7 @@ ManagementPanelView.prototype.renderEnglishVocabulary = function(this: Managemen
 
         const deleteBtn = actionsDiv.createEl('button', { text: '🗑️', cls: 'polyglot-btn-icon danger' });
         deleteBtn.addEventListener('click', fire(async () => {
-            const confirmed = await confirmAction(this.app, `确定要删除英语单词 "${item.word}" 吗？`);
+            const confirmed = await confirmAction(this.app, tr(`确定要删除英语单词 "${item.word}" 吗？`, `Delete the English word "${item.word}"?`));
             if (confirmed) {
                 await this.plugin.learningTracker.removeEnglishVocabularyItem(item.word);
                 this.renderEnglishVocabulary(container);
@@ -1840,7 +1841,7 @@ ManagementPanelView.prototype.renderEnglishVocabulary = function(this: Managemen
 
 ManagementPanelView.prototype.renderFavoriteVocabulary = function(this: ManagementPanelView, container: HTMLElement) {
     container.empty();
-    container.createEl('h3', { text: '💖 收藏词汇' });
+    container.createEl('h3', { text: tr('💖 收藏词汇', '💖 Favourites') });
 
     // 获取所有收藏的词汇
     const japaneseVocab = this.plugin.learningTracker.getJapaneseVocabulary().filter(item => item.isFavorite);
@@ -1850,7 +1851,7 @@ ManagementPanelView.prototype.renderFavoriteVocabulary = function(this: Manageme
     // 操作按钮
     const actions = container.createDiv({ cls: 'polyglot-vocab-actions' });
 
-    const reviewBtn = actions.createEl('button', { text: '📖 复习收藏词汇', cls: 'polyglot-btn-success' });
+    const reviewBtn = actions.createEl('button', { text: tr('📖 复习收藏词汇', '📖 Review favourites'), cls: 'polyglot-btn-success' });
     reviewBtn.addEventListener('click', () => {
         // 打开复习视图
         void this.plugin.app.workspace.getLeaf(false).setViewState({
@@ -1863,13 +1864,13 @@ ManagementPanelView.prototype.renderFavoriteVocabulary = function(this: Manageme
     const stats = container.createDiv({ cls: 'polyglot-vocab-stats' });
     const el1 = stats.createDiv({ cls: 'polyglot-stat-card' });
     el1.createDiv({ cls: 'stat-number', text: `${totalFavorites}` });
-    el1.createDiv({ cls: 'stat-label', text: '收藏总数' });
+    el1.createDiv({ cls: 'stat-label', text: tr('收藏总数', 'Favourites') });
     const el2 = stats.createDiv({ cls: 'polyglot-stat-card' });
     el2.createDiv({ cls: 'stat-number', text: `${japaneseVocab.length}` });
-    el2.createDiv({ cls: 'stat-label', text: '日语收藏' });
+    el2.createDiv({ cls: 'stat-label', text: tr('日语收藏', 'Japanese favourites') });
     const el3 = stats.createDiv({ cls: 'polyglot-stat-card' });
     el3.createDiv({ cls: 'stat-number', text: `${englishVocab.length}` });
-    el3.createDiv({ cls: 'stat-label', text: '英语收藏' });
+    el3.createDiv({ cls: 'stat-label', text: tr('英语收藏', 'English favourites') });
 
     // 词汇列表
     const vocabList = container.createDiv({ cls: 'polyglot-vocab-list' });
@@ -1877,15 +1878,15 @@ ManagementPanelView.prototype.renderFavoriteVocabulary = function(this: Manageme
     if (totalFavorites === 0) {
         const emptyState = vocabList.createDiv({ cls: 'polyglot-empty-state' });
         emptyState.createDiv({ cls: 'empty-icon', text: '💖' });
-        emptyState.createDiv({ cls: 'empty-title', text: '还没有收藏的词汇' });
-        emptyState.createDiv({ cls: 'empty-subtitle', text: '在复习时点击收藏按钮来添加收藏吧！' });
+        emptyState.createDiv({ cls: 'empty-title', text: tr('还没有收藏的词汇', 'No favourites yet') });
+        emptyState.createDiv({ cls: 'empty-subtitle', text: tr('在复习时点击收藏按钮来添加收藏吧！', 'Press the favourite button during a review to add one.') });
         return;
     }
 
     // 分类显示收藏词汇
     if (japaneseVocab.length > 0) {
         const japaneseSection = vocabList.createDiv({ cls: 'polyglot-vocab-section' });
-        japaneseSection.createEl('h4', { text: '🇯🇵 日语收藏', cls: 'section-title' });
+        japaneseSection.createEl('h4', { text: tr('🇯🇵 日语收藏', '🇯🇵 Japanese favourites'), cls: 'section-title' });
 
         japaneseVocab.forEach(item => {
             const itemEl = japaneseSection.createDiv({ cls: 'polyglot-vocab-item japanese favorite' });
@@ -1913,7 +1914,7 @@ ManagementPanelView.prototype.renderFavoriteVocabulary = function(this: Manageme
                 try {
                     await this.plugin.playJapaneseVoice(item.japaneseText, false);
                 } catch {
-                    new Notice('音频播放失败');
+                    new Notice(tr('音频播放失败', 'Could not play the audio'));
                 }
             }));
 
@@ -1923,14 +1924,14 @@ ManagementPanelView.prototype.renderFavoriteVocabulary = function(this: Manageme
                     isFavorite: false
                 });
                 this.renderFavoriteVocabulary(container);
-                new Notice('已取消收藏');
+                new Notice(tr('已取消收藏', 'Removed from favourites'));
             }));
         });
     }
 
     if (englishVocab.length > 0) {
         const englishSection = vocabList.createDiv({ cls: 'polyglot-vocab-section' });
-        englishSection.createEl('h4', { text: '🇺🇸 英语收藏', cls: 'section-title' });
+        englishSection.createEl('h4', { text: tr('🇺🇸 英语收藏', '🇺🇸 English favourites'), cls: 'section-title' });
 
         englishVocab.forEach(item => {
             const itemEl = englishSection.createDiv({ cls: 'polyglot-vocab-item english favorite' });
@@ -1961,7 +1962,7 @@ ManagementPanelView.prototype.renderFavoriteVocabulary = function(this: Manageme
                 try {
                     await this.plugin.playEnglishVoice(item.word, false);
                 } catch {
-                    new Notice('音频播放失败');
+                    new Notice(tr('音频播放失败', 'Could not play the audio'));
                 }
             }));
 
@@ -1971,7 +1972,7 @@ ManagementPanelView.prototype.renderFavoriteVocabulary = function(this: Manageme
                     isFavorite: false
                 });
                 this.renderFavoriteVocabulary(container);
-                new Notice('已取消收藏');
+                new Notice(tr('已取消收藏', 'Removed from favourites'));
             }));
         });
     }

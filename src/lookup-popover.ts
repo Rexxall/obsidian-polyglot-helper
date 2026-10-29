@@ -6,6 +6,7 @@ import { chatContent, postChatCompletion } from "./apis/llm";
 import type { DictionaryInfo } from "./types";
 
 import { fire } from "./shared/fire";
+import { tr } from './shared/i18n';
 interface LookupResult {
     reading: string;
     pos: string;
@@ -67,17 +68,17 @@ export class LookupPopover {
         const head = this.el.createDiv({ cls: 'polyglot-pop-head' });
         head.createSpan({ cls: 'polyglot-pop-word', text: this.word });
         head.createSpan({ cls: 'polyglot-pop-reading' });
-        const play = head.createEl('button', { cls: 'polyglot-play', attr: { 'aria-label': '朗读' } });
+        const play = head.createEl('button', { cls: 'polyglot-play', attr: { 'aria-label': tr('朗读', 'Read aloud') } });
         setIcon(play, 'play');
         play.addEventListener('click', fire(() => this.play()));
 
         this.body = this.el.createDiv({ cls: 'polyglot-pop-body' });
-        this.body.createDiv({ cls: 'polyglot-muted', text: '正在查……' });
+        this.body.createDiv({ cls: 'polyglot-muted', text: tr('正在查……', 'Looking up…') });
 
         const acts = this.el.createDiv({ cls: 'polyglot-pop-actions' });
-        const save = acts.createEl('button', { cls: 'mod-cta polyglot-primary', text: '收进生词本' });
+        const save = acts.createEl('button', { cls: 'mod-cta polyglot-primary', text: tr('收进生词本', 'Add to word list') });
         save.addEventListener('click', fire(() => this.save(save)));
-        const full = acts.createEl('button', { cls: 'polyglot-link', text: '完整词条 →' });
+        const full = acts.createEl('button', { cls: 'polyglot-link', text: tr('完整词条 →', 'Full entry →') });
         full.addEventListener('click', () => {
             this.close();
             void this.plugin.openFullEntry(this.word, this.japanese, this.file);
@@ -152,7 +153,7 @@ export class LookupPopover {
         this.body.empty();
         const r = this.result;
         if (!r || (!r.meaning && !r.inContext && r.definitions.length === 0)) {
-            this.body.createDiv({ cls: 'polyglot-muted', text: '没有查到。可以点“完整词条”用模型分析。' });
+            this.body.createDiv({ cls: 'polyglot-muted', text: tr('没有查到。可以点“完整词条”用模型分析。', 'Nothing found. Press "Full entry" to ask the model.') });
             this.position();
             return;
         }
@@ -161,7 +162,7 @@ export class LookupPopover {
         const mean = this.body.createDiv({ cls: 'polyglot-pop-meaning' });
         if (r.pos) mean.createSpan({ cls: 'polyglot-pos', text: r.pos });
         mean.appendText(r.meaning || r.definitions[0] || '');
-        if (r.inContext) this.body.createDiv({ cls: 'polyglot-pop-context', text: `本句里：${r.inContext}` });
+        if (r.inContext) this.body.createDiv({ cls: 'polyglot-pop-context', text: tr(`本句里：${r.inContext}`, `In this sentence: ${r.inContext}`) });
         if (r.example) this.body.createDiv({ cls: 'polyglot-pop-example', text: r.example });
 
         (this.el.querySelector('.polyglot-pop-src') as HTMLElement).setText(r.sources.join(' · '));
@@ -244,20 +245,20 @@ export class LookupPopover {
             if (this.japanese) await this.plugin.playJapaneseVoice(this.word, false);
             else await this.plugin.playEnglishVoice(this.word, false);
         } catch {
-            new Notice('朗读失败');
+            new Notice(tr('朗读失败', 'Could not read aloud'));
         }
     }
 
     private async save(button: HTMLButtonElement) {
         const r = this.result;
         if (!r) {
-            new Notice('还没查到释义，稍等一下再收');
+            new Notice(tr('还没查到释义，稍等一下再收', 'No meaning yet; wait a moment before adding it'));
             return;
         }
         const settings = this.plugin.settings;
         if (!settings.enableLearningTracker) {
             settings.enableLearningTracker = true;
-            new Notice('已开启生词本');
+            new Notice(tr('已开启生词本', 'Word list turned on'));
         }
         const today = new Date().toISOString().slice(0, 10);
         const note = `收自 ${this.file ? `[[${this.file.basename}]]` : '查词'} · ${today}`;
@@ -268,7 +269,7 @@ export class LookupPopover {
             ? !!settings.japaneseVocabItems[`${this.word}_${this.word}`]
             : !!settings.englishVocabItems[this.word.toLowerCase()];
         if (exists) {
-            button.setText('已在生词本里');
+            button.setText(tr('已在生词本里', 'Already in your word list'));
             button.disabled = true;
             return;
         }
@@ -277,7 +278,7 @@ export class LookupPopover {
         } else {
             await tracker.addEnglishVocabularyItem(this.word.toLowerCase(), meaning, r.reading, r.pos, r.definitions, note, [this.sentence], ['查词小卡']);
         }
-        button.setText('已收进生词本');
+        button.setText(tr('已收进生词本', 'Added to your word list'));
         button.disabled = true;
     }
 }

@@ -4,6 +4,7 @@ import { PolyglotHelperSettings } from '../types';
 import { Logger } from '../logger';
 
 import { errorMessage } from '../shared/errors';
+import { tr } from '../shared/i18n';
 // 辅助函数：截断文本用于有道API签名
 function truncate(q: string): string {
     const len = q.length;
@@ -81,7 +82,7 @@ async function getOpenaiTtsAudioTS(
         return await response.arrayBuffer();
     } catch (error) {
         logger.error("OpenAI TTS API (SDK) 调用失败", error);
-        new Notice(`OpenAI TTS API 调用失败: ${errorMessage(error)}`);
+        new Notice(tr(`OpenAI TTS API 调用失败: ${errorMessage(error)}`, `OpenAI speech request failed: ${errorMessage(error)}`));
         return null;
     }
 }
@@ -94,7 +95,7 @@ async function getYoudaoTtsAudioTS(
 ): Promise<ArrayBuffer | null> {
     if (!settings.youdaoAppKey || !settings.youdaoAppSecret) {
         logger.info("有道 TTS AppKey 或 AppSecret 未提供。");
-        new Notice("有道语音合成配置不完整，请检查应用 ID 和应用密钥");
+        new Notice(tr("有道语音合成配置不完整，请检查应用 ID 和应用密钥", "Youdao speech settings are incomplete. Check the app ID and app secret"));
         return null;
     }
 
@@ -102,7 +103,7 @@ async function getYoudaoTtsAudioTS(
     const textBytes = new TextEncoder().encode(text).length;
     if (textBytes > 2048) {
         logger.error(`有道 TTS 文本UTF-8编码长度超过限制 (${textBytes}/2048字节)`);
-        new Notice("文本过长，有道语音合成最多 2048 字节");
+        new Notice(tr("文本过长，有道语音合成最多 2048 字节", "Text too long: Youdao speech accepts at most 2048 bytes"));
         return null;
     }
 
@@ -218,7 +219,7 @@ async function getYoudaoTtsAudioTS(
             const errorCode = errorInfo?.errorCode || 'unknown';
             const errorMessage = errorMessages[errorCode] || `未知错误 (${errorCode})`;
 
-            new Notice(`有道 TTS 错误 [${errorCode}]: ${errorMessage}`);
+            new Notice(tr(`有道 TTS 错误 [${errorCode}]: ${errorMessage}`, `Youdao speech error [${errorCode}]: ${errorMessage}`));
             return null;
         } else {
             // 其他类型的响应
@@ -227,12 +228,12 @@ async function getYoudaoTtsAudioTS(
                 contentType: contentType,
                 headers: response.headers
             });
-            new Notice(`有道 TTS 错误: 服务器返回未知响应类型 (${contentType})`);
+            new Notice(tr(`有道 TTS 错误: 服务器返回未知响应类型 (${contentType})`, `Youdao speech error: unexpected response type (${contentType})`));
             return null;
         }
     } catch (error) {
         logger.error("请求有道 TTS API 失败", error);
-        new Notice(`请求有道 TTS API 失败: ${errorMessage(error)}`);
+        new Notice(tr(`请求有道 TTS API 失败: ${errorMessage(error)}`, `Youdao speech request failed: ${errorMessage(error)}`));
         return null;
     }
 }
@@ -304,7 +305,7 @@ async function getGeminiTtsAudioTS(
                 const detail = typeof nested === 'string' ? nested : errorMessage(error) || "未知错误";
 
                 // 只在最后一次失败时显示通知，避免重复通知
-                new Notice(`Gemini TTS 错误: ${detail}`);
+                new Notice(tr(`Gemini TTS 错误: ${detail}`, `Gemini speech error: ${detail}`));
                 return null;
             }
 
@@ -335,7 +336,7 @@ export async function getTtsAudioTS(
             return getGeminiTtsAudioTS(text, settings, logger, customSpeed);
         default:
             logger.info(`未知的 TTS 引擎: ${String(settings.ttsEngine)}`);
-            new Notice(`未知的 TTS 引擎: ${String(settings.ttsEngine)}`);
+            new Notice(tr(`未知的 TTS 引擎: ${String(settings.ttsEngine)}`, `Unknown speech engine: ${String(settings.ttsEngine)}`));
             return null;
     }
 }

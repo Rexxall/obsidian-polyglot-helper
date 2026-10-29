@@ -4,6 +4,7 @@ import { Logger } from './shared/Logger';
 
 import { fire } from './shared/fire';
 import { confirmAction } from './shared/confirm-modal';
+import { tr } from './shared/i18n';
 export class CacheCleanupModal extends Modal {
     private cacheManager: CacheManager;
     private allItems: CacheItem[] = [];
@@ -35,7 +36,7 @@ export class CacheCleanupModal extends Modal {
         const mainContainer = contentEl.createDiv({ cls: 'polyglot-cleanup-main-container' });
 
         // 标题
-        mainContainer.createEl('h2', { text: '🗑️ 智能缓存清理', cls: 'polyglot-cleanup-title' });
+        mainContainer.createEl('h2', { text: tr('🗑️ 智能缓存清理', '🗑️ Smart cache cleanup'), cls: 'polyglot-cleanup-title' });
 
         // 加载缓存数据
         await this.loadCacheData();
@@ -55,35 +56,35 @@ export class CacheCleanupModal extends Modal {
 
     private async loadCacheData() {
         try {
-            const loadingNotice = new Notice('正在扫描缓存文件...', 0);
+            const loadingNotice = new Notice(tr('正在扫描缓存文件...', 'Scanning cache files...'), 0);
             this.allItems = await this.cacheManager.scanAllCache();
             loadingNotice.hide();
             this.logger.info(`扫描到 ${this.allItems.length} 个缓存文件`);
 
             if (this.allItems.length === 0) {
-                new Notice('没有找到缓存文件');
+                new Notice(tr('没有找到缓存文件', 'No cache files found'));
             } else {
-                new Notice(`扫描完成，找到 ${this.allItems.length} 个缓存文件`);
+                new Notice(tr(`扫描完成，找到 ${this.allItems.length} 个缓存文件`, `Scan finished: ${this.allItems.length} cache files`));
             }
         } catch (error) {
             this.logger.error('扫描缓存失败', error);
-            new Notice('扫描缓存失败');
+            new Notice(tr('扫描缓存失败', 'Could not scan the cache'));
         }
     }
 
     private createFilterSection(container: HTMLElement) {
         const filterSection = container.createDiv({ cls: 'polyglot-filter-section' });
-        filterSection.createEl('h3', { text: '📋 筛选条件' });
+        filterSection.createEl('h3', { text: tr('📋 筛选条件', '📋 Filters') });
 
         // 类型筛选
         new Setting(filterSection)
-            .setName('缓存类型')
-            .setDesc('选择要清理的缓存类型')
+            .setName(tr('缓存类型', 'Cache type'))
+            .setDesc(tr('选择要清理的缓存类型', 'Which cache to clean'))
             .addDropdown(dropdown => {
                 dropdown
-                    .addOption('all', '🔄 所有类型')
-                    .addOption('translation', '📝 翻译缓存')
-                    .addOption('audio', '🎵 音频缓存')
+                    .addOption('all', tr('🔄 所有类型', '🔄 All types'))
+                    .addOption('translation', tr('📝 翻译缓存', '📝 Translation cache'))
+                    .addOption('audio', tr('🎵 音频缓存', '🎵 Audio cache'))
                     .setValue(this.filter.type || 'all')
                     .onChange(value => {
                         this.filter.type = value as CacheFilter['type'];
@@ -93,15 +94,15 @@ export class CacheCleanupModal extends Modal {
 
         // 时间筛选
         new Setting(filterSection)
-            .setName('文件时间')
-            .setDesc('只显示早于指定天数的文件')
+            .setName(tr('文件时间', 'File age'))
+            .setDesc(tr('只显示早于指定天数的文件', 'Only files older than this'))
             .addDropdown(dropdown => {
                 dropdown
-                    .addOption('', '🕐 所有时间')
-                    .addOption('1', '1天前')
-                    .addOption('7', '1周前')
-                    .addOption('30', '1个月前')
-                    .addOption('90', '3个月前')
+                    .addOption('', tr('🕐 所有时间', '🕐 Any age'))
+                    .addOption('1', tr('1天前', '1 day'))
+                    .addOption('7', tr('1周前', '1 week'))
+                    .addOption('30', tr('1个月前', '1 month'))
+                    .addOption('90', tr('3个月前', '3 months'))
                     .setValue('')
                     .onChange(value => {
                         this.filter.olderThan = value ? parseInt(value) : undefined;
@@ -111,15 +112,15 @@ export class CacheCleanupModal extends Modal {
 
         // 大小筛选
         new Setting(filterSection)
-            .setName('文件大小')
-            .setDesc('只显示大于指定大小的文件')
+            .setName(tr('文件大小', 'File size'))
+            .setDesc(tr('只显示大于指定大小的文件', 'Only files larger than this'))
             .addDropdown(dropdown => {
                 dropdown
-                    .addOption('', '📦 所有大小')
-                    .addOption('1024', '大于 1 千字节')
-                    .addOption('10240', '大于 10 千字节')
-                    .addOption('102400', '大于 100 千字节')
-                    .addOption('1048576', '大于 1 兆字节')
+                    .addOption('', tr('📦 所有大小', '📦 Any size'))
+                    .addOption('1024', tr('大于 1 千字节', 'Over 1 KB'))
+                    .addOption('10240', tr('大于 10 千字节', 'Over 10 KB'))
+                    .addOption('102400', tr('大于 100 千字节', 'Over 100 KB'))
+                    .addOption('1048576', tr('大于 1 兆字节', 'Over 1 MB'))
                     .setValue('')
                     .onChange(value => {
                         this.filter.largerThan = value ? parseInt(value) : undefined;
@@ -129,11 +130,11 @@ export class CacheCleanupModal extends Modal {
 
         // 模式筛选
         new Setting(filterSection)
-            .setName('文件名模式')
-            .setDesc('使用正则表达式筛选文件名')
+            .setName(tr('文件名模式', 'File name pattern'))
+            .setDesc(tr('使用正则表达式筛选文件名', 'Filter file names with a regular expression'))
             .addText(text => {
                 text
-                    .setPlaceholder('例如: .*hello.*')
+                    .setPlaceholder(tr('例如: .*hello.*', 'For example .*hello.*'))
                     .setValue(this.filter.pattern || '')
                     .onChange(value => {
                         this.filter.pattern = value || undefined;
@@ -144,7 +145,7 @@ export class CacheCleanupModal extends Modal {
 
     private createPreviewSection(container: HTMLElement) {
         const previewSection = container.createDiv({ cls: 'polyglot-preview-section' });
-        previewSection.createEl('h3', { text: '👀 预览结果' });
+        previewSection.createEl('h3', { text: tr('👀 预览结果', '👀 Preview') });
 
         // 统计信息
         const statsDiv = previewSection.createDiv({ cls: 'polyglot-cache-stats' });
@@ -153,7 +154,7 @@ export class CacheCleanupModal extends Modal {
         // 全选/取消全选
         const selectAllDiv = previewSection.createDiv({ cls: 'polyglot-select-all' });
         const selectAllCheckbox = selectAllDiv.createEl('input', { type: 'checkbox' });
-        selectAllDiv.createEl('label', { text: '全选/取消全选' });
+        selectAllDiv.createEl('label', { text: tr('全选/取消全选', 'Select all / none') });
         
         selectAllCheckbox.addEventListener('change', () => {
             if (selectAllCheckbox.checked) {
@@ -174,18 +175,18 @@ export class CacheCleanupModal extends Modal {
         const buttonDiv = container.createDiv({ cls: 'polyglot-action-buttons' });
 
         // 刷新按钮
-        const refreshBtn = buttonDiv.createEl('button', { text: '🔄 刷新' });
+        const refreshBtn = buttonDiv.createEl('button', { text: tr('🔄 刷新', '🔄 Refresh') });
         refreshBtn.addEventListener('click', fire(async () => {
             await this.loadCacheData();
             this.applyFilter();
         }));
 
         // 清理按钮
-        const cleanBtn = buttonDiv.createEl('button', { text: '🗑️ 清理选中项', cls: 'mod-warning' });
+        const cleanBtn = buttonDiv.createEl('button', { text: tr('🗑️ 清理选中项', '🗑️ Delete selected'), cls: 'mod-warning' });
         cleanBtn.addEventListener('click', fire(() => this.confirmCleanup()));
 
         // 取消按钮
-        const cancelBtn = buttonDiv.createEl('button', { text: '❌ 取消' });
+        const cancelBtn = buttonDiv.createEl('button', { text: tr('❌ 取消', '❌ Cancel') });
         cancelBtn.addEventListener('click', () => this.close());
     }
 
@@ -208,13 +209,13 @@ export class CacheCleanupModal extends Modal {
         );
 
         statsContainer.createDiv({ 
-            text: `📊 筛选结果: ${stats.total} 个文件 (${this.cacheManager.formatSize(stats.totalSize)})`,
+            text: tr(`📊 筛选结果: ${stats.total} 个文件 (${this.cacheManager.formatSize(stats.totalSize)})`, `📊 Matches: ${stats.total} files (${this.cacheManager.formatSize(stats.totalSize)})`),
             cls: 'polyglot-stat-item'
         });
 
         if (this.selectedItems.size > 0) {
             statsContainer.createDiv({ 
-                text: `✅ 已选择: ${this.selectedItems.size} 个文件 (${this.cacheManager.formatSize(selectedStats.totalSize)})`,
+                text: tr(`✅ 已选择: ${this.selectedItems.size} 个文件 (${this.cacheManager.formatSize(selectedStats.totalSize)})`, `✅ Selected: ${this.selectedItems.size} files (${this.cacheManager.formatSize(selectedStats.totalSize)})`),
                 cls: 'polyglot-stat-item selected'
             });
         }
@@ -225,7 +226,7 @@ export class CacheCleanupModal extends Modal {
             .join(', ');
         if (typeStats) {
             statsContainer.createDiv({ 
-                text: `📂 类型分布: ${typeStats}`,
+                text: tr(`📂 类型分布: ${typeStats}`, `📂 By type: ${typeStats}`),
                 cls: 'polyglot-stat-detail'
             });
         }
@@ -239,7 +240,7 @@ export class CacheCleanupModal extends Modal {
 
         if (this.filteredItems.length === 0) {
             listContainer.createDiv({ 
-                text: '没有找到符合条件的缓存文件',
+                text: tr('没有找到符合条件的缓存文件', 'No cache files match'),
                 cls: 'polyglot-empty-message'
             });
             return;
@@ -249,7 +250,7 @@ export class CacheCleanupModal extends Modal {
         const displayItems = this.filteredItems.slice(0, 100);
         if (this.filteredItems.length > 100) {
             listContainer.createDiv({ 
-                text: `⚠️ 只显示前100个文件，共${this.filteredItems.length}个`,
+                text: tr(`⚠️ 只显示前100个文件，共${this.filteredItems.length}个`, `⚠️ Showing the first 100 of ${this.filteredItems.length} files`),
                 cls: 'polyglot-warning-message'
             });
         }
@@ -285,7 +286,7 @@ export class CacheCleanupModal extends Modal {
 
     private async confirmCleanup() {
         if (this.selectedItems.size === 0) {
-            new Notice('请先选择要清理的文件');
+            new Notice(tr('请先选择要清理的文件', 'Select files to clean first'));
             return;
         }
 
@@ -301,18 +302,18 @@ export class CacheCleanupModal extends Modal {
         if (!confirmed) return;
 
         try {
-            const cleanupNotice = new Notice('正在清理缓存...', 0);
+            const cleanupNotice = new Notice(tr('正在清理缓存...', 'Cleaning the cache...'), 0);
             const result = await this.cacheManager.deleteItems(selectedItems);
             cleanupNotice.hide();
 
-            new Notice(`✅ 清理完成: 成功删除 ${result.success} 个文件${result.failed > 0 ? `，失败 ${result.failed} 个` : ''}`);
+            new Notice(tr(`✅ 清理完成: 成功删除 ${result.success} 个文件${result.failed > 0 ? `，失败 ${result.failed} 个` : ''}`, `✅ Done: deleted ${result.success} files${result.failed > 0 ? `, ${result.failed} failed` : ''}`));
             
             // 刷新数据
             await this.loadCacheData();
             this.applyFilter();
         } catch (error) {
             this.logger.error('清理缓存失败', error);
-            new Notice('清理缓存失败');
+            new Notice(tr('清理缓存失败', 'Could not clean the cache'));
         }
     }
 

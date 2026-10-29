@@ -42,8 +42,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	 */
 	getSettingDefinitions(): SettingDefinitionItem[] {
 		return [{
-			name: '语言助手设置',
-			desc: '输出、翻译与模型、语音、学习、缓存和高级选项',
+			name: tr('语言助手设置', 'Polyglot Helper settings'),
+			desc: tr('输出、翻译与模型、语音、学习、缓存和高级选项', 'Output, translation and models, speech, learning, cache and advanced options'),
 			aliases: SETTINGS_SEARCH_TERMS,
 			render: (setting) => {
 				const host = setting.settingEl;
@@ -80,12 +80,12 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		const tabNav = containerEl.createDiv({ cls: 'polyglot-tab-navigation' });
 
 		const tabs = [
-			{ id: 'general', name: '输出与保存', icon: '🔧' },
-			{ id: 'translation', name: '翻译与模型', icon: '🌐' },
-			{ id: 'audio', name: '语音', icon: '🎵' },
-			{ id: 'ui', name: '学习与界面', icon: '🎨' },
-			{ id: 'cache', name: '缓存', icon: '🗑️' },
-			{ id: 'advanced', name: '高级', icon: '⚙️' }
+			{ id: 'general', name: tr('输出与保存', 'Output'), icon: '🔧' },
+			{ id: 'translation', name: tr('翻译与模型', 'Translation and models'), icon: '🌐' },
+			{ id: 'audio', name: tr('语音', 'Speech'), icon: '🎵' },
+			{ id: 'ui', name: tr('学习与界面', 'Learning and interface'), icon: '🎨' },
+			{ id: 'cache', name: tr('缓存', 'Cache'), icon: '🗑️' },
+			{ id: 'advanced', name: tr('高级', 'Advanced'), icon: '⚙️' }
 		];
 
 		tabs.forEach(tab => {
@@ -138,11 +138,11 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	}
 
 	private displayGeneralSettings(containerEl: HTMLElement) {
-		new Setting(containerEl).setName('输出与保存').setHeading();
+		new Setting(containerEl).setName(tr('输出与保存', 'Output')).setHeading();
 
 		new Setting(containerEl)
-			.setName('自动添加到词汇库')
-			.setDesc('翻译后自动将词汇添加到词汇库。')
+			.setName(tr('自动添加到词汇库', 'Add to the word list automatically'))
+			.setDesc(tr('翻译后自动将词汇添加到词汇库。', 'Add words to the word list after each translation.'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.autoAddToVocab || false)
 				.onChange(async (value) => {
@@ -151,8 +151,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('选词模式')
-			.setDesc('开启后，鼠标选择的词汇会自动添加到侧边栏文本框，便于批量处理。')
+			.setName(tr('选词模式', 'Word-selection mode'))
+			.setDesc(tr('开启后，鼠标选择的词汇会自动添加到侧边栏文本框，便于批量处理。', "When on, words you select go into the side panel's text box for batch lookups."))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.wordSelectionMode || false)
 				.onChange(async (value) => {
@@ -161,8 +161,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('复习提醒')
-			.setDesc('启用智能复习提醒功能。')
+			.setName(tr('复习提醒', 'Review reminders'))
+			.setDesc(tr('启用智能复习提醒功能。', 'Turn on smart review reminders.'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.reviewReminder || false)
 				.onChange(async (value) => {
@@ -171,15 +171,15 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		// --- 输出位置设置 ---
-		new Setting(containerEl).setName('输出位置').setHeading();
+		new Setting(containerEl).setName(tr('输出位置', 'Output location')).setHeading();
 
 		const outputDesc = containerEl.createDiv({cls: 'polyglot-setting-description'});
-		outputDesc.createEl('p').createEl('strong', { text: '优先级说明：' });
+		outputDesc.createEl('p').createEl('strong', { text: tr('优先级说明：', 'Priority:') });
 		const priorityList = outputDesc.createEl('ul');
 		for (const [medal, title, detail] of [
-			['🥇', '最高优先级', '：侧边栏选择的输出位置'],
-			['🥈', '语言特定路径', '：仅在选择"固定文件"或"创建新文件"时使用下方的语言专用路径'],
-			['🥉', '通用路径', '：其他情况使用此处设置的通用路径'],
+			['🥇', tr('最高优先级', 'Highest priority'), tr('：侧边栏选择的输出位置', ': the output location chosen in the side panel')],
+			['🥈', tr('语言特定路径', 'Language-specific paths'), tr('：仅在选择"固定文件"或"创建新文件"时使用下方的语言专用路径', ': the per-language paths below, only for "Fixed file" or "New file"')],
+			['🥉', tr('通用路径', 'Default paths'), tr('：其他情况使用此处设置的通用路径', ': the default paths set here, in every other case')],
 		]) {
 			const li = priorityList.createEl('li');
 			li.appendText(`${medal} `);
@@ -188,14 +188,14 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		}
 
 		new Setting(containerEl)
-			.setName('默认输出位置')
-			.setDesc('设置默认的输出位置。侧边栏的选择会覆盖此设置。')
+			.setName(tr('默认输出位置', 'Default output location'))
+			.setDesc(tr('设置默认的输出位置。侧边栏的选择会覆盖此设置。', 'Where results go by default. The choice in the side panel overrides it.'))
 			.addDropdown(dropdown => dropdown
-				.addOption('sidebar', '侧边栏')
-				.addOption('newFile', '创建新文件')
-				.addOption('appendCurrent', '追加到当前文件')
-				.addOption('replace', '替换选中内容')
-				.addOption('fixedFile', '固定文件')
+				.addOption('sidebar', tr('侧边栏', 'Side panel'))
+				.addOption('newFile', tr('创建新文件', 'New file'))
+				.addOption('appendCurrent', tr('追加到当前文件', 'Append to current file'))
+				.addOption('replace', tr('替换选中内容', 'Replace selection'))
+				.addOption('fixedFile', tr('固定文件', 'Fixed file'))
 				.setValue(this.plugin.settings.outputDestination)
 				.onChange(async (value: 'sidebar' | 'newFile' | 'appendCurrent' | 'replace' | 'fixedFile') => {
 					this.plugin.settings.outputDestination = value;
@@ -205,10 +205,10 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		if (this.plugin.settings.outputDestination === 'newFile') {
 			new Setting(containerEl)
-				.setName('通用新文件存放位置')
-				.setDesc('当输出位置为"创建新文件"且未设置语言特定路径时使用。')
+				.setName(tr('通用新文件存放位置', 'Default folder for new files'))
+				.setDesc(tr('当输出位置为"创建新文件"且未设置语言特定路径时使用。', 'Used for "New file" when no language-specific folder is set.'))
 				.addText(text => text
-					.setPlaceholder('例如: Notes/')
+					.setPlaceholder(tr('例如: Notes/', 'For example Notes/'))
 					.setValue(this.plugin.settings.newFileLocation)
 					.onChange(async (value) => {
 						this.plugin.settings.newFileLocation = value;
@@ -218,10 +218,10 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		if (this.plugin.settings.outputDestination === 'fixedFile') {
 			new Setting(containerEl)
-				.setName('通用固定输出文件')
-				.setDesc('当输出位置为"固定文件"且未设置语言特定路径时使用。')
+				.setName(tr('通用固定输出文件', 'Default fixed output file'))
+				.setDesc(tr('当输出位置为"固定文件"且未设置语言特定路径时使用。', 'Used for "Fixed file" when no language-specific file is set.'))
 				.addText(text => text
-					.setPlaceholder('例如: Notes/学习记录.md')
+					.setPlaceholder(tr('例如: Notes/学习记录.md', 'For example Notes/Study log.md'))
 					.setValue(this.plugin.settings.fixedOutputFile)
 					.onChange(async (value) => {
 						this.plugin.settings.fixedOutputFile = value;
@@ -230,10 +230,10 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		}
 
 		// --- 快速翻译专属设置 ---
-		new Setting(containerEl).setName('快速翻译').setHeading();
+		new Setting(containerEl).setName(tr('快速翻译', 'Quick translation')).setHeading();
 		new Setting(containerEl)
-			.setName('快速翻译：罗马音标注')
-			.setDesc('在“→日”快速翻译结果中显示罗马音（仅日语文本时生效）。')
+			.setName(tr('快速翻译：罗马音标注', 'Quick translation: romaji'))
+			.setDesc(tr('在“→日”快速翻译结果中显示罗马音（仅日语文本时生效）。', 'Show romaji in "→ Japanese" quick translations (Japanese text only).'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.quickTranslationOptions?.showRomaji ?? false)
 				.onChange(async (value) => {
@@ -243,8 +243,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('快速翻译：播放音频')
-			.setDesc('开启后，快速翻译会在显示文本后后台生成音频并播放。')
+			.setName(tr('快速翻译：播放音频', 'Quick translation: play audio'))
+			.setDesc(tr('开启后，快速翻译会在显示文本后后台生成音频并播放。', 'When on, quick translation generates and plays audio after showing the text.'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.quickTranslationOptions?.playAudio ?? true)
 				.onChange(async (value) => {
@@ -254,14 +254,14 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('快速翻译：输出位置')
-			.setDesc('为“→日 / →汉”快速翻译单独设置输出位置。')
+			.setName(tr('快速翻译：输出位置', 'Quick translation: output location'))
+			.setDesc(tr('为“→日 / →汉”快速翻译单独设置输出位置。', 'Separate output location for the "→ Japanese / → Chinese" quick translations.'))
 			.addDropdown(dropdown => dropdown
-				.addOption('sidebar', '侧边栏')
-				.addOption('newFile', '创建新文件')
-				.addOption('appendCurrent', '追加到当前文件')
-				.addOption('replace', '替换选中内容')
-				.addOption('fixedFile', '固定文件')
+				.addOption('sidebar', tr('侧边栏', 'Side panel'))
+				.addOption('newFile', tr('创建新文件', 'New file'))
+				.addOption('appendCurrent', tr('追加到当前文件', 'Append to current file'))
+				.addOption('replace', tr('替换选中内容', 'Replace selection'))
+				.addOption('fixedFile', tr('固定文件', 'Fixed file'))
 				.setValue(this.plugin.settings.quickTranslationOptions?.outputDestination ?? 'sidebar')
 				.onChange(async (value: 'sidebar' | 'newFile' | 'appendCurrent' | 'replace' | 'fixedFile') => {
 					this.plugin.settings.quickTranslationOptions = this.plugin.settings.quickTranslationOptions || { showRomaji: false, playAudio: true, outputDestination: 'sidebar' };
@@ -270,22 +270,22 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		// --- 语言特定路径设置 ---
-		new Setting(containerEl).setName('语言特定路径').setHeading();
+		new Setting(containerEl).setName(tr('语言特定路径', 'Language-specific paths')).setHeading();
 
 		const languageDesc = containerEl.createDiv({cls: 'polyglot-setting-description'});
 		const languageNote = languageDesc.createEl('p');
-		languageNote.createEl('strong', { text: '说明：' });
-		languageNote.appendText('这些路径仅在选择"固定文件"或"创建新文件"输出模式时使用。');
-		languageDesc.createEl('p', { text: '如果留空，将使用上方的通用路径设置。' });
+		languageNote.createEl('strong', { text: tr('说明：', 'Note:') });
+		languageNote.appendText(tr('这些路径仅在选择"固定文件"或"创建新文件"输出模式时使用。', 'These paths are only used with the "Fixed file" or "New file" output.'));
+		languageDesc.createEl('p', { text: tr('如果留空，将使用上方的通用路径设置。', 'Leave them empty to use the default paths above.') });
 
 		// 日语特定路径设置
-		this.createLanguagePathSettings(containerEl, '日语分析', 'japaneseOutputSettings');
+		this.createLanguagePathSettings(containerEl, tr('日语分析', 'Japanese analysis'), 'japaneseOutputSettings');
 
 		// 英语特定路径设置
-		this.createLanguagePathSettings(containerEl, '英语分析', 'englishOutputSettings');
+		this.createLanguagePathSettings(containerEl, tr('英语分析', 'English analysis'), 'englishOutputSettings');
 
 		// 快捷翻译特定路径设置
-		this.createLanguagePathSettings(containerEl, '快捷翻译', 'quickTranslationOutputSettings');
+		this.createLanguagePathSettings(containerEl, tr('快捷翻译', 'Quick translation'), 'quickTranslationOutputSettings');
 	}
 
 	/** 一套 AI 配置：服务商、密钥、接口地址、模型分开填，可以单独测试。 */
@@ -475,13 +475,13 @@ export class PolyglotSettingTab extends PluginSettingTab {
 			);
 
 		// --- 功能API选择器 ---
-		new Setting(containerEl).setName('功能API选择').setHeading();
+		new Setting(containerEl).setName(tr('功能API选择', 'AI configuration for each feature')).setHeading();
 
 		const enabledConfigs = this.plugin.settings.apiConfigs.filter(config => config.enabled);
 
 		new Setting(containerEl)
-			.setName('快速翻译API')
-			.setDesc('选择快速翻译功能使用的API配置')
+			.setName(tr('快速翻译API', 'Quick translation'))
+			.setDesc(tr('选择快速翻译功能使用的API配置', 'Which AI configuration quick translation uses'))
 			.addDropdown(dropdown => {
 				enabledConfigs.forEach(config => {
 					dropdown.addOption(config.name, config.name);
@@ -494,8 +494,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName('英语分析API')
-			.setDesc('选择英语分析功能使用的API配置')
+			.setName(tr('英语分析API', 'English analysis'))
+			.setDesc(tr('选择英语分析功能使用的API配置', 'Which AI configuration English analysis uses'))
 			.addDropdown(dropdown => {
 				enabledConfigs.forEach(config => {
 					dropdown.addOption(config.name, config.name);
@@ -508,8 +508,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName('日语分析API')
-			.setDesc('选择日语分析功能使用的API配置')
+			.setName(tr('日语分析API', 'Japanese analysis'))
+			.setDesc(tr('选择日语分析功能使用的API配置', 'Which AI configuration Japanese analysis uses'))
 			.addDropdown(dropdown => {
 				enabledConfigs.forEach(config => {
 					dropdown.addOption(config.name, config.name);
@@ -524,16 +524,16 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		// 语音转日语功能已移除
 
 		// --- 内容定制设置 ---
-		new Setting(containerEl).setName('内容定制').setHeading();
+		new Setting(containerEl).setName(tr('内容定制', 'Content')).setHeading();
 
 		// 日语内容定制
-		new Setting(containerEl).setName('日语内容定制').setHeading();
+		new Setting(containerEl).setName(tr('日语内容定制', 'Japanese sections')).setHeading();
         const japaneseSectionToggles: Record<keyof PolyglotHelper['settings']['japaneseSections'], string> = {
-            vocabAnalysis: '词汇分析',
-            relatedVocab: '相关词汇解析',
-            sentences: '例句生成 (不同场景)',
-			exercise: '翻译练习',
-			jisho: 'Jisho 词典'
+            vocabAnalysis: tr('词汇分析', 'Vocabulary analysis'),
+            relatedVocab: tr('相关词汇解析', 'Related vocabulary'),
+            sentences: tr('例句生成 (不同场景)', 'Example sentences (different situations)'),
+			exercise: tr('翻译练习', 'Translation exercise'),
+			jisho: tr('Jisho 词典', 'Jisho dictionary')
         };
 
         Object.keys(japaneseSectionToggles).forEach((key: keyof typeof japaneseSectionToggles) => {
@@ -549,16 +549,16 @@ export class PolyglotSettingTab extends PluginSettingTab {
         });
 
 		// 英语内容定制
-		new Setting(containerEl).setName('英语内容定制').setHeading();
+		new Setting(containerEl).setName(tr('英语内容定制', 'English sections')).setHeading();
 		const englishSectionToggles: Record<keyof EnglishSections, string> = {
-            definitions: '词典释义 (核心)',
-            example: '例句 (LLM生成)',
-            usage: '用法助记 (搭配/同反义词/技巧)',
-            etymology: '词源',
-            medical: '医学专用',
-            slang: '俚语 (Urban Dictionary)',
-            tatoeba: 'Tatoeba 真实世界例句',
-            idioms: '相关习语'
+            definitions: tr('词典释义 (核心)', 'Dictionary definitions (core)'),
+            example: tr('例句 (LLM生成)', 'Example sentences (AI)'),
+            usage: tr('用法助记 (搭配/同反义词/技巧)', 'Usage notes (collocations, synonyms, tips)'),
+            etymology: tr('词源', 'Etymology'),
+            medical: tr('医学专用', 'Medical'),
+            slang: tr('俚语 (Urban Dictionary)', 'Slang (Urban Dictionary)'),
+            tatoeba: tr('Tatoeba 真实世界例句', 'Tatoeba real-world sentences'),
+            idioms: tr('相关习语', 'Related idioms')
         };
 
         (Object.keys(englishSectionToggles) as Array<keyof EnglishSections>).forEach(key => {
@@ -575,16 +575,16 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	}
 
 	private displayAudioSettings(containerEl: HTMLElement) {
-		new Setting(containerEl).setName('语音').setHeading();
+		new Setting(containerEl).setName(tr('语音', 'Speech')).setHeading();
 
 		// 音频文件存储设置
-		new Setting(containerEl).setName('音频文件').setHeading();
+		new Setting(containerEl).setName(tr('音频文件', 'Audio files')).setHeading();
 
 		new Setting(containerEl)
-			.setName('日语音频文件存储路径')
-			.setDesc('用于保存日语单词或句子音频文件的基本路径。')
+			.setName(tr('日语音频文件存储路径', 'Japanese audio folder'))
+			.setDesc(tr('用于保存日语单词或句子音频文件的基本路径。', 'Base folder for saved Japanese word and sentence audio.'))
 			.addText(text => text
-				.setPlaceholder('库内文件夹路径')
+				.setPlaceholder(tr('库内文件夹路径', 'Folder in this vault'))
 				.setValue(this.plugin.settings.japaneseAudioPath || 'Audio/Japanese')
 				.onChange(async (value) => {
 					this.plugin.settings.japaneseAudioPath = value;
@@ -592,8 +592,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('自动保存音频文件')
-			.setDesc('启用后，语音合成的音频文件会自动保存到指定路径。')
+			.setName(tr('自动保存音频文件', 'Save audio files automatically'))
+			.setDesc(tr('启用后，语音合成的音频文件会自动保存到指定路径。', 'When on, synthesised audio is saved to the folder above.'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.autoSaveAudio || false)
 				.onChange(async (value) => {
@@ -602,13 +602,13 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		// TTS Engine for Japanese
-		new Setting(containerEl).setName('语音合成').setHeading();
+		new Setting(containerEl).setName(tr('语音合成', 'Speech')).setHeading();
 		new Setting(containerEl)
-			.setName('语音合成引擎')
+			.setName(tr('语音合成引擎', 'Speech engine'))
 			.addDropdown(dropdown => dropdown
-				.addOption('openai', 'OpenAI 语音合成')
-				.addOption('youdao', '有道语音合成')
-				.addOption('gemini', 'Gemini 语音合成')
+				.addOption('openai', tr('OpenAI 语音合成', 'OpenAI speech'))
+				.addOption('youdao', tr('有道语音合成', 'Youdao speech'))
+				.addOption('gemini', tr('Gemini 语音合成', 'Gemini speech'))
 				.setValue(this.plugin.settings.ttsEngine)
 				.onChange(async (value: 'openai' | 'youdao' | 'gemini') => {
 					this.plugin.settings.ttsEngine = value;
@@ -627,18 +627,18 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		// 音频格式信息
 		const audioFormatDiv = containerEl.createDiv({ cls: 'polyglot-info-section' });
-		new Setting(audioFormatDiv).setName('音频格式信息').setHeading();
-		audioFormatDiv.createEl('p', { text: '• 支持格式：mp3、wav、m4a' });
-		audioFormatDiv.createEl('p', { text: '• 默认格式: MP3 (兼容性最佳)' });
-		audioFormatDiv.createEl('p', { text: '• 音频文件会自动嵌入到翻译结果中' });
+		new Setting(audioFormatDiv).setName(tr('音频格式信息', 'Audio format')).setHeading();
+		audioFormatDiv.createEl('p', { text: tr('• 支持格式：mp3、wav、m4a', '• Formats: mp3, wav, m4a') });
+		audioFormatDiv.createEl('p', { text: tr('• 默认格式: MP3 (兼容性最佳)', '• Default: MP3 (works everywhere)') });
+		audioFormatDiv.createEl('p', { text: tr('• 音频文件会自动嵌入到翻译结果中', '• Audio is embedded in the result') });
 	}
 
 	private displayUISettings(containerEl: HTMLElement) {
-		new Setting(containerEl).setName('学习与界面').setHeading();
+		new Setting(containerEl).setName(tr('学习与界面', 'Learning and interface')).setHeading();
 
 		new Setting(containerEl)
-			.setName('状态栏显示待复习数')
-			.setDesc('有到期单词时在状态栏显示“待复习”和数量，点一下打开复习页。仅桌面端有状态栏。')
+			.setName(tr('状态栏显示待复习数', 'Show due reviews in the status bar'))
+			.setDesc(tr('有到期单词时在状态栏显示“待复习”和数量，点一下打开复习页。仅桌面端有状态栏。', 'When words are due, show "to review" and the count in the status bar; click it to open the review. Desktop only.'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.showDueInStatusBar !== false)
 				.onChange(async (value) => {
@@ -647,8 +647,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('词库导出文件夹')
-			.setDesc('命令“导出词库为闪卡笔记”“导出词库为 Anki 导入文件”写到这里。闪卡笔记可直接用间隔重复插件复习，重新导出会保留它的复习排程。')
+			.setName(tr('词库导出文件夹', 'Word list export folder'))
+			.setDesc(tr('命令“导出词库为闪卡笔记”“导出词库为 Anki 导入文件”写到这里。闪卡笔记可直接用间隔重复插件复习，重新导出会保留它的复习排程。', 'The "Export word list as flashcard notes" and "Export word list as an Anki import file" commands write here. Flashcard notes work with the Spaced Repetition plugin, and exporting again keeps its review schedule.'))
 			.addText(text => text
 				.setPlaceholder('Polyglot')
 				.setValue(this.plugin.settings.vocabExportFolder || 'Polyglot')
@@ -660,8 +660,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		// 学习进度追踪设置
 		
 		new Setting(containerEl)
-			.setName('启用学习进度追踪')
-			.setDesc('开启后可以追踪单词学习进度，支持间隔重复复习。')
+			.setName(tr('启用学习进度追踪', 'Track learning progress'))
+			.setDesc(tr('开启后可以追踪单词学习进度，支持间隔重复复习。', 'Track how well you know each word, with spaced review.'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.enableLearningTracker)
 				.onChange(async (value) => {
@@ -672,8 +672,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		
 		if (this.plugin.settings.enableLearningTracker) {
 			new Setting(containerEl)
-				.setName('自动添加词汇到词汇库')
-				.setDesc('分析文本时自动提取并添加词汇到对应的词汇库。')
+				.setName(tr('自动添加词汇到词汇库', 'Add words to the word list automatically'))
+				.setDesc(tr('分析文本时自动提取并添加词汇到对应的词汇库。', 'Extract words while analysing text and add them to the matching word list.'))
 				.addToggle(toggle => toggle
 					.setValue(this.plugin.settings.autoAddToVocab || false)
 					.onChange(async (value) => {
@@ -682,8 +682,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 					}));
 
 			new Setting(containerEl)
-				.setName('每日学习目标')
-				.setDesc('设置每天计划学习的新单词数量。')
+				.setName(tr('每日学习目标', 'Daily goal'))
+				.setDesc(tr('设置每天计划学习的新单词数量。', 'How many new words to learn each day.'))
 				.addSlider(slider => slider
 					.setLimits(1, 50, 1)
 					.setValue(this.plugin.settings.dailyGoal)
@@ -696,13 +696,13 @@ export class PolyglotSettingTab extends PluginSettingTab {
 			// 复习间隔设置
 			const intervalDesc = createFragment();
 			intervalDesc.append(
-				'设置间隔重复的天数序列，用逗号分隔。',
+				tr('设置间隔重复的天数序列，用逗号分隔。', 'Review intervals in days, separated by commas.'),
 				intervalDesc.createEl('br'),
-				'例如: 1,3,7,14,30,90,180 表示第一次复习在1天后，第二次在3天后，依此类推。'
+				tr('例如: 1,3,7,14,30,90,180 表示第一次复习在1天后，第二次在3天后，依此类推。', 'For example 1,3,7,14,30,90,180: the first review after 1 day, the second after 3 days, and so on.')
 			);
 			
 			new Setting(containerEl)
-				.setName('复习间隔设置')
+				.setName(tr('复习间隔设置', 'Review intervals'))
 				.setDesc(intervalDesc)
 				.addText(text => text
 					.setValue(this.plugin.settings.reviewIntervals.join(','))
@@ -720,25 +720,25 @@ export class PolyglotSettingTab extends PluginSettingTab {
 			// 学习数据管理
 			const statsInfo = createFragment();
 			statsInfo.append(
-				`总词汇量: ${this.plugin.settings.learningStats.totalWords} 词`,
+				tr(`总词汇量: ${this.plugin.settings.learningStats.totalWords} 词`, `Total words: ${this.plugin.settings.learningStats.totalWords}`),
 				statsInfo.createEl('br'),
-				`总复习次数: ${this.plugin.settings.learningStats.totalReviews} 次`,
+				tr(`总复习次数: ${this.plugin.settings.learningStats.totalReviews} 次`, `Total reviews: ${this.plugin.settings.learningStats.totalReviews}`),
 				statsInfo.createEl('br'),
-				`学习连续天数: ${this.plugin.settings.learningStats.streakDays} 天`
+				tr(`学习连续天数: ${this.plugin.settings.learningStats.streakDays} 天`, `Study streak: ${this.plugin.settings.learningStats.streakDays} days`)
 			);
 			
 			new Setting(containerEl)
-				.setName('学习统计')
+				.setName(tr('学习统计', 'Statistics'))
 				.setDesc(statsInfo);
 			
 			new Setting(containerEl)
-				.setName('重置学习数据')
-				.setDesc('警告：此操作将清除所有学习进度和统计数据，无法恢复。')
+				.setName(tr('重置学习数据', 'Reset learning data'))
+				.setDesc(tr('警告：此操作将清除所有学习进度和统计数据，无法恢复。', 'Warning: this deletes all learning progress and statistics and cannot be undone.'))
 				.addButton(button => button
-					.setButtonText('重置数据')
+					.setButtonText(tr('重置数据', 'Reset'))
 					.setClass('mod-warning')
 					.onClick(async () => {
-						const confirmed = await confirmAction(this.app, '确定要重置所有学习数据吗？此操作无法撤销。');
+						const confirmed = await confirmAction(this.app, tr('确定要重置所有学习数据吗？此操作无法撤销。', 'Reset all learning data? This cannot be undone.'));
 						if (confirmed) {
 							this.plugin.settings.learningStats = {
 								dailyStats: {},
@@ -750,7 +750,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 							this.plugin.settings.vocabItems = {};
 							await this.plugin.saveSettings();
 							this.redraw();
-							new Notice('学习数据已重置。');
+							new Notice(tr('学习数据已重置。', 'Learning data reset.'));
 						}
 					}));
 		}
@@ -760,62 +760,62 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	}
 
 	private displayCacheSettings(containerEl: HTMLElement) {
-		new Setting(containerEl).setName('缓存').setHeading();
+		new Setting(containerEl).setName(tr('缓存', 'Cache')).setHeading();
 
 		// 创建智能清理区域
 		void this.createSmartCleanupSection(containerEl);
 
 		// 快速清理选项
 		const quickCleanDiv = containerEl.createDiv({ cls: 'polyglot-quick-clean-section' });
-		new Setting(quickCleanDiv).setName('快速清理').setHeading();
+		new Setting(quickCleanDiv).setName(tr('快速清理', 'Quick cleanup')).setHeading();
 
 		// 翻译缓存清理
 		new Setting(quickCleanDiv)
-			.setName('清理翻译缓存')
-			.setDesc('清理所有翻译相关的缓存文件（保留音频文件）')
+			.setName(tr('清理翻译缓存', 'Clear translation cache'))
+			.setDesc(tr('清理所有翻译相关的缓存文件（保留音频文件）', 'Delete all cached translations (audio stays)'))
 			.addButton(button => {
 				button
-					.setButtonText('📝 清理翻译缓存')
+					.setButtonText(tr('📝 清理翻译缓存', '📝 Clear translation cache'))
 					.onClick(async () => {
 						try {
 							await this.plugin.clearTranslationCache();
 						} catch (error) {
-							new Notice(`清理失败: ${errorMessage(error)}`);
+							new Notice(tr(`清理失败: ${errorMessage(error)}`, `Cleanup failed: ${errorMessage(error)}`));
 						}
 					});
 			});
 
 		// 音频缓存清理
 		new Setting(quickCleanDiv)
-			.setName('清理音频缓存')
-			.setDesc('清理所有音频文件缓存（保留翻译缓存）')
+			.setName(tr('清理音频缓存', 'Clear audio cache'))
+			.setDesc(tr('清理所有音频文件缓存（保留翻译缓存）', 'Delete all cached audio (translations stay)'))
 			.addButton(button => {
 				button
-					.setButtonText('🎵 清理音频缓存')
+					.setButtonText(tr('🎵 清理音频缓存', '🎵 Clear audio cache'))
 					.onClick(async () => {
 						try {
 							await this.plugin.clearAudioCache();
 						} catch (error) {
-							new Notice(`清理失败: ${errorMessage(error)}`);
+							new Notice(tr(`清理失败: ${errorMessage(error)}`, `Cleanup failed: ${errorMessage(error)}`));
 						}
 					});
 			});
 
 		// 全部清理
 		new Setting(quickCleanDiv)
-			.setName('清理所有缓存')
-			.setDesc('⚠️ 清理所有缓存数据，包括翻译和音频文件')
+			.setName(tr('清理所有缓存', 'Clear all caches'))
+			.setDesc(tr('⚠️ 清理所有缓存数据，包括翻译和音频文件', '⚠️ Delete all cached data, translations and audio'))
 			.addButton(button => {
 				button
-					.setButtonText('🗑️ 清理所有缓存')
+					.setButtonText(tr('🗑️ 清理所有缓存', '🗑️ Clear all caches'))
 					.setClass('mod-warning')
 					.onClick(async () => {
-						const confirmed = await confirmAction(this.app, '确定要清理所有缓存吗？此操作不可撤销！');
+						const confirmed = await confirmAction(this.app, tr('确定要清理所有缓存吗？此操作不可撤销！', 'Clear all caches? This cannot be undone.'));
 						if (confirmed) {
 							try {
 								await this.plugin.clearAllCache();
 							} catch (error) {
-								new Notice(`清理失败: ${errorMessage(error)}`);
+								new Notice(tr(`清理失败: ${errorMessage(error)}`, `Cleanup failed: ${errorMessage(error)}`));
 							}
 						}
 					});
@@ -823,11 +823,11 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	}
 
 	private displayAdvancedSettings(containerEl: HTMLElement) {
-		new Setting(containerEl).setName('高级').setHeading();
+		new Setting(containerEl).setName(tr('高级', 'Advanced')).setHeading();
 
 		new Setting(containerEl)
-			.setName('启用调试模式')
-			.setDesc('启用后会在控制台输出详细的调试信息')
+			.setName(tr('启用调试模式', 'Debug mode'))
+			.setDesc(tr('启用后会在控制台输出详细的调试信息', 'Write detailed debug information to the console'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.debugMode || false)
 				.onChange(async (value) => {
@@ -836,8 +836,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('自动保存设置')
-			.setDesc('修改设置后自动保存')
+			.setName(tr('自动保存设置', 'Save settings automatically'))
+			.setDesc(tr('修改设置后自动保存', 'Save as soon as a setting changes'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.autoSave || true)
 				.onChange(async (value) => {
@@ -847,10 +847,10 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		// 开发者信息
 		const devInfo = containerEl.createDiv({ cls: 'polyglot-dev-info' });
-		new Setting(devInfo).setName('插件信息').setHeading();
-		devInfo.createEl('p', { text: `版本: ${this.plugin.manifest.version}` });
-		devInfo.createEl('p', { text: `作者: ${this.plugin.manifest.author}` });
-		devInfo.createEl('p', { text: `描述: ${this.plugin.manifest.description}` });
+		new Setting(devInfo).setName(tr('插件信息', 'About')).setHeading();
+		devInfo.createEl('p', { text: tr(`版本: ${this.plugin.manifest.version}`, `Version: ${this.plugin.manifest.version}`) });
+		devInfo.createEl('p', { text: tr(`作者: ${this.plugin.manifest.author}`, `Author: ${this.plugin.manifest.author}`) });
+		devInfo.createEl('p', { text: tr(`描述: ${this.plugin.manifest.description}`, `Description: ${this.plugin.manifest.description}`) });
 	}
 
 	private createLanguagePathSettings(containerEl: HTMLElement, title: string, settingsKey: keyof Pick<PolyglotHelperSettings, 'japaneseOutputSettings' | 'englishOutputSettings' | 'quickTranslationOutputSettings'>) {
@@ -859,10 +859,10 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		const settings = this.plugin.settings[settingsKey];
 
 		new Setting(containerEl)
-			.setName('新文件存放位置')
-			.setDesc('当选择"创建新文件"时，此语言专用的文件夹路径。留空则使用通用设置。')
+			.setName(tr('新文件存放位置', 'Folder for new files'))
+			.setDesc(tr('当选择"创建新文件"时，此语言专用的文件夹路径。留空则使用通用设置。', 'Folder for this language when "New file" is chosen. Empty uses the default.'))
 			.addText(text => text
-				.setPlaceholder('例如: Japanese/')
+				.setPlaceholder(tr('例如: Japanese/', 'For example Japanese/'))
 				.setValue(settings.newFileLocation)
 				.onChange(async (value) => {
 					this.plugin.settings[settingsKey].newFileLocation = value;
@@ -870,10 +870,10 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('固定输出文件')
-			.setDesc('当选择"固定文件"时，此语言专用的文件路径。留空则使用通用设置。')
+			.setName(tr('固定输出文件', 'Fixed output file'))
+			.setDesc(tr('当选择"固定文件"时，此语言专用的文件路径。留空则使用通用设置。', 'File for this language when "Fixed file" is chosen. Empty uses the default.'))
 			.addText(text => text
-				.setPlaceholder('例如: Japanese/日语学习记录.md')
+				.setPlaceholder(tr('例如: Japanese/日语学习记录.md', 'For example Japanese/Study log.md'))
 				.setValue(settings.fixedOutputFile)
 				.onChange(async (value) => {
 					this.plugin.settings[settingsKey].fixedOutputFile = value;
@@ -882,21 +882,21 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	}
 
 	private displayOpenAITTSSettings(containerEl: HTMLElement) {
-		new Setting(containerEl).setName('OpenAI 语音合成').setHeading();
-		new Setting(containerEl).setName('语音合成接口地址').addText(text => text.setValue(this.plugin.settings.openaiTtsBaseUrl || '').onChange(async (value) => { this.plugin.settings.openaiTtsBaseUrl = value; await this.plugin.saveSettings(); }));
-		new Setting(containerEl).setName('语音合成 API 密钥').setDesc("留空时使用上面的 OpenAI API 密钥").addText(text => { text.inputEl.type = 'password'; text.setValue(this.plugin.settings.openaiTtsApiKey || '').onChange(async (value) => { this.plugin.settings.openaiTtsApiKey = value; await this.plugin.saveSettings(); }); });
-		new Setting(containerEl).setName('语音合成模型名称').setDesc('例如：tts-1、tts-1-hd').addText(text => text.setValue(this.plugin.settings.openaiTtsModel || '').onChange(async (value) => { this.plugin.settings.openaiTtsModel = value; await this.plugin.saveSettings(); }));
-		new Setting(containerEl).setName('语音合成声音').setDesc('例如：alloy、echo、fable、onyx、nova、shimmer').addText(text => text.setValue(this.plugin.settings.openaiTtsVoice || '').onChange(async (value) => { this.plugin.settings.openaiTtsVoice = value; await this.plugin.saveSettings(); }));
-		new Setting(containerEl).setName('语音合成语速').setDesc('范围：0.25 - 4.0（默认 1.0）').addText(text => text.setValue(String(this.plugin.settings.openaiTtsSpeed || 1.0)).onChange(async (value) => { const speed = parseFloat(value); if (!isNaN(speed)) { this.plugin.settings.openaiTtsSpeed = speed; await this.plugin.saveSettings(); } }));
+		new Setting(containerEl).setName(tr('OpenAI 语音合成', 'OpenAI speech')).setHeading();
+		new Setting(containerEl).setName(tr('语音合成接口地址', 'Speech endpoint')).addText(text => text.setValue(this.plugin.settings.openaiTtsBaseUrl || '').onChange(async (value) => { this.plugin.settings.openaiTtsBaseUrl = value; await this.plugin.saveSettings(); }));
+		new Setting(containerEl).setName(tr('语音合成 API 密钥', 'Speech API key')).setDesc(tr("留空时使用上面的 OpenAI API 密钥", "Empty uses the OpenAI API key above")).addText(text => { text.inputEl.type = 'password'; text.setValue(this.plugin.settings.openaiTtsApiKey || '').onChange(async (value) => { this.plugin.settings.openaiTtsApiKey = value; await this.plugin.saveSettings(); }); });
+		new Setting(containerEl).setName(tr('语音合成模型名称', 'Speech model')).setDesc(tr('例如：tts-1、tts-1-hd', 'For example tts-1, tts-1-hd')).addText(text => text.setValue(this.plugin.settings.openaiTtsModel || '').onChange(async (value) => { this.plugin.settings.openaiTtsModel = value; await this.plugin.saveSettings(); }));
+		new Setting(containerEl).setName(tr('语音合成声音', 'Voice')).setDesc(tr('例如：alloy、echo、fable、onyx、nova、shimmer', 'For example alloy, echo, fable, onyx, nova, shimmer')).addText(text => text.setValue(this.plugin.settings.openaiTtsVoice || '').onChange(async (value) => { this.plugin.settings.openaiTtsVoice = value; await this.plugin.saveSettings(); }));
+		new Setting(containerEl).setName(tr('语音合成语速', 'Speed')).setDesc(tr('范围：0.25 - 4.0（默认 1.0）', 'Range 0.25–4.0 (default 1.0)')).addText(text => text.setValue(String(this.plugin.settings.openaiTtsSpeed || 1.0)).onChange(async (value) => { const speed = parseFloat(value); if (!isNaN(speed)) { this.plugin.settings.openaiTtsSpeed = speed; await this.plugin.saveSettings(); } }));
 
 		// 添加测试按钮
 		new Setting(containerEl)
-			.setName('测试 OpenAI 语音合成')
-			.setDesc('测试 OpenAI 语音合成 配置是否正确')
+			.setName(tr('测试 OpenAI 语音合成', 'Test OpenAI speech'))
+			.setDesc(tr('测试 OpenAI 语音合成 配置是否正确', 'Check that the OpenAI speech settings work'))
 			.addButton(button => button
-				.setButtonText('测试')
+				.setButtonText(tr('测试', 'Test'))
 				.onClick(async () => {
-					button.setButtonText('测试中...');
+					button.setButtonText(tr('测试中...', 'Testing...'));
 					button.setDisabled(true);
 
 					try {
@@ -904,33 +904,33 @@ export class PolyglotSettingTab extends PluginSettingTab {
 						const audioBuffer = await this.plugin.testTtsAudio(testText);
 
 						if (audioBuffer) {
-							new Notice('OpenAI 语音合成测试成功！');
+							new Notice(tr('OpenAI 语音合成测试成功！', 'OpenAI speech works.'));
 						} else {
-							new Notice('OpenAI 语音合成测试失败，请检查配置和网络连接');
+							new Notice(tr('OpenAI 语音合成测试失败，请检查配置和网络连接', 'OpenAI speech test failed; check the settings and network'));
 						}
 					} catch (error) {
-						new Notice(`OpenAI 语音合成测试失败: ${errorMessage(error)}`);
+						new Notice(tr(`OpenAI 语音合成测试失败: ${errorMessage(error)}`, `OpenAI speech test failed: ${errorMessage(error)}`));
 						this.plugin.logger.error('OpenAI 语音合成测试失败', error);
 					} finally {
-						button.setButtonText('测试');
+						button.setButtonText(tr('测试', 'Test'));
 						button.setDisabled(false);
 					}
 				}));
 	}
 
 	private displayYoudaoTTSSettings(containerEl: HTMLElement) {
-		new Setting(containerEl).setName('有道语音合成').setHeading();
-		new Setting(containerEl).setName('有道应用 ID').addText(text => { text.inputEl.type = 'password'; text.setValue(this.plugin.settings.youdaoAppKey || '').onChange(async (value) => { this.plugin.settings.youdaoAppKey = value; await this.plugin.saveSettings(); }); });
-		new Setting(containerEl).setName('有道应用密钥').addText(text => { text.inputEl.type = 'password'; text.setValue(this.plugin.settings.youdaoAppSecret || '').onChange(async (value) => { this.plugin.settings.youdaoAppSecret = value; await this.plugin.saveSettings(); }); });
+		new Setting(containerEl).setName(tr('有道语音合成', 'Youdao speech')).setHeading();
+		new Setting(containerEl).setName(tr('有道应用 ID', 'Youdao app ID')).addText(text => { text.inputEl.type = 'password'; text.setValue(this.plugin.settings.youdaoAppKey || '').onChange(async (value) => { this.plugin.settings.youdaoAppKey = value; await this.plugin.saveSettings(); }); });
+		new Setting(containerEl).setName(tr('有道应用密钥', 'Youdao app secret')).addText(text => { text.inputEl.type = 'password'; text.setValue(this.plugin.settings.youdaoAppSecret || '').onChange(async (value) => { this.plugin.settings.youdaoAppSecret = value; await this.plugin.saveSettings(); }); });
 
 		// 添加测试按钮
 		new Setting(containerEl)
-			.setName('测试有道语音合成')
-			.setDesc('测试有道语音合成 配置是否正确')
+			.setName(tr('测试有道语音合成', 'Test Youdao speech'))
+			.setDesc(tr('测试有道语音合成 配置是否正确', 'Check that the Youdao speech settings work'))
 			.addButton(button => button
-				.setButtonText('测试')
+				.setButtonText(tr('测试', 'Test'))
 				.onClick(async () => {
-					button.setButtonText('测试中...');
+					button.setButtonText(tr('测试中...', 'Testing...'));
 					button.setDisabled(true);
 
 					try {
@@ -938,26 +938,26 @@ export class PolyglotSettingTab extends PluginSettingTab {
 						const audioBuffer = await this.plugin.testTtsAudio(testText);
 
 						if (audioBuffer) {
-							new Notice('有道语音合成测试成功！');
+							new Notice(tr('有道语音合成测试成功！', 'Youdao speech works.'));
 						} else {
-							new Notice('有道语音合成测试失败，请检查配置和网络连接');
+							new Notice(tr('有道语音合成测试失败，请检查配置和网络连接', 'Youdao speech test failed; check the settings and network'));
 						}
 					} catch (error) {
-						new Notice(`有道语音合成测试失败: ${errorMessage(error)}`);
+						new Notice(tr(`有道语音合成测试失败: ${errorMessage(error)}`, `Youdao speech test failed: ${errorMessage(error)}`));
 						this.plugin.logger.error('有道语音合成测试失败', error);
 					} finally {
-						button.setButtonText('测试');
+						button.setButtonText(tr('测试', 'Test'));
 						button.setDisabled(false);
 					}
 				}));
 	}
 
 	private displayGeminiTTSSettings(containerEl: HTMLElement) {
-		new Setting(containerEl).setName('Gemini 语音合成').setHeading();
+		new Setting(containerEl).setName(tr('Gemini 语音合成', 'Gemini speech')).setHeading();
 
 		new Setting(containerEl)
-			.setName('Gemini 语音合成接口地址')
-			.setDesc('Gemini 语音合成 API 的基础地址')
+			.setName(tr('Gemini 语音合成接口地址', 'Gemini speech endpoint'))
+			.setDesc(tr('Gemini 语音合成 API 的基础地址', 'Base address of the Gemini speech API'))
 			.addText(text => text
 				.setValue(this.plugin.settings.geminiTtsBaseUrl || '')
 				.onChange(async (value) => {
@@ -966,8 +966,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('Gemini 语音合成 API 密钥')
-			.setDesc('输入你的 Gemini API 密钥')
+			.setName(tr('Gemini 语音合成 API 密钥', 'Gemini speech API key'))
+			.setDesc(tr('输入你的 Gemini API 密钥', 'Your Gemini API key'))
 			.addText(text => {
 				text.inputEl.type = 'password';
 				text.setValue(this.plugin.settings.geminiTtsApiKey || '')
@@ -978,8 +978,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName('Gemini 语音合成模型名称')
-			.setDesc('例如：tts-1、tts-1-hd')
+			.setName(tr('Gemini 语音合成模型名称', 'Gemini speech model'))
+			.setDesc(tr('例如：tts-1、tts-1-hd', 'For example tts-1, tts-1-hd'))
 			.addText(text => text
 				.setValue(this.plugin.settings.geminiTtsModel || '')
 				.onChange(async (value) => {
@@ -988,41 +988,41 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('Gemini 语音合成声音')
-			.setDesc('选择 Gemini 语音合成的声音')
+			.setName(tr('Gemini 语音合成声音', 'Gemini voice'))
+			.setDesc(tr('选择 Gemini 语音合成的声音', 'Choose a Gemini voice'))
 			.addDropdown(dropdown => {
 				// 添加图中显示的所有语音选项
 				const voices = [
-					{ value: 'Zephyr', label: 'Zephyr (明亮)' },
-					{ value: 'Puck', label: 'Puck (欢快)' },
-					{ value: 'Charon', label: 'Charon (信息丰富)' },
-					{ value: 'Kore', label: 'Kore (坚定)' },
-					{ value: 'Fenrir', label: 'Fenrir (易激动)' },
-					{ value: 'Leda', label: 'Leda (年轻)' },
-					{ value: 'Orus', label: 'Orus (坚定)' },
-					{ value: 'Aoede', label: 'Aoede (轻松)' },
-					{ value: 'Callirhoe', label: 'Callirhoe (随和)' },
-					{ value: 'Autonoe', label: 'Autonoe (明亮)' },
-					{ value: 'Enceladus', label: 'Enceladus (呼吸感)' },
-					{ value: 'Iapetus', label: 'Iapetus (清晰)' },
-					{ value: 'Umbriel', label: 'Umbriel (随和)' },
-					{ value: 'Algieba', label: 'Algieba (平滑)' },
-					{ value: 'Despina', label: 'Despina (平滑)' },
-					{ value: 'Erinome', label: 'Erinome (清晰)' },
-					{ value: 'Algenib', label: 'Algenib (沙哑)' },
-					{ value: 'Rasalgethi', label: 'Rasalgethi (信息丰富)' },
-					{ value: 'Laomedeia', label: 'Laomedeia (欢快)' },
-					{ value: 'Achernar', label: 'Achernar (轻柔)' },
-					{ value: 'Alnilam', label: 'Alnilam (坚定)' },
-					{ value: 'Schedar', label: 'Schedar (平稳)' },
-					{ value: 'Gacrux', label: 'Gacrux (成熟)' },
-					{ value: 'Pulcherrima', label: 'Pulcherrima (向前)' },
-					{ value: 'Achird', label: 'Achird (友好)' },
-					{ value: 'Zubenelgenubi', label: 'Zubenelgenubi (休闲)' },
-					{ value: 'Vindematrix', label: 'Vindematrix (温柔)' },
-					{ value: 'Sadachbia', label: 'Sadachbia (活泼)' },
-					{ value: 'Sadaltager', label: 'Sadaltager (博学)' },
-					{ value: 'Sulafat', label: 'Sulafat (温暖)' }
+					{ value: 'Zephyr', label: tr('Zephyr (明亮)', 'Zephyr (bright)') },
+					{ value: 'Puck', label: tr('Puck (欢快)', 'Puck (upbeat)') },
+					{ value: 'Charon', label: tr('Charon (信息丰富)', 'Charon (informative)') },
+					{ value: 'Kore', label: tr('Kore (坚定)', 'Kore (firm)') },
+					{ value: 'Fenrir', label: tr('Fenrir (易激动)', 'Fenrir (excitable)') },
+					{ value: 'Leda', label: tr('Leda (年轻)', 'Leda (youthful)') },
+					{ value: 'Orus', label: tr('Orus (坚定)', 'Orus (firm)') },
+					{ value: 'Aoede', label: tr('Aoede (轻松)', 'Aoede (breezy)') },
+					{ value: 'Callirhoe', label: tr('Callirhoe (随和)', 'Callirhoe (easy-going)') },
+					{ value: 'Autonoe', label: tr('Autonoe (明亮)', 'Autonoe (bright)') },
+					{ value: 'Enceladus', label: tr('Enceladus (呼吸感)', 'Enceladus (breathy)') },
+					{ value: 'Iapetus', label: tr('Iapetus (清晰)', 'Iapetus (clear)') },
+					{ value: 'Umbriel', label: tr('Umbriel (随和)', 'Umbriel (easy-going)') },
+					{ value: 'Algieba', label: tr('Algieba (平滑)', 'Algieba (smooth)') },
+					{ value: 'Despina', label: tr('Despina (平滑)', 'Despina (smooth)') },
+					{ value: 'Erinome', label: tr('Erinome (清晰)', 'Erinome (clear)') },
+					{ value: 'Algenib', label: tr('Algenib (沙哑)', 'Algenib (gravelly)') },
+					{ value: 'Rasalgethi', label: tr('Rasalgethi (信息丰富)', 'Rasalgethi (informative)') },
+					{ value: 'Laomedeia', label: tr('Laomedeia (欢快)', 'Laomedeia (upbeat)') },
+					{ value: 'Achernar', label: tr('Achernar (轻柔)', 'Achernar (soft)') },
+					{ value: 'Alnilam', label: tr('Alnilam (坚定)', 'Alnilam (firm)') },
+					{ value: 'Schedar', label: tr('Schedar (平稳)', 'Schedar (even)') },
+					{ value: 'Gacrux', label: tr('Gacrux (成熟)', 'Gacrux (mature)') },
+					{ value: 'Pulcherrima', label: tr('Pulcherrima (向前)', 'Pulcherrima (forward)') },
+					{ value: 'Achird', label: tr('Achird (友好)', 'Achird (friendly)') },
+					{ value: 'Zubenelgenubi', label: tr('Zubenelgenubi (休闲)', 'Zubenelgenubi (casual)') },
+					{ value: 'Vindematrix', label: tr('Vindematrix (温柔)', 'Vindematrix (gentle)') },
+					{ value: 'Sadachbia', label: tr('Sadachbia (活泼)', 'Sadachbia (lively)') },
+					{ value: 'Sadaltager', label: tr('Sadaltager (博学)', 'Sadaltager (knowledgeable)') },
+					{ value: 'Sulafat', label: tr('Sulafat (温暖)', 'Sulafat (warm)') }
 				];
 
 				voices.forEach(voice => {
@@ -1037,8 +1037,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName('Gemini 语音合成语速')
-			.setDesc('范围：0.25 - 4.0（默认 1.0）')
+			.setName(tr('Gemini 语音合成语速', 'Gemini speech speed'))
+			.setDesc(tr('范围：0.25 - 4.0（默认 1.0）', 'Range 0.25–4.0 (default 1.0)'))
 			.addText(text => text
 				.setValue(String(this.plugin.settings.geminiTtsSpeed || 1.0))
 				.onChange(async (value) => {
@@ -1051,12 +1051,12 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		// 添加测试按钮
 		new Setting(containerEl)
-			.setName('测试 Gemini 语音合成')
-			.setDesc('测试 Gemini 语音合成 配置是否正确')
+			.setName(tr('测试 Gemini 语音合成', 'Test Gemini speech'))
+			.setDesc(tr('测试 Gemini 语音合成 配置是否正确', 'Check that the Gemini speech settings work'))
 			.addButton(button => button
-				.setButtonText('测试')
+				.setButtonText(tr('测试', 'Test'))
 				.onClick(async () => {
-					button.setButtonText('测试中...');
+					button.setButtonText(tr('测试中...', 'Testing...'));
 					button.setDisabled(true);
 
 					try {
@@ -1064,15 +1064,15 @@ export class PolyglotSettingTab extends PluginSettingTab {
 						const audioBuffer = await this.plugin.testTtsAudio(testText);
 
 						if (audioBuffer) {
-							new Notice('Gemini 语音合成测试成功！');
+							new Notice(tr('Gemini 语音合成测试成功！', 'Gemini speech works.'));
 						} else {
-							new Notice('Gemini 语音合成测试失败，请检查配置和网络连接');
+							new Notice(tr('Gemini 语音合成测试失败，请检查配置和网络连接', 'Gemini speech test failed; check the settings and network'));
 						}
 					} catch (error) {
-						new Notice(`Gemini 语音合成测试失败: ${errorMessage(error)}`);
+						new Notice(tr(`Gemini 语音合成测试失败: ${errorMessage(error)}`, `Gemini speech test failed: ${errorMessage(error)}`));
 						this.plugin.logger.error('Gemini 语音合成测试失败', error);
 					} finally {
-						button.setButtonText('测试');
+						button.setButtonText(tr('测试', 'Test'));
 						button.setDisabled(false);
 					}
 				}));
@@ -1081,7 +1081,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	private async createSmartCleanupSection(containerEl: HTMLElement) {
 		// 智能清理容器
 		const smartCleanupDiv = containerEl.createDiv({ cls: 'polyglot-smart-cleanup-section' });
-		new Setting(smartCleanupDiv).setName('智能缓存清理').setHeading();
+		new Setting(smartCleanupDiv).setName(tr('智能缓存清理', 'Smart cache cleanup')).setHeading();
 
 		// 加载缓存数据 - 使用动态导入以支持移动端
 		const { CacheManager } = await import('./cache-manager');
@@ -1106,7 +1106,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		// 扫描缓存按钮
 		const scanSection = smartCleanupDiv.createDiv({ cls: 'polyglot-scan-section' });
 		const scanButton = scanSection.createEl('button', {
-			text: '🔍 扫描缓存文件',
+			text: tr('🔍 扫描缓存文件', '🔍 Scan cache files'),
 			cls: 'mod-cta'
 		});
 
@@ -1115,7 +1115,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		scanButton.addEventListener('click', fire(async () => {
 			try {
 				scanButton.disabled = true;
-				scanButton.textContent = '⏳ 扫描中...';
+				scanButton.textContent = tr('⏳ 扫描中...', '⏳ Scanning...');
 				scanStatus.textContent = '';
 
 				allItems = await cacheManager.scanAllCache();
@@ -1123,8 +1123,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				selectedItems.clear();
 
 				scanButton.disabled = false;
-				scanButton.textContent = '🔍 重新扫描';
-				scanStatus.textContent = `✅ 扫描完成，找到 ${allItems.length} 个缓存文件`;
+				scanButton.textContent = tr('🔍 重新扫描', '🔍 Scan again');
+				scanStatus.textContent = tr(`✅ 扫描完成，找到 ${allItems.length} 个缓存文件`, `✅ Scan finished: ${allItems.length} cache files`);
 
 				// 创建筛选和预览区域
 				this.createFilterAndPreviewSection(smartCleanupDiv, {
@@ -1137,8 +1137,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 			} catch (error) {
 				scanButton.disabled = false;
-				scanButton.textContent = '🔍 扫描缓存文件';
-				scanStatus.textContent = `❌ 扫描失败: ${errorMessage(error)}`;
+				scanButton.textContent = tr('🔍 扫描缓存文件', '🔍 Scan cache files');
+				scanStatus.textContent = tr(`❌ 扫描失败: ${errorMessage(error)}`, `❌ Scan failed: ${errorMessage(error)}`);
 			}
 		}));
 	}
@@ -1164,31 +1164,31 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 	private createInlineFilterSection(containerEl: HTMLElement, data: CleanupState) {
 		const filterDiv = containerEl.createDiv({ cls: 'polyglot-inline-filter' });
-		new Setting(filterDiv).setName('筛选条件').setHeading();
+		new Setting(filterDiv).setName(tr('筛选条件', 'Filters')).setHeading();
 
 		const filterRow = filterDiv.createDiv({ cls: 'polyglot-filter-row' });
 
 		// 类型筛选
 		const typeSelect = filterRow.createEl('select', { cls: 'polyglot-filter-select' });
-		typeSelect.createEl('option', { value: 'all', text: '🔄 所有类型' });
-		typeSelect.createEl('option', { value: 'translation', text: '📝 翻译缓存' });
-		typeSelect.createEl('option', { value: 'audio', text: '🎵 音频缓存' });
+		typeSelect.createEl('option', { value: 'all', text: tr('🔄 所有类型', '🔄 All types') });
+		typeSelect.createEl('option', { value: 'translation', text: tr('📝 翻译缓存', '📝 Translation cache') });
+		typeSelect.createEl('option', { value: 'audio', text: tr('🎵 音频缓存', '🎵 Audio cache') });
 
 		// 时间筛选
 		const timeSelect = filterRow.createEl('select', { cls: 'polyglot-filter-select' });
-		timeSelect.createEl('option', { value: '', text: '🕐 所有时间' });
-		timeSelect.createEl('option', { value: '1', text: '1天前' });
-		timeSelect.createEl('option', { value: '7', text: '1周前' });
-		timeSelect.createEl('option', { value: '30', text: '1个月前' });
-		timeSelect.createEl('option', { value: '90', text: '3个月前' });
+		timeSelect.createEl('option', { value: '', text: tr('🕐 所有时间', '🕐 Any age') });
+		timeSelect.createEl('option', { value: '1', text: tr('1天前', '1 day') });
+		timeSelect.createEl('option', { value: '7', text: tr('1周前', '1 week') });
+		timeSelect.createEl('option', { value: '30', text: tr('1个月前', '1 month') });
+		timeSelect.createEl('option', { value: '90', text: tr('3个月前', '3 months') });
 
 		// 大小筛选
 		const sizeSelect = filterRow.createEl('select', { cls: 'polyglot-filter-select' });
-		sizeSelect.createEl('option', { value: '', text: '📦 所有大小' });
-		sizeSelect.createEl('option', { value: '1024', text: '大于 1 千字节' });
-		sizeSelect.createEl('option', { value: '10240', text: '大于 10 千字节' });
-		sizeSelect.createEl('option', { value: '102400', text: '大于 100 千字节' });
-		sizeSelect.createEl('option', { value: '1048576', text: '大于 1 兆字节' });
+		sizeSelect.createEl('option', { value: '', text: tr('📦 所有大小', '📦 Any size') });
+		sizeSelect.createEl('option', { value: '1024', text: tr('大于 1 千字节', 'Over 1 KB') });
+		sizeSelect.createEl('option', { value: '10240', text: tr('大于 10 千字节', 'Over 10 KB') });
+		sizeSelect.createEl('option', { value: '102400', text: tr('大于 100 千字节', 'Over 100 KB') });
+		sizeSelect.createEl('option', { value: '1048576', text: tr('大于 1 兆字节', 'Over 1 MB') });
 
 		// 应用筛选
 		const applyFilter = () => {
@@ -1207,7 +1207,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 	private createInlinePreviewSection(containerEl: HTMLElement, data: CleanupState) {
 		const previewDiv = containerEl.createDiv({ cls: 'polyglot-inline-preview' });
-		new Setting(previewDiv).setName('预览结果').setHeading();
+		new Setting(previewDiv).setName(tr('预览结果', 'Preview')).setHeading();
 
 		// 统计信息
 		const statsDiv = previewDiv.createDiv({ cls: 'polyglot-inline-stats' });
@@ -1215,7 +1215,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		// 全选控制
 		const selectAllDiv = previewDiv.createDiv({ cls: 'polyglot-inline-select-all' });
 		const selectAllCheckbox = selectAllDiv.createEl('input', { type: 'checkbox' });
-		selectAllDiv.createEl('label', { text: '全选/取消全选' });
+		selectAllDiv.createEl('label', { text: tr('全选/取消全选', 'Select all / none') });
 
 		selectAllCheckbox.addEventListener('change', () => {
 			if (selectAllCheckbox.checked) {
@@ -1242,22 +1242,22 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		// 清理按钮
 		const cleanButton = buttonDiv.createEl('button', {
-			text: '🗑️ 清理选中项',
+			text: tr('🗑️ 清理选中项', '🗑️ Delete selected'),
 			cls: 'mod-warning'
 		});
 
 		cleanButton.addEventListener('click', fire(async () => {
 			if (data.selectedItems.size === 0) {
-				new Notice('请先选择要清理的文件');
+				new Notice(tr('请先选择要清理的文件', 'Select files to clean first'));
 				return;
 			}
 
-			const confirmed = await confirmAction(this.app, `确定要删除 ${data.selectedItems.size} 个缓存文件吗？此操作不可撤销！`);
+			const confirmed = await confirmAction(this.app, tr(`确定要删除 ${data.selectedItems.size} 个缓存文件吗？此操作不可撤销！`, `Delete ${data.selectedItems.size} cache files? This cannot be undone.`));
 			if (!confirmed) return;
 
 			try {
 				cleanButton.disabled = true;
-				cleanButton.textContent = '⏳ 清理中...';
+				cleanButton.textContent = tr('⏳ 清理中...', '⏳ Cleaning...');
 
 				const selectedPaths = Array.from(data.selectedItems);
 				await data.cacheManager.deleteItems(data.allItems.filter(item => data.selectedItems.has(item.path)));
@@ -1269,13 +1269,13 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				this.updateInlinePreview(data);
 
 				cleanButton.disabled = false;
-				cleanButton.textContent = '🗑️ 清理选中项';
-				new Notice(`成功清理 ${selectedPaths.length} 个缓存文件`);
+				cleanButton.textContent = tr('🗑️ 清理选中项', '🗑️ Delete selected');
+				new Notice(tr(`成功清理 ${selectedPaths.length} 个缓存文件`, `Deleted ${selectedPaths.length} cache files`));
 
 			} catch (error) {
 				cleanButton.disabled = false;
-				cleanButton.textContent = '🗑️ 清理选中项';
-				new Notice(`清理失败: ${errorMessage(error)}`);
+				cleanButton.textContent = tr('🗑️ 清理选中项', '🗑️ Delete selected');
+				new Notice(tr(`清理失败: ${errorMessage(error)}`, `Cleanup failed: ${errorMessage(error)}`));
 			}
 		}));
 	}
@@ -1324,15 +1324,15 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		};
 
 		statsDiv.empty();
-		statsDiv.createDiv({ cls: 'polyglot-stat-item', text: `📊 筛选结果: ${filteredItems.length} 个文件 (${formatSize(totalSize)})` });
-		statsDiv.createDiv({ cls: 'polyglot-stat-item selected', text: `✅ 已选择: ${selectedItems.size} 个文件 (${formatSize(selectedSize)})` });
+		statsDiv.createDiv({ cls: 'polyglot-stat-item', text: tr(`📊 筛选结果: ${filteredItems.length} 个文件 (${formatSize(totalSize)})`, `📊 Matches: ${filteredItems.length} files (${formatSize(totalSize)})`) });
+		statsDiv.createDiv({ cls: 'polyglot-stat-item selected', text: tr(`✅ 已选择: ${selectedItems.size} 个文件 (${formatSize(selectedSize)})`, `✅ Selected: ${selectedItems.size} files (${formatSize(selectedSize)})`) });
 
 		// 更新文件列表
 		listDiv.empty();
 
 		if (filteredItems.length === 0) {
 			listDiv.createDiv({
-				text: '没有找到符合条件的缓存文件',
+				text: tr('没有找到符合条件的缓存文件', 'No cache files match'),
 				cls: 'polyglot-empty-message'
 			});
 			return;
@@ -1342,7 +1342,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		const displayItems = filteredItems.slice(0, 50);
 		if (filteredItems.length > 50) {
 			listDiv.createDiv({
-				text: `显示前50个文件，共${filteredItems.length}个`,
+				text: tr(`显示前50个文件，共${filteredItems.length}个`, `Showing the first 50 of ${filteredItems.length} files`),
 				cls: 'polyglot-limit-message'
 			});
 		}
