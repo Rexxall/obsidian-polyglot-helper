@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, Notice, TextAreaComponent, Editor, MarkdownRenderer, MarkdownView, TextComponent, setIcon, TFile, Menu, normalizePath, sanitizeHTMLToDom, moment } from "obsidian";
+import { ItemView, WorkspaceLeaf, Notice, TextAreaComponent, Editor, MarkdownRenderer, MarkdownView, TextComponent, setIcon, TFile, Menu, normalizePath, sanitizeHTMLToDom } from "obsidian";
 import PolyglotHelper from "./main";
 import { HistoryItem } from "./types";
 import { getFromCache, saveToCache } from './cache';
@@ -928,7 +928,8 @@ export class PolyglotHelperView extends ItemView {
      * 和查词小卡写的“收自 [[笔记]] · 日期”同一格式，复习时会显示出来。
      */
     private collectionContext(word: string): { note: string; examples: string[] } {
-        const today = moment().format('YYYY-MM-DD');
+        const now = new Date();
+        const today = [now.getFullYear(), now.getMonth() + 1, now.getDate()].map((part) => String(part).padStart(2, '0')).join('-');
         const view = this.lastActiveLeaf;
         const file = view?.file;
         let sentence = '';

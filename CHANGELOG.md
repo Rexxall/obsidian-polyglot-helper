@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.8.0
+
+- Passes the community directory's code checks with no warnings. The stylesheet no longer uses `!important`, `all: unset` or `:has()`: buttons and fields reset only the properties they need, the plugin marks the first and last row of each settings group itself, and reduced motion turns animations off through a more specific selector. Nothing looks different.
+- The source date of a word added from the side panel is worked out without Moment.js; it is still the local date.
+- `npm run lint` checks types the way the directory does, and checks the stylesheet; any warning fails it.
+
 ## 1.7.0
 
 - **AI settings in four fields.** Each AI configuration is now provider, API key, endpoint and model, filled in separately. Pick a provider and the endpoint and default model are filled in: DeepSeek (the default), Qwen (通义千问), SiliconFlow (硅基流动), Kimi, Zhipu GLM (智谱), OpenRouter, OpenAI, or any OpenAI-compatible service. A base URL ending in `/v1` is accepted; the rest of the path is added. Existing configurations keep working and get their provider recognised from the endpoint.

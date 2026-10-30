@@ -289,9 +289,8 @@ async function getGeminiTtsAudioTS(
 
             // 移动端兼容性：使用 ArrayBuffer 而不是 Buffer
             const arrayBuffer = await mp3.arrayBuffer();
-            const buffer = new Uint8Array(arrayBuffer);
             logger.info(`Gemini TTS成功生成音频 (尝试 ${attempt}/${maxRetries})`);
-            return buffer;
+            return arrayBuffer;
 
         } catch (error) {
             logger.warn(`Gemini TTS生成失败 (尝试 ${attempt}/${maxRetries})`, error);

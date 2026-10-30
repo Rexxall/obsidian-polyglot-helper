@@ -1,7 +1,7 @@
 {
   "id": "polyglot-helper",
   "name": "Polyglot Helper",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "minAppVersion": "1.8.7",
   "description": "Look up English and Japanese words in your notes and get a study card with meaning, reading, examples and audio, kept in a word list you review.",
   "author": "Rexxall",

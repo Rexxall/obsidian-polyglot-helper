@@ -11,6 +11,7 @@ import { errorMessage } from './shared/errors';
 import type { CacheItem, CacheManager } from './cache-manager';
 
 import { confirmAction } from './shared/confirm-modal';
+import { watchSettingGroups } from './shared/setting-groups';
 import { SETTINGS_SEARCH_TERMS } from './settings-search';
 /** 智能缓存清理面板在几个方法之间共用的状态。 */
 interface CleanupState {
@@ -61,6 +62,14 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		if (this.host) this.renderPage(this.host);
 	}
 
+	/** Stops keeping the group corners current once the page is closed. */
+	private stopGroupMarks: (() => void) | null = null;
+
+	hide(): void {
+		this.stopGroupMarks?.();
+		this.stopGroupMarks = null;
+	}
+
 	private renderPage(containerEl: HTMLElement): void {
 		this.host = containerEl;
 		containerEl.empty();
@@ -74,6 +83,9 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		// 根据当前标签页显示内容
 		this.displayTabContent(contentContainer);
+
+		this.stopGroupMarks?.();
+		this.stopGroupMarks = watchSettingGroups(containerEl);
 	}
 
 	private createTabNavigation(containerEl: HTMLElement) {

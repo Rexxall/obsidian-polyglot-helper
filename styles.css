@@ -79,6 +79,7 @@
   --ap-ease: cubic-bezier(0.16, 1, 0.3, 1);
   --ap-ease-spring: cubic-bezier(0.34, 1.36, 0.64, 1);
   --ap-ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  --ap-press: 80ms;
   --ap-fast: 120ms;
   --ap-base: 200ms;
   --ap-slow: 340ms;
@@ -136,12 +137,8 @@
 .ap-settings .setting-item:not(.setting-item-heading) + .setting-item:not(.setting-item-heading)::before {
   content: ""; position: absolute; top: 0; right: 0; left: var(--ap-s4); border-top: 0.5px solid var(--ap-sep);
 }
-.ap-settings .setting-item:not(.setting-item-heading):first-child,
-.ap-settings .setting-item-heading + .setting-item,
-.ap-settings > :not(.setting-item) + .setting-item { border-top-left-radius: var(--ap-r-group); border-top-right-radius: var(--ap-r-group); }
-.ap-settings .setting-item:not(.setting-item-heading):has(+ .setting-item-heading),
-.ap-settings .setting-item:not(.setting-item-heading):last-child,
-.ap-settings .setting-item:not(.setting-item-heading):has(+ :not(.setting-item)) { border-bottom-left-radius: var(--ap-r-group); border-bottom-right-radius: var(--ap-r-group); }
+.ap-settings .setting-item.ap-group-first { border-top-left-radius: var(--ap-r-group); border-top-right-radius: var(--ap-r-group); }
+.ap-settings .setting-item.ap-group-last { border-bottom-left-radius: var(--ap-r-group); border-bottom-right-radius: var(--ap-r-group); }
 .ap-settings .setting-item-heading { background: none; padding: var(--ap-s6) 0 var(--ap-s2); min-height: 0; }
 .ap-settings .setting-item-heading .setting-item-name { font: var(--ap-headline); }
 .ap-settings .setting-item-heading .setting-item-description { padding-top: 4px; }
@@ -176,7 +173,7 @@
 /* Size and knob position come from the variables above, so Obsidian's own geometry keeps the knob 2px from every edge */
 .ap .checkbox-container { border-radius: var(--ap-r-pill); background: var(--ap-fill-strong); box-shadow: none; }
 .ap .checkbox-container.is-enabled { background: var(--ap-accent); }
-.ap .checkbox-container::after { box-shadow: 0 1px 3px rgb(0 0 0 / 0.22); transition: width 0.08s ease-out, left 0.08s ease-out, transform var(--ap-base) var(--ap-ease-spring) 0.08s; }
+.ap .checkbox-container::after { box-shadow: 0 1px 3px rgb(0 0 0 / 0.22); transition: width var(--ap-press) ease-out, left var(--ap-press) ease-out, transform var(--ap-base) var(--ap-ease-spring) var(--ap-press); }
 /* Pressed: the knob stretches to a 26px capsule inside the track, keeping its 2px margin; it grows away from
    the end it rests on. Released, it turns round first, then slides. Repeated classes outrank Obsidian's
    pressed bubble, which grows past the track. */
@@ -194,7 +191,7 @@
   padding: 2px; border-radius: var(--ap-r-pill); background: var(--ap-fill);
 }
 .ap-seg button {
-  all: unset; cursor: pointer; text-align: center; white-space: nowrap;
+  appearance: none; -webkit-app-region: initial; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; outline: none; width: auto; height: auto; min-width: auto; min-height: auto; max-width: none; font: inherit; color: inherit; letter-spacing: inherit; text-align: inherit; text-transform: inherit; text-rendering: inherit; white-space: inherit; user-select: inherit; display: inline; align-items: normal; justify-content: normal; gap: normal; cursor: inherit; box-sizing: content-box; flex: initial; transition: initial; corner-shape: round; cursor: pointer; text-align: center; white-space: nowrap;
   font: 500 12px/16px var(--ap-font); color: var(--ap-label);
   padding: 5px 14px; border-radius: var(--ap-r-pill);
   transition: background var(--ap-base) var(--ap-ease), box-shadow var(--ap-base) var(--ap-ease);
@@ -207,7 +204,7 @@
 
 /* ---------- Buttons: capsules ---------- */
 .ap-btn {
-  all: unset; cursor: pointer; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  appearance: none; -webkit-app-region: initial; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; outline: none; width: auto; height: auto; min-width: auto; min-height: auto; max-width: none; font: inherit; color: inherit; letter-spacing: inherit; text-align: inherit; text-transform: inherit; text-rendering: inherit; white-space: inherit; user-select: inherit; display: inline; align-items: normal; justify-content: normal; gap: normal; cursor: inherit; box-sizing: content-box; flex: initial; transition: initial; corner-shape: round; cursor: pointer; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   font: 500 13px/18px var(--ap-font); padding: 6px 14px; border-radius: var(--ap-r-pill);
   background: var(--ap-fill); color: var(--ap-label); white-space: nowrap;
   transition: background var(--ap-fast) var(--ap-ease), transform var(--ap-fast) var(--ap-ease);
@@ -233,7 +230,7 @@
 }
 .ap-field:focus { outline: none; box-shadow: 0 0 0 1px var(--ap-accent), 0 0 0 4px var(--ap-accent-tint); }
 .ap-search { display: flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: var(--ap-r-pill); background: var(--ap-fill); color: var(--ap-label-3); }
-.ap-search input { all: unset; flex: 1; min-width: 0; font: var(--ap-body); color: var(--ap-label); }
+.ap-search input { appearance: none; -webkit-app-region: initial; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; outline: none; width: auto; height: auto; min-width: auto; min-height: auto; max-width: none; font: inherit; color: inherit; letter-spacing: inherit; text-align: inherit; text-transform: inherit; text-rendering: inherit; white-space: inherit; user-select: inherit; display: inline; align-items: normal; justify-content: normal; gap: normal; cursor: inherit; box-sizing: content-box; flex: initial; transition: initial; corner-shape: round; flex: 1; min-width: 0; font: var(--ap-body); color: var(--ap-label); }
 
 /* ---------- Sidebar list ---------- */
 .ap-list { display: grid; gap: 2px; padding: var(--ap-s1); }
@@ -337,7 +334,7 @@
    <div class="ap-row"> … <div class="ap-row-actions"><button class="ap-icon-btn" aria-label="Edit">…svg…</button></div></div>
    Hidden until the row is hovered or something in it has focus; always shown where there is no hover. */
 .ap-icon-btn {
-  all: unset; cursor: pointer; box-sizing: border-box; flex: none;
+  appearance: none; -webkit-app-region: initial; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; outline: none; width: auto; height: auto; min-width: auto; min-height: auto; max-width: none; font: inherit; color: inherit; letter-spacing: inherit; text-align: inherit; text-transform: inherit; text-rendering: inherit; white-space: inherit; user-select: inherit; display: inline; align-items: normal; justify-content: normal; gap: normal; cursor: inherit; box-sizing: content-box; flex: initial; transition: initial; corner-shape: round; cursor: pointer; box-sizing: border-box; flex: none;
   display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: var(--ap-r-pill);
   color: var(--ap-label-2); transition: background var(--ap-fast) var(--ap-ease), color var(--ap-fast) var(--ap-ease);
 }
@@ -356,7 +353,7 @@
    <button class="ap-picker" aria-haspopup="listbox" aria-expanded="false"><span class="ap-picker-value">Auto</span></button>
    Opens .ap-menu, a glass popover list (see the helper in 74 appendix B for the behaviour). */
 .ap-picker {
-  all: unset; cursor: pointer; box-sizing: border-box; flex: none; max-width: 100%;
+  appearance: none; -webkit-app-region: initial; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; outline: none; width: auto; height: auto; min-width: auto; min-height: auto; max-width: none; font: inherit; color: inherit; letter-spacing: inherit; text-align: inherit; text-transform: inherit; text-rendering: inherit; white-space: inherit; user-select: inherit; display: inline; align-items: normal; justify-content: normal; gap: normal; cursor: inherit; box-sizing: content-box; flex: initial; transition: initial; corner-shape: round; cursor: pointer; box-sizing: border-box; flex: none; max-width: 100%;
   display: inline-flex; align-items: center; gap: 6px;
   font: 500 12px/16px var(--ap-font); color: var(--ap-label);
   padding: 5px 10px 5px 12px; border-radius: var(--ap-r-pill); background: var(--ap-fill);
@@ -405,7 +402,7 @@
 .ap-cal-head { display: flex; align-items: center; justify-content: space-between; font: var(--ap-headline); padding-inline: 4px; }
 .ap-cal-grid { display: grid; grid-template-columns: repeat(7, 30px); gap: 2px; text-align: center; font-variant-numeric: tabular-nums; }
 .ap-cal-dow { font: var(--ap-caption); color: var(--ap-label-3); line-height: 22px; }
-.ap-cal-day { all: unset; cursor: pointer; display: grid; place-items: center; height: 30px; border-radius: var(--ap-r-pill); font: var(--ap-body); }
+.ap-cal-day { appearance: none; -webkit-app-region: initial; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; outline: none; width: auto; height: auto; min-width: auto; min-height: auto; max-width: none; font: inherit; color: inherit; letter-spacing: inherit; text-align: inherit; text-transform: inherit; text-rendering: inherit; white-space: inherit; user-select: inherit; display: inline; align-items: normal; justify-content: normal; gap: normal; cursor: inherit; box-sizing: content-box; flex: initial; transition: initial; corner-shape: round; cursor: pointer; display: grid; place-items: center; height: 30px; border-radius: var(--ap-r-pill); font: var(--ap-body); }
 .ap-cal-day:hover { background: var(--ap-fill); }
 .ap-cal-day.is-other { color: var(--ap-label-3); }
 .ap-cal-day.is-today { color: var(--ap-accent); font-weight: 600; }
@@ -460,7 +457,8 @@
 }
 /* Reduce motion: no movement, state changes are instant */
 @media (prefers-reduced-motion: reduce) {
-  .ap, .ap *, .modal.ap-modal { animation: none !important; transition: none !important; }
+  /* The id in :not() lifts these above any class-only rule, no important flag needed */
+  :is(.ap, .ap *, .modal.ap-modal):not(#ap-reduced-motion) { animation: none; transition: none; }
 }
 /* Phones: lighter blur, no blur on anything inside a scrolling list */
 .is-mobile .ap { --ap-blur: blur(16px) saturate(160%); --ap-blur-thin: blur(10px) saturate(150%); }
@@ -1708,31 +1706,15 @@ button.polyglot-page-btn:hover { background: var(--pg-hover); }
    the same amount, so controls inside and outside a group end on one right line. From Obsidian 1.13
    the page is drawn inside a settings row whose card is dropped here. Empty or hidden helpers between
    rows (status lines, QR boxes) do not split a group. */
-.setting-group .setting-items:has(> .ap-settings) { padding: 0; border: 0; border-radius: 0; background: none; }
+.setting-group .setting-items.ap-settings-host { padding: 0; border: 0; border-radius: 0; background: none; }
 .ap.ap-settings { --ap-inset: var(--ap-s4); padding-inline: var(--ap-inset); }
 .vertical-tab-content.ap.ap-settings { padding-inline: calc(var(--size-4-8, 32px) + var(--ap-inset)); }
 .ap.ap-settings .setting-item:not(.setting-item-heading) { margin-inline: calc(-1 * var(--ap-inset)); padding-inline: var(--ap-inset); border-radius: 0; }
 .ap.ap-settings .setting-item-heading { margin: 0; padding-inline: 0; border: 0; }
-.ap.ap-settings .setting-item:not(.setting-item-heading):is(
-  .setting-item:not(.setting-item-heading) + *,
-  .setting-item:not(.setting-item-heading) + :is(:empty, [style*="display: none"]) + *,
-  .setting-item:not(.setting-item-heading) + :is(:empty, [style*="display: none"]) + :is(:empty, [style*="display: none"]) + *
-)::before { content: ""; display: block; position: absolute; top: 0; left: var(--ap-inset); right: 0; border-top: 0.5px solid var(--ap-sep); }
-.ap.ap-settings .setting-item:not(.setting-item-heading):not(
-  .setting-item:not(.setting-item-heading) + *,
-  .setting-item:not(.setting-item-heading) + :is(:empty, [style*="display: none"]) + *,
-  .setting-item:not(.setting-item-heading) + :is(:empty, [style*="display: none"]) + :is(:empty, [style*="display: none"]) + *
-) { border-top-left-radius: var(--ap-r-group); border-top-right-radius: var(--ap-r-group); }
-.ap.ap-settings .setting-item:not(.setting-item-heading):not(
-  .setting-item:not(.setting-item-heading) + *,
-  .setting-item:not(.setting-item-heading) + :is(:empty, [style*="display: none"]) + *,
-  .setting-item:not(.setting-item-heading) + :is(:empty, [style*="display: none"]) + :is(:empty, [style*="display: none"]) + *
-)::before { content: none; }
-.ap.ap-settings .setting-item:not(.setting-item-heading):not(:has(
-  + .setting-item:not(.setting-item-heading),
-  + :is(:empty, [style*="display: none"]) + .setting-item:not(.setting-item-heading),
-  + :is(:empty, [style*="display: none"]) + :is(:empty, [style*="display: none"]) + .setting-item:not(.setting-item-heading)
-)) { border-bottom-left-radius: var(--ap-r-group); border-bottom-right-radius: var(--ap-r-group); }
+.ap.ap-settings .setting-item:not(.setting-item-heading)::before { content: ""; display: block; position: absolute; top: 0; left: var(--ap-inset); right: 0; border-top: 0.5px solid var(--ap-sep); }
+.ap.ap-settings .setting-item.ap-group-first { border-top-left-radius: var(--ap-r-group); border-top-right-radius: var(--ap-r-group); }
+.ap.ap-settings .setting-item.ap-group-first::before { content: none; }
+.ap.ap-settings .setting-item.ap-group-last { border-bottom-left-radius: var(--ap-r-group); border-bottom-right-radius: var(--ap-r-group); }
 
 /* Side panel: the setup card lines up with the input and the mode row */
 .polyglot-helper-view-container .polyglot-status { margin: var(--ap-s3) 0; }

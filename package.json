@@ -1,13 +1,14 @@
 {
   "name": "obsidian-polyglot-helper",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Look up English and Japanese words in your notes and get a study card with meaning, reading, examples and audio, kept in a word list you review.",
   "main": "src/main.ts",
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "tsc --noEmit --skipLibCheck && node esbuild.config.mjs production",
     "build-with-check": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-    "test": "node --test *.test.mjs"
+    "test": "node --test *.test.mjs",
+    "lint": "eslint --ext .ts src --max-warnings 0 && stylelint styles.css"
   },
   "keywords": [
     "obsidian-md",
@@ -28,11 +29,15 @@
   },
   "devDependencies": {
     "@types/node": "^16.11.6",
+    "@typescript-eslint/eslint-plugin": "^8.72.1",
+    "@typescript-eslint/parser": "^8.72.1",
     "builtins": "^5.0.1",
     "esbuild": "0.17.3",
+    "eslint": "^8.57.1",
     "obsidian": "1.13.0",
+    "stylelint": "^16.26.1",
     "tslib": "2.3.1",
-    "typescript": "4.7.4"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "openai": "^5.9.0"
