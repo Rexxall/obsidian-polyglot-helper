@@ -3,6 +3,7 @@
 ## 1.8.2
 
 - Settings show fewer descriptions: rows whose name already says what they do have none. Notes about cost, side effects and which setting wins remain.
+- The Advanced settings page is gone. Debug mode is at the end of the Cache page; the "Save settings automatically" switch, which did nothing, is removed.
 - The side panel's empty state is one line shorter.
 - The README is shorter, with Chinese and Japanese versions in their own files.
 - The stylesheet no longer sets the same property twice in one rule. Nothing looks different.

@@ -44,7 +44,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	getSettingDefinitions(): SettingDefinitionItem[] {
 		return [{
 			name: tr('语言助手设置', 'Polyglot Helper settings'),
-			desc: tr('输出、翻译与模型、语音、学习、缓存和高级选项', 'Output, translation and models, speech, learning, cache and advanced options'),
+			desc: tr('输出、翻译与模型、语音、学习、缓存和调试', 'Output, translation and models, speech, learning, cache and debugging'),
 			aliases: SETTINGS_SEARCH_TERMS,
 			render: (setting) => {
 				const host = setting.settingEl;
@@ -96,8 +96,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 			{ id: 'translation', name: tr('翻译与模型', 'Translation and models'), icon: '🌐' },
 			{ id: 'audio', name: tr('语音', 'Speech'), icon: '🎵' },
 			{ id: 'ui', name: tr('学习与界面', 'Learning and interface'), icon: '🎨' },
-			{ id: 'cache', name: tr('缓存', 'Cache'), icon: '🗑️' },
-			{ id: 'advanced', name: tr('高级', 'Advanced'), icon: '⚙️' }
+			{ id: 'cache', name: tr('缓存', 'Cache'), icon: '🗑️' }
 		];
 
 		tabs.forEach(tab => {
@@ -142,9 +141,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				break;
 			case 'cache':
 				this.displayCacheSettings(containerEl);
-				break;
-			case 'advanced':
-				this.displayAdvancedSettings(containerEl);
 				break;
 		}
 	}
@@ -807,10 +803,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 						}
 					});
 			});
-	}
 
-	private displayAdvancedSettings(containerEl: HTMLElement) {
-		new Setting(containerEl).setName(tr('高级', 'Advanced')).setHeading();
+		new Setting(containerEl).setName(tr('调试', 'Debugging')).setHeading();
 
 		new Setting(containerEl)
 			.setName(tr('启用调试模式', 'Debug mode'))
@@ -820,20 +814,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 					this.plugin.settings.debugMode = value;
 					await this.plugin.saveSettings();
 				}));
-
-		new Setting(containerEl)
-			.setName(tr('自动保存设置', 'Save settings automatically'))
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.autoSave || true)
-				.onChange(async (value) => {
-					this.plugin.settings.autoSave = value;
-					await this.plugin.saveSettings();
-				}));
-
-		// 开发者信息
-		const devInfo = containerEl.createDiv({ cls: 'polyglot-dev-info' });
-		new Setting(devInfo).setName(tr('插件信息', 'About')).setHeading();
-		devInfo.createEl('p', { text: tr(`版本: ${this.plugin.manifest.version}`, `Version: ${this.plugin.manifest.version}`) });
 	}
 
 	private createLanguagePathSettings(containerEl: HTMLElement, title: string, settingsKey: keyof Pick<PolyglotHelperSettings, 'japaneseOutputSettings' | 'englishOutputSettings' | 'quickTranslationOutputSettings'>) {

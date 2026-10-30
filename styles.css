@@ -1324,7 +1324,6 @@ button.polyglot-page-btn:hover { background: var(--pg-hover); }
 .polyglot-smart-cleanup-section,
 .polyglot-quick-clean-section,
 .polyglot-info-section,
-.polyglot-dev-info { margin: 12px 0; }
 .polyglot-stats-header,
 .polyglot-stats-subheader,
 .polyglot-cleanup-title { font-weight: var(--font-semibold); margin: 10px 0 6px; color: var(--pg-ink); }

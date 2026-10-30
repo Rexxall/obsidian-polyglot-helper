@@ -29,7 +29,6 @@ export interface ApiConfig {
 
 export interface PolyglotHelperSettings {
     debugMode?: boolean;
-    autoSave?: boolean;
     voiceSynthesis?: { rate?: number; voice?: string };
 	// General Settings
 	outputDestination: 'replace' | 'appendCurrent' | 'newFile' | 'sidebar' | 'fixedFile';
