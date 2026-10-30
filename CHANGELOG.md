@@ -1,10 +1,11 @@
 # Changelog
 
-## 1.8.1
+## 1.8.2
 
 - Settings show fewer descriptions: rows whose name already says what they do have none. Notes about cost, side effects and which setting wins remain.
 - The side panel's empty state is one line shorter.
 - The README is shorter, with Chinese and Japanese versions in their own files.
+- The stylesheet no longer sets the same property twice in one rule. Nothing looks different.
 
 ## 1.8.0
 
