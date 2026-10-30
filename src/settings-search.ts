@@ -77,8 +77,6 @@ export const SETTINGS_SEARCH_TERMS: string[] = [
 	'语音合成',
 	'语音合成引擎',
 	'Speech engine',
-	'音频格式信息',
-	'Audio format',
 	'状态栏显示待复习数',
 	'Show due reviews in the status bar',
 	'词库导出文件夹',

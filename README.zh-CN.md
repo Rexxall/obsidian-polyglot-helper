@@ -4,7 +4,7 @@
 
 **在笔记里查一个英文或日文词，拿回释义、读音、例句和发音整理好的学习卡片，并收进可以复习的生词本。**
 
-[English](README.md) · 中文
+[English](README.md) · 中文 · [日本語](README.ja.md)
 
 <img src="docs/screenshots/hero.png" width="860" alt="左边是示例笔记，右边侧栏是 postpone 的单词卡">
 

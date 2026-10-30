@@ -981,10 +981,7 @@ export class PolyglotHelperView extends ItemView {
             this.showStatus({
                 kind: 'setup',
                 title: tr('还没有配置 AI 服务', 'No AI service yet'),
-                detail: tr(
-                    '翻译和日语、英语分析要用 AI。默认用 DeepSeek，填一个密钥就行；只查词典和读音不需要。',
-                    'Translation and the Japanese and English analyses need an AI service. DeepSeek is preset: paste one key. Dictionaries and pronunciation work without it.',
-                ),
+                detail: tr('只查词典和读音不需要 AI。', 'Dictionaries and pronunciation work without it.'),
                 action: { label: tr('打开 AI 设置', 'Open AI settings'), run: () => this.openSettings() },
                 secondary: { label: tr('先看示例', 'See an example'), run: () => { void this.loadSample(); } },
             });
@@ -993,7 +990,6 @@ export class PolyglotHelperView extends ItemView {
         this.showStatus({
             kind: 'idle',
             title: tr('选中一个词，或在上面输入', 'Select a word, or type one above'),
-            detail: tr('英语、日语都可以，按回车或“查询”。第一次用？载入一段示例试试。', 'English or Japanese; press Enter or Look up. New here? Load a short example.'),
             action: { label: tr('载入示例', 'Load example'), run: () => { void this.loadSample(); } },
         });
     }
@@ -2021,10 +2017,6 @@ export class PolyglotHelperView extends ItemView {
             this.plugin.settings.forceRefreshAudio = refreshCheckbox.checked;
             await this.plugin.saveSettings();
         }));
-
-        // 添加说明文字
-        const refreshHint = refreshSection.createDiv({ cls: 'polyglot-settings-hint' });
-        refreshHint.textContent = tr('勾选后，相同文字会重新生成音频', 'When checked, the same text gets fresh audio');
 
         document.body.appendChild(panel);
 

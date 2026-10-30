@@ -154,7 +154,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(tr('自动添加到词汇库', 'Add to the word list automatically'))
-			.setDesc(tr('翻译后自动将词汇添加到词汇库。', 'Add words to the word list after each translation.'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.autoAddToVocab || false)
 				.onChange(async (value) => {
@@ -164,7 +163,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(tr('选词模式', 'Word-selection mode'))
-			.setDesc(tr('开启后，鼠标选择的词汇会自动添加到侧边栏文本框，便于批量处理。', "When on, words you select go into the side panel's text box for batch lookups."))
+			.setDesc(tr('选中的词会自动填进侧栏输入框。', 'Selected words go into the side panel input.'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.wordSelectionMode || false)
 				.onChange(async (value) => {
@@ -174,7 +173,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(tr('复习提醒', 'Review reminders'))
-			.setDesc(tr('启用智能复习提醒功能。', 'Turn on smart review reminders.'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.reviewReminder || false)
 				.onChange(async (value) => {
@@ -185,23 +183,10 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		// --- 输出位置设置 ---
 		new Setting(containerEl).setName(tr('输出位置', 'Output location')).setHeading();
 
-		const outputDesc = containerEl.createDiv({cls: 'polyglot-setting-description'});
-		outputDesc.createEl('p').createEl('strong', { text: tr('优先级说明：', 'Priority:') });
-		const priorityList = outputDesc.createEl('ul');
-		for (const [medal, title, detail] of [
-			['🥇', tr('最高优先级', 'Highest priority'), tr('：侧边栏选择的输出位置', ': the output location chosen in the side panel')],
-			['🥈', tr('语言特定路径', 'Language-specific paths'), tr('：仅在选择"固定文件"或"创建新文件"时使用下方的语言专用路径', ': the per-language paths below, only for "Fixed file" or "New file"')],
-			['🥉', tr('通用路径', 'Default paths'), tr('：其他情况使用此处设置的通用路径', ': the default paths set here, in every other case')],
-		]) {
-			const li = priorityList.createEl('li');
-			li.appendText(`${medal} `);
-			li.createEl('strong', { text: title });
-			li.appendText(detail);
-		}
 
 		new Setting(containerEl)
 			.setName(tr('默认输出位置', 'Default output location'))
-			.setDesc(tr('设置默认的输出位置。侧边栏的选择会覆盖此设置。', 'Where results go by default. The choice in the side panel overrides it.'))
+			.setDesc(tr('侧栏里的选择优先于这里。', 'The choice in the side panel takes precedence.'))
 			.addDropdown(dropdown => dropdown
 				.addOption('sidebar', tr('侧边栏', 'Side panel'))
 				.addOption('newFile', tr('创建新文件', 'New file'))
@@ -245,7 +230,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName(tr('快速翻译', 'Quick translation')).setHeading();
 		new Setting(containerEl)
 			.setName(tr('快速翻译：罗马音标注', 'Quick translation: romaji'))
-			.setDesc(tr('在“→日”快速翻译结果中显示罗马音（仅日语文本时生效）。', 'Show romaji in "→ Japanese" quick translations (Japanese text only).'))
+			.setDesc(tr('只对日语文本生效。', 'Japanese text only.'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.quickTranslationOptions?.showRomaji ?? false)
 				.onChange(async (value) => {
@@ -267,7 +252,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(tr('快速翻译：输出位置', 'Quick translation: output location'))
-			.setDesc(tr('为“→日 / →汉”快速翻译单独设置输出位置。', 'Separate output location for the "→ Japanese / → Chinese" quick translations.'))
 			.addDropdown(dropdown => dropdown
 				.addOption('sidebar', tr('侧边栏', 'Side panel'))
 				.addOption('newFile', tr('创建新文件', 'New file'))
@@ -284,11 +268,10 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		// --- 语言特定路径设置 ---
 		new Setting(containerEl).setName(tr('语言特定路径', 'Language-specific paths')).setHeading();
 
-		const languageDesc = containerEl.createDiv({cls: 'polyglot-setting-description'});
-		const languageNote = languageDesc.createEl('p');
-		languageNote.createEl('strong', { text: tr('说明：', 'Note:') });
-		languageNote.appendText(tr('这些路径仅在选择"固定文件"或"创建新文件"输出模式时使用。', 'These paths are only used with the "Fixed file" or "New file" output.'));
-		languageDesc.createEl('p', { text: tr('如果留空，将使用上方的通用路径设置。', 'Leave them empty to use the default paths above.') });
+		containerEl.createDiv({
+			cls: 'polyglot-setting-description',
+			text: tr('只在输出到“固定文件”或“创建新文件”时使用；留空用上面的路径。', 'Used only for "Fixed file" and "New file"; empty uses the paths above.'),
+		});
 
 		// 日语特定路径设置
 		this.createLanguagePathSettings(containerEl, tr('日语分析', 'Japanese analysis'), 'japaneseOutputSettings');
@@ -460,8 +443,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		containerEl.createEl('p', {
 			cls: 'setting-item-description',
 			text: tr(
-				'查词典和读音不需要 AI。翻译、英语和日语分析要用一个兼容 OpenAI 接口的 AI 服务：选服务商、填密钥，就可以测试。密钥只存在这台设备的插件设置里（加密保存）；换设备或同步库时要重新填。',
-				'Dictionary lookups and pronunciation need no AI. Translation and the English and Japanese analyses use an OpenAI-compatible AI service: pick a provider, paste its key, then test. The key is stored encrypted in this device\'s plugin settings; enter it again on another device.',
+				'查词典和读音不需要 AI。翻译和分析要填一个 AI 密钥；密钥加密存在这台设备上，换设备要重新填。',
+				'Dictionary lookups and pronunciation need no AI. Translation and analysis need an AI key, stored encrypted on this device; enter it again on another device.',
 			),
 		});
 
@@ -471,7 +454,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(tr('添加一套 AI 配置', 'Add an AI configuration'))
-			.setDesc(tr('比如给翻译和分析用不同的服务商。', 'For example, a different provider for translation and analysis.'))
 			.addButton((button) =>
 				button.setButtonText(tr('添加', 'Add')).onClick(async () => {
 					const preset = presetFor('deepseek');
@@ -495,7 +477,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(tr('快速翻译API', 'Quick translation'))
-			.setDesc(tr('选择快速翻译功能使用的API配置', 'Which AI configuration quick translation uses'))
 			.addDropdown(dropdown => {
 				enabledConfigs.forEach(config => {
 					dropdown.addOption(config.name, config.name);
@@ -509,7 +490,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(tr('英语分析API', 'English analysis'))
-			.setDesc(tr('选择英语分析功能使用的API配置', 'Which AI configuration English analysis uses'))
 			.addDropdown(dropdown => {
 				enabledConfigs.forEach(config => {
 					dropdown.addOption(config.name, config.name);
@@ -523,7 +503,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(tr('日语分析API', 'Japanese analysis'))
-			.setDesc(tr('选择日语分析功能使用的API配置', 'Which AI configuration Japanese analysis uses'))
 			.addDropdown(dropdown => {
 				enabledConfigs.forEach(config => {
 					dropdown.addOption(config.name, config.name);
@@ -596,7 +575,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(tr('日语音频文件存储路径', 'Japanese audio folder'))
-			.setDesc(tr('用于保存日语单词或句子音频文件的基本路径。', 'Base folder for saved Japanese word and sentence audio.'))
 			.addText(text => text
 				.setPlaceholder(tr('库内文件夹路径', 'Folder in this vault'))
 				.setValue(this.plugin.settings.japaneseAudioPath || 'Audio/Japanese')
@@ -607,7 +585,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(tr('自动保存音频文件', 'Save audio files automatically'))
-			.setDesc(tr('启用后，语音合成的音频文件会自动保存到指定路径。', 'When on, synthesised audio is saved to the folder above.'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.autoSaveAudio || false)
 				.onChange(async (value) => {
@@ -641,10 +618,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		// 音频格式信息
 		const audioFormatDiv = containerEl.createDiv({ cls: 'polyglot-info-section' });
-		new Setting(audioFormatDiv).setName(tr('音频格式信息', 'Audio format')).setHeading();
-		audioFormatDiv.createEl('p', { text: tr('• 支持格式：mp3、wav、m4a', '• Formats: mp3, wav, m4a') });
-		audioFormatDiv.createEl('p', { text: tr('• 默认格式: MP3 (兼容性最佳)', '• Default: MP3 (works everywhere)') });
-		audioFormatDiv.createEl('p', { text: tr('• 音频文件会自动嵌入到翻译结果中', '• Audio is embedded in the result') });
+		audioFormatDiv.createEl('p', { cls: 'setting-item-description', text: tr('音频会嵌入翻译结果。', 'Audio is embedded in the result.') });
 	}
 
 	private displayUISettings(containerEl: HTMLElement) {
@@ -652,7 +626,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(tr('状态栏显示待复习数', 'Show due reviews in the status bar'))
-			.setDesc(tr('有到期单词时在状态栏显示“待复习”和数量，点一下打开复习页。仅桌面端有状态栏。', 'When words are due, show "to review" and the count in the status bar; click it to open the review. Desktop only.'))
+			.setDesc(tr('点一下打开复习。仅桌面端。', 'Click it to start reviewing. Desktop only.'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.showDueInStatusBar !== false)
 				.onChange(async (value) => {
@@ -675,7 +649,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		
 		new Setting(containerEl)
 			.setName(tr('启用学习进度追踪', 'Track learning progress'))
-			.setDesc(tr('开启后可以追踪单词学习进度，支持间隔重复复习。', 'Track how well you know each word, with spaced review.'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.enableLearningTracker)
 				.onChange(async (value) => {
@@ -841,7 +814,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(tr('启用调试模式', 'Debug mode'))
-			.setDesc(tr('启用后会在控制台输出详细的调试信息', 'Write detailed debug information to the console'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.debugMode || false)
 				.onChange(async (value) => {
@@ -851,7 +823,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(tr('自动保存设置', 'Save settings automatically'))
-			.setDesc(tr('修改设置后自动保存', 'Save as soon as a setting changes'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.autoSave || true)
 				.onChange(async (value) => {
@@ -863,8 +834,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		const devInfo = containerEl.createDiv({ cls: 'polyglot-dev-info' });
 		new Setting(devInfo).setName(tr('插件信息', 'About')).setHeading();
 		devInfo.createEl('p', { text: tr(`版本: ${this.plugin.manifest.version}`, `Version: ${this.plugin.manifest.version}`) });
-		devInfo.createEl('p', { text: tr(`作者: ${this.plugin.manifest.author}`, `Author: ${this.plugin.manifest.author}`) });
-		devInfo.createEl('p', { text: tr(`描述: ${this.plugin.manifest.description}`, `Description: ${this.plugin.manifest.description}`) });
 	}
 
 	private createLanguagePathSettings(containerEl: HTMLElement, title: string, settingsKey: keyof Pick<PolyglotHelperSettings, 'japaneseOutputSettings' | 'englishOutputSettings' | 'quickTranslationOutputSettings'>) {
@@ -874,7 +843,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(tr('新文件存放位置', 'Folder for new files'))
-			.setDesc(tr('当选择"创建新文件"时，此语言专用的文件夹路径。留空则使用通用设置。', 'Folder for this language when "New file" is chosen. Empty uses the default.'))
 			.addText(text => text
 				.setPlaceholder(tr('例如: Japanese/', 'For example Japanese/'))
 				.setValue(settings.newFileLocation)
@@ -885,7 +853,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(tr('固定输出文件', 'Fixed output file'))
-			.setDesc(tr('当选择"固定文件"时，此语言专用的文件路径。留空则使用通用设置。', 'File for this language when "Fixed file" is chosen. Empty uses the default.'))
 			.addText(text => text
 				.setPlaceholder(tr('例如: Japanese/日语学习记录.md', 'For example Japanese/Study log.md'))
 				.setValue(settings.fixedOutputFile)
@@ -906,7 +873,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		// 添加测试按钮
 		new Setting(containerEl)
 			.setName(tr('测试 OpenAI 语音合成', 'Test OpenAI speech'))
-			.setDesc(tr('测试 OpenAI 语音合成 配置是否正确', 'Check that the OpenAI speech settings work'))
 			.addButton(button => button
 				.setButtonText(tr('测试', 'Test'))
 				.onClick(async () => {
@@ -940,7 +906,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		// 添加测试按钮
 		new Setting(containerEl)
 			.setName(tr('测试有道语音合成', 'Test Youdao speech'))
-			.setDesc(tr('测试有道语音合成 配置是否正确', 'Check that the Youdao speech settings work'))
 			.addButton(button => button
 				.setButtonText(tr('测试', 'Test'))
 				.onClick(async () => {
@@ -1066,7 +1031,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		// 添加测试按钮
 		new Setting(containerEl)
 			.setName(tr('测试 Gemini 语音合成', 'Test Gemini speech'))
-			.setDesc(tr('测试 Gemini 语音合成 配置是否正确', 'Check that the Gemini speech settings work'))
 			.addButton(button => button
 				.setButtonText(tr('测试', 'Test'))
 				.onClick(async () => {

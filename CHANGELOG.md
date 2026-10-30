@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.8.1
+
+- Settings show fewer descriptions: rows whose name already says what they do have none. Notes about cost, side effects and which setting wins remain.
+- The side panel's empty state is one line shorter.
+- The README is shorter, with Chinese and Japanese versions in their own files.
+
 ## 1.8.0
 
 - Passes the community directory's code checks with no warnings. The stylesheet no longer uses `!important`, `all: unset` or `:has()`: buttons and fields reset only the properties they need, the plugin marks the first and last row of each settings group itself, and reduced motion turns animations off through a more specific selector. Nothing looks different.
@@ -25,7 +31,7 @@
 - The language row is one segmented control (日语 · 英语 · 译日语) with an options button, plus a separate 翻译成中文 button. The row of small icons (force refresh, read aloud, voice options) and 跳到上次输出位置 and 设置 moved into the ··· menu next to the title. Where results go (side panel, replace selection, append, new note, fixed file) is a capsule picker inside the input box instead of a native dropdown.
 - The 学习 page opens on one card with today's due, English and Japanese counts and 开始复习, followed by the list of words due today. 只复习英语／日语 and the vocabulary list are in the card's ··· menu.
 - No more "Polyglot Helper is now active!" notice on every start.
-- **Plugin ID is now `polyglot-helper`.** The Obsidian community directory does not allow "obsidian" in an ID. On first start the new version imports settings, API keys and both vocabulary lists from the old `obsidian-polyglot-helper` folder. See [Upgrading from 1.5 or earlier](#upgrading-from-15-or-earlier).
+- **Plugin ID is now `polyglot-helper`.** The Obsidian community directory does not allow "obsidian" in an ID. On first start the new version imports settings, API keys and both vocabulary lists from the old `obsidian-polyglot-helper` folder. See [Upgrading from 1.5 or earlier](README.md#install).
 - **Export your vocabulary.** "导出词库为闪卡笔记" writes a `#flashcards/polyglot` note that the Spaced Repetition plugin can review (`word::reading · meaning`); exporting again keeps its review schedule. "导出词库为 Anki 导入文件" writes a tab-separated file with tags for Anki's File → Import. Folder in Settings → 学习与界面.
 - **Due words in the status bar.** "待复习 N" appears when words are due; click it to start reviewing. Can be turned off.
 - Settings use Obsidian's native section headings; floating panels and the review card use theme classes instead of inline styles; command names no longer start with emoji; the management panel's ribbon icon is a library, not a gear.

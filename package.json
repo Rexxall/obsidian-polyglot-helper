@@ -1,6 +1,6 @@
 {
   "name": "obsidian-polyglot-helper",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "description": "Look up English and Japanese words in your notes and get a study card with meaning, reading, examples and audio, kept in a word list you review.",
   "main": "src/main.ts",
   "scripts": {
