@@ -254,6 +254,7 @@ export interface ReviewRecord {
 
 // 日语词汇项 - 标题使用原文（中文），日文作为复习单词
 export interface JapaneseVocabularyItem {
+	id?: string; // 稳定 ID，导出时用来对应同一张卡
 	originalText: string; // 原文（中文）- 用作标题
 	japaneseText: string; // 日文 - 用作复习单词
 	reading?: string; // 读音
@@ -272,6 +273,7 @@ export interface JapaneseVocabularyItem {
 
 // 英语词汇项
 export interface EnglishVocabularyItem {
+	id?: string; // 稳定 ID，导出时用来对应同一张卡
 	word: string; // 英文单词
 	translation: string; // 中文翻译
 	phonetics?: string; // 音标

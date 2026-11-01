@@ -33,7 +33,8 @@ English · [中文](README.zh-CN.md) · [日本語](README.ja.md)
 - **Quick translation** of a selection into Chinese or Japanese.
 - **Where results go:** the side panel, the selection, the end of the note, a new note or a fixed file, with separate paths per language.
 - **Word list:** one click adds a word with the note and sentence it came from; adding it again merges. Review on a schedule you can change (default 1, 3, 7, 14, 30, 90, 180 days); the status bar shows how many are due.
-- **Export** to a Spaced Repetition flashcard note (re-exporting keeps its schedule) or an Anki import file.
+- **Several meanings:** adding a word you already saved lets you put this sentence under an existing meaning or keep it as a new one, reviewed on its own.
+- **Export** to a Spaced Repetition flashcard note or an Anki import file. Each card has a stable id and a link back to its note, so re-exporting keeps the schedule and re-importing into Anki updates the same cards.
 - **Cache:** the same lookup costs nothing the second time; the cleanup panel only touches the plugin's own cache.
 
 ## Screens

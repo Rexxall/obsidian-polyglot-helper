@@ -7,6 +7,7 @@ import type { DictionaryInfo } from "./types";
 
 import { fire } from "./shared/fire";
 import { tr } from './shared/i18n';
+import { showSenseMenu } from './ui/sense-menu';
 interface LookupResult {
     reading: string;
     pos: string;
@@ -77,7 +78,7 @@ export class LookupPopover {
 
         const acts = this.el.createDiv({ cls: 'polyglot-pop-actions' });
         const save = acts.createEl('button', { cls: 'mod-cta polyglot-primary', text: tr('收进生词本', 'Add to word list') });
-        save.addEventListener('click', fire(() => this.save(save)));
+        save.addEventListener('click', fire((event: MouseEvent) => this.save(save, event)));
         const full = acts.createEl('button', { cls: 'polyglot-link', text: tr('完整词条 →', 'Full entry →') });
         full.addEventListener('click', () => {
             this.close();
@@ -249,7 +250,7 @@ export class LookupPopover {
         }
     }
 
-    private async save(button: HTMLButtonElement) {
+    private async save(button: HTMLButtonElement, event: MouseEvent) {
         const r = this.result;
         if (!r) {
             new Notice(tr('还没查到释义，稍等一下再收', 'No meaning yet; wait a moment before adding it'));
@@ -260,26 +261,28 @@ export class LookupPopover {
             settings.enableLearningTracker = true;
             new Notice(tr('已开启生词本', 'Word list turned on'));
         }
-        const today = new Date().toISOString().slice(0, 10);
+        // 本地日期：toISOString 是 UTC，在日本早上 9 点前会记成前一天
+        const now = new Date();
+        const today = [now.getFullYear(), now.getMonth() + 1, now.getDate()].map((part) => String(part).padStart(2, '0')).join('-');
         const note = `收自 ${this.file ? `[[${this.file.basename}]]` : '查词'} · ${today}`;
-        const meaning = r.meaning || r.definitions[0] || '';
         const tracker = this.plugin.learningTracker;
-        // 已经收过的词不再覆盖，免得冲掉复习记录
-        const exists = this.japanese
-            ? !!settings.japaneseVocabItems[`${this.word}_${this.word}`]
-            : !!settings.englishVocabItems[this.word.toLowerCase()];
-        if (exists) {
-            button.setText(tr('已在生词本里', 'Already in your word list'));
+        const add = async (meaning: string, target?: string) => {
+            if (this.japanese) {
+                await tracker.addJapaneseVocabularyItem(this.word, this.word, r.reading, meaning, note, [this.sentence], ['查词小卡'], target);
+            } else {
+                await tracker.addEnglishVocabularyItem(this.word.toLowerCase(), meaning, r.reading, r.pos, r.definitions, note, [this.sentence], ['查词小卡'], target);
+            }
+            button.setText(tr('已收进生词本', 'Added to your word list'));
             button.disabled = true;
+        };
+        const store: Record<string, { translation: string }> = this.japanese ? settings.japaneseVocabItems : settings.englishVocabItems;
+        const base = this.japanese ? `${this.word}_${this.word}` : this.word.toLowerCase();
+        // 已经收过：选并入哪个义项，或另存一个义项；不覆盖原来的释义和复习记录
+        if (store[base]) {
+            showSenseMenu(event, store, base, [r.inContext, r.meaning, ...r.definitions], (target, meaning) => void add(meaning, target));
             return;
         }
-        if (this.japanese) {
-            await tracker.addJapaneseVocabularyItem(this.word, this.word, r.reading, meaning, note, [this.sentence], ['查词小卡']);
-        } else {
-            await tracker.addEnglishVocabularyItem(this.word.toLowerCase(), meaning, r.reading, r.pos, r.definitions, note, [this.sentence], ['查词小卡']);
-        }
-        button.setText(tr('已收进生词本', 'Added to your word list'));
-        button.disabled = true;
+        await add(r.inContext || r.meaning || r.definitions[0] || '');
     }
 }
 

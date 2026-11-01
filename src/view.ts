@@ -12,6 +12,7 @@ import { errorMessage } from './shared/errors';
 import { asTFile } from './file-utils';
 import { classifyAiFailure } from './ai/providers';
 import { tr } from './shared/i18n';
+import { showSenseMenu } from './ui/sense-menu';
 export const POLYGLOT_HELPER_VIEW_TYPE = "polyglot-helper-view";
 
 export class PolyglotHelperView extends ItemView {
@@ -410,9 +411,8 @@ export class PolyglotHelperView extends ItemView {
             add.toggleClass('is-done', done);
         };
         setAdded(!!saved);
-        add.addEventListener('click', fire(async () => {
-            if (add.hasClass('is-done')) return;
-            await this.addToVocabulary(result, historyItem, card);
+        add.addEventListener('click', fire(async (event: MouseEvent) => {
+            await this.addToVocabulary(result, historyItem, card, add.hasClass('is-done') ? event : undefined);
             setAdded(true);
         }));
 
@@ -1491,7 +1491,8 @@ export class PolyglotHelperView extends ItemView {
     /**
      * 添加到词汇库
      */
-    private async addToVocabulary(result: string, historyItem?: HistoryItem, card?: WordCard): Promise<void> {
+    /** `senseEvent`：词已经在生词本里时，在这里弹出“加到哪个义项／新义项”。 */
+    private async addToVocabulary(result: string, historyItem?: HistoryItem, card?: WordCard, senseEvent?: MouseEvent): Promise<void> {
         const word = (historyItem?.query || this.lastQuery?.text || this.queryInput.getValue()).trim();
         if (!word) {
             new Notice(tr('❌ 无法确定要添加的词汇', '❌ Cannot tell which word to add'));
@@ -1511,19 +1512,29 @@ export class PolyglotHelperView extends ItemView {
             .slice(0, 3);
         const tracker = this.plugin.learningTracker;
         const { note, examples } = this.collectionContext(card?.headword || word);
-        if (card && !japanese) {
-            // 词卡已经拆好了词头、音标、词性与释义，直接用
-            const senses = card.sections.flatMap(section => section.groups.flatMap(group => group.lines.map(line => line.text))).slice(0, 3);
-            await tracker.addEnglishVocabularyItem(card.headword.toLowerCase(), card.gloss || senses[0] || '', card.phonetic, card.pos.join(', '), senses, note, examples, ['查词']);
-            new Notice(tr(`已把 "${card.headword}" 加入生词本`, `Added "${card.headword}" to the word list`));
+        const englishWord = (card && !japanese ? card.headword : word).toLowerCase();
+        // 词卡已经拆好了词头、音标、词性与释义，直接用
+        const senses = card && !japanese
+            ? card.sections.flatMap(section => section.groups.flatMap(group => group.lines.map(line => line.text))).slice(0, 3)
+            : definitions;
+        const firstMeaning = (card && !japanese ? card.gloss : '') || senses[0] || '';
+        const save = async (meaning: string, target?: string) => {
+            if (japanese) {
+                await tracker.addJapaneseVocabularyItem(word, word, '', meaning, note, examples, ['查词'], target);
+            } else if (card) {
+                await tracker.addEnglishVocabularyItem(englishWord, meaning, card.phonetic, card.pos.join(', '), senses, note, examples, ['查词'], target);
+            } else {
+                await tracker.addEnglishVocabularyItem(englishWord, meaning, '', '', senses, note, examples, ['查词'], target);
+            }
+        };
+        const store: Record<string, { translation: string }> = japanese ? settings.japaneseVocabItems : settings.englishVocabItems;
+        const base = japanese ? `${word}_${word}` : englishWord;
+        if (senseEvent && store[base]) {
+            showSenseMenu(senseEvent, store, base, [firstMeaning, ...senses], (target, meaning) => void save(meaning, target));
             return;
         }
-        if (japanese) {
-            await tracker.addJapaneseVocabularyItem(word, word, '', definitions[0] ?? '', note, examples, ['查词']);
-        } else {
-            await tracker.addEnglishVocabularyItem(word.toLowerCase(), definitions[0] ?? '', '', '', definitions, note, examples, ['查词']);
-        }
-        new Notice(tr(`✅ "${word}" 已添加到词汇库`, `✅ "${word}" added to the word list`));
+        await save(firstMeaning);
+        new Notice(tr(`已把 "${card?.headword || word}" 加入生词本`, `Added "${card?.headword || word}" to the word list`));
     }
 
     /**

@@ -39,6 +39,7 @@ import { CacheCleanupModal } from './cache-cleanup-modal';
 import { LookupPopover, sentenceAround } from './lookup-popover';
 import { readLegacyPluginData } from './legacy-migration';
 import { collectCards, toAnkiText, toFlashcardNote } from './vocab-export';
+import { ensureIds } from './vocab-senses';
 
 import { fire } from './shared/fire';
 import { errorMessage } from './shared/errors';
@@ -1798,6 +1799,11 @@ Input text: "${inputText}"`;
 				console.debug('Polyglot: 词汇数据已迁移到分离的词库');
 			}
 		}
+
+		// 1.9.0：每个条目一个稳定 ID，导出靠它对应同一张卡
+		if (ensureIds(this.settings.englishVocabItems, 'en') + ensureIds(this.settings.japaneseVocabItems, 'ja') > 0) {
+			await this.saveSettings();
+		}
 	}
 
 	async saveSettings() {
@@ -1842,9 +1848,9 @@ Input text: "${inputText}"`;
 		if (!vault.getAbstractFileByPath(folder)) await vault.createFolder(folder);
 		const existing = vault.getAbstractFileByPath(path);
 		if (existing instanceof TFile) {
-			await vault.process(existing, previous => format === 'flashcards' ? toFlashcardNote(cards, previous) : toAnkiText(cards));
+			await vault.process(existing, previous => format === 'flashcards' ? toFlashcardNote(cards, previous) : toAnkiText(cards, vault.getName()));
 		} else {
-			await vault.create(path, format === 'flashcards' ? toFlashcardNote(cards) : toAnkiText(cards));
+			await vault.create(path, format === 'flashcards' ? toFlashcardNote(cards) : toAnkiText(cards, vault.getName()));
 		}
 		new Notice(tr(`已导出 ${cards.length} 张卡片到 ${path}`, `Exported ${cards.length} cards to ${path}`));
 		if (format === 'flashcards') {

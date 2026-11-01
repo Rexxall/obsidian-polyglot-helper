@@ -1505,11 +1505,7 @@ class JapaneseReviewModal extends Modal {
                 cls: rating.cls
             });
             btn.addEventListener('click', fire(async () => {
-                await this.plugin.learningTracker.recordJapaneseReview(
-                    this.item.originalText,
-                    this.item.japaneseText,
-                    rating.value
-                );
+                await this.plugin.learningTracker.recordJapaneseReview(this.item, rating.value);
                 new Notice(tr(`已记录复习结果: ${rating.text}`, `Review saved: ${rating.text}`));
                 this.close();
                 this.onSubmit();
@@ -1593,7 +1589,7 @@ class EnglishReviewModal extends Modal {
                 cls: rating.cls
             });
             btn.addEventListener('click', fire(async () => {
-                await this.plugin.learningTracker.recordEnglishReview(this.item.word, rating.value);
+                await this.plugin.learningTracker.recordEnglishReview(this.item, rating.value);
                 new Notice(tr(`已记录复习结果: ${rating.text}`, `Review saved: ${rating.text}`));
                 this.close();
                 this.onSubmit();
@@ -1715,7 +1711,7 @@ ManagementPanelView.prototype.renderJapaneseVocabulary = function(this: Manageme
         deleteBtn.addEventListener('click', fire(async () => {
             const confirmed = await confirmAction(this.app, tr(`确定要删除日语词汇 "${item.originalText}" 吗？`, `Delete the Japanese entry "${item.originalText}"?`));
             if (confirmed) {
-                await this.plugin.learningTracker.removeJapaneseVocabularyItem(item.originalText, item.japaneseText);
+                await this.plugin.learningTracker.removeJapaneseVocabularyItem(item);
                 this.renderJapaneseVocabulary(container);
             }
         }));
@@ -1832,7 +1828,7 @@ ManagementPanelView.prototype.renderEnglishVocabulary = function(this: Managemen
         deleteBtn.addEventListener('click', fire(async () => {
             const confirmed = await confirmAction(this.app, tr(`确定要删除英语单词 "${item.word}" 吗？`, `Delete the English word "${item.word}"?`));
             if (confirmed) {
-                await this.plugin.learningTracker.removeEnglishVocabularyItem(item.word);
+                await this.plugin.learningTracker.removeEnglishVocabularyItem(item);
                 this.renderEnglishVocabulary(container);
             }
         }));
@@ -1920,7 +1916,7 @@ ManagementPanelView.prototype.renderFavoriteVocabulary = function(this: Manageme
 
             const unfavoriteBtn = actionsDiv.createEl('button', { text: '💔', cls: 'polyglot-btn-icon' });
             unfavoriteBtn.addEventListener('click', fire(async () => {
-                await this.plugin.learningTracker.updateJapaneseVocabularyItem(item.originalText, item.japaneseText, {
+                await this.plugin.learningTracker.updateJapaneseVocabularyItem(item, {
                     isFavorite: false
                 });
                 this.renderFavoriteVocabulary(container);
@@ -1968,7 +1964,7 @@ ManagementPanelView.prototype.renderFavoriteVocabulary = function(this: Manageme
 
             const unfavoriteBtn = actionsDiv.createEl('button', { text: '💔', cls: 'polyglot-btn-icon' });
             unfavoriteBtn.addEventListener('click', fire(async () => {
-                await this.plugin.learningTracker.updateEnglishVocabularyItem(item.word, {
+                await this.plugin.learningTracker.updateEnglishVocabularyItem(item, {
                     isFavorite: false
                 });
                 this.renderFavoriteVocabulary(container);

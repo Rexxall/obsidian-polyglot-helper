@@ -27,6 +27,8 @@ export class ReviewSession {
     private index = 0;
     private reviewed = 0;
     private showingAnswer = false;
+    /** 正面已经给出原句（多义项的词），答案里不再重复。 */
+    private cueShown = false;
     private startedAt = 0;
     private scope: Scope = 'all';
     private onKey = (e: KeyboardEvent) => this.handleKey(e);
@@ -167,6 +169,9 @@ export class ReviewSession {
             play.addEventListener('click', fire(() => this.play(item, kind)));
         }
         if (reading) card.createDiv({ cls: 'polyglot-flash-reading', text: kind === 'japanese' ? reading : `/${reading.replace(/^\/|\/$/g, '')}/` });
+        // 同一个词存了几个义项：正面给出原句，问的是这句里的意思
+        this.cueShown = kind !== 'legacy' && !!item.examples?.[0] && this.tracker.hasOtherSenses(item);
+        if (this.cueShown) card.createDiv({ cls: 'polyglot-flash-example', text: item.examples?.[0] });
 
         const answer = card.createDiv({ cls: 'polyglot-flash-answer' });
         const reveal = answer.createEl('button', { text: tr('显示答案', 'Show answer'), cls: 'polyglot-secondary' });
@@ -197,7 +202,7 @@ export class ReviewSession {
                 answer.createDiv({ cls: 'polyglot-muted', text: tr(`原文：${original}`, `Source: ${original}`) });
             }
         }
-        const example = item.examples?.[0];
+        const example = this.cueShown ? '' : item.examples?.[0];
         if (example) answer.createDiv({ cls: 'polyglot-flash-example', text: example });
         const source = sourceNote(item.notes);
         if (source) answer.createDiv({ cls: 'polyglot-muted', text: source });
@@ -267,10 +272,9 @@ export class ReviewSession {
         const next = !(item as EnglishVocabularyItem).isFavorite;
         try {
             if (kind === 'japanese') {
-                const jp = item as JapaneseVocabularyItem;
-                await this.tracker.updateJapaneseVocabularyItem(jp.originalText, jp.japaneseText, { isFavorite: next });
+                await this.tracker.updateJapaneseVocabularyItem(item as JapaneseVocabularyItem, { isFavorite: next });
             } else {
-                await this.tracker.updateEnglishVocabularyItem((item as EnglishVocabularyItem).word, { isFavorite: next });
+                await this.tracker.updateEnglishVocabularyItem(item as EnglishVocabularyItem, { isFavorite: next });
             }
         } catch (e) {
             new Notice(errorMessage(e));

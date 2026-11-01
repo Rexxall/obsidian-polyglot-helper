@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **One word, several meanings.** Adding a word that is already in the word list asks where this sentence goes: into one of the meanings you saved, or as a new meaning (the meaning in this sentence comes first). Each meaning has its own reviews, and its card shows the sentence on the front so you know which meaning is asked.
+- **Exports keep their identity.** Every word has a stable id. The flashcard note marks each card with it, so re-exporting keeps each card's Spaced Repetition schedule even after you edit the meaning. The Anki file puts the id in Anki's GUID column, so importing it again updates the same notes instead of adding copies. The first import of this format into a deck made from an older Anki export can still add copies once.
+- Each card links back to the note the word was collected from: a `[[link]]` in the flashcard note, an `obsidian://` link in Anki.
+- Words already in your list get their id on first start, the same id on every synced device.
+- A word added from the lookup card records the local date of collection; before, it could show the previous day early in the morning.
+
 ## 1.8.2
 
 - Settings show fewer descriptions: rows whose name already says what they do have none. Notes about cost, side effects and which setting wins remain.

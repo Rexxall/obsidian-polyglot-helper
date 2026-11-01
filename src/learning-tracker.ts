@@ -1,4 +1,5 @@
 import { mergeVocabEntry } from './vocab-merge';
+import { baseKey, keyOf, nextSenseKey, senseKeys, stableId } from './vocab-senses';
 import { App, Notice } from "obsidian";
 import { PolyglotHelperSettings, VocabularyItem, JapaneseVocabularyItem, EnglishVocabularyItem, ReviewRecord } from "./types";
 
@@ -706,21 +707,27 @@ export class LearningTracker {
         translation: string,
         notes: string = '',
         examples: string[] = [],
-        tags: string[] = []
+        tags: string[] = [],
+        /** 并入哪个义项（已有条目的 key），或 'new' 另存一个义项；不传时并入这个词的第一个义项。 */
+        target?: string
     ): Promise<void> {
         if (!this.settings.enableLearningTracker) return;
 
-        const key = `${originalText}_${japaneseText}`;
+        const base = `${originalText}_${japaneseText}`;
+        const store = this.settings.japaneseVocabItems;
+        const key = target === 'new' ? nextSenseKey(store, base) : target && store[target] ? target : base;
 
         // 如果词汇已存在，只更新部分字段
-        if (this.settings.japaneseVocabItems[key]) {
-            const existingItem = mergeVocabEntry(this.settings.japaneseVocabItems[key], { translation, notes, examples, tags });
+        if (store[key]) {
+            const existingItem = mergeVocabEntry(store[key], { translation, notes, examples, tags });
             if (reading && !existingItem.reading) existingItem.reading = reading;
-            this.settings.japaneseVocabItems[key] = existingItem;
+            store[key] = existingItem;
             new Notice(tr(`已更新日语词汇 "${originalText}"`, `Updated Japanese entry "${originalText}"`));
         } else {
             // 创建新词汇条目
+            const createdAt = Date.now();
             const newItem: JapaneseVocabularyItem = {
+                id: stableId('ja', key, createdAt),
                 originalText,
                 japaneseText,
                 reading,
@@ -728,14 +735,14 @@ export class LearningTracker {
                 notes,
                 examples,
                 tags,
-                createdAt: Date.now(),
+                createdAt,
                 reviewCount: 0,
                 difficulty: 2, // 默认中等难度
                 reviewHistory: [],
-                nextReview: Date.now() // 设置为立即可复习
+                nextReview: createdAt // 设置为立即可复习
             };
 
-            this.settings.japaneseVocabItems[key] = newItem;
+            store[key] = newItem;
             this.settings.learningStats.totalWords++;
 
             // 更新每日统计
@@ -756,21 +763,28 @@ export class LearningTracker {
         definitions: string[] = [],
         notes: string = '',
         examples: string[] = [],
-        tags: string[] = []
+        tags: string[] = [],
+        /** 并入哪个义项（已有条目的 key），或 'new' 另存一个义项；不传时并入这个词的第一个义项。 */
+        target?: string
     ): Promise<void> {
         if (!this.settings.enableLearningTracker) return;
 
+        const store = this.settings.englishVocabItems;
+        const key = target === 'new' ? nextSenseKey(store, word) : target && store[target] ? target : word;
+
         // 如果词汇已存在，只更新部分字段
-        if (this.settings.englishVocabItems[word]) {
-            const existingItem = mergeVocabEntry(this.settings.englishVocabItems[word], { translation, notes, examples, tags });
+        if (store[key]) {
+            const existingItem = mergeVocabEntry(store[key], { translation, notes, examples, tags });
             if (phonetics && !existingItem.phonetics) existingItem.phonetics = phonetics;
             if (partOfSpeech && !existingItem.partOfSpeech) existingItem.partOfSpeech = partOfSpeech;
             if (definitions.length > 0 && !existingItem.definitions?.length) existingItem.definitions = definitions;
-            this.settings.englishVocabItems[word] = existingItem;
+            store[key] = existingItem;
             new Notice(tr(`已更新英语单词 "${word}"`, `Updated English word "${word}"`));
         } else {
             // 创建新词汇条目
+            const createdAt = Date.now();
             const newItem: EnglishVocabularyItem = {
+                id: stableId('en', key, createdAt),
                 word,
                 translation,
                 phonetics,
@@ -779,14 +793,14 @@ export class LearningTracker {
                 notes,
                 examples,
                 tags,
-                createdAt: Date.now(),
+                createdAt,
                 reviewCount: 0,
                 difficulty: 2, // 默认中等难度
                 reviewHistory: [],
-                nextReview: Date.now() // 设置为立即可复习
+                nextReview: createdAt // 设置为立即可复习
             };
 
-            this.settings.englishVocabItems[word] = newItem;
+            store[key] = newItem;
             this.settings.learningStats.totalWords++;
 
             // 更新每日统计
@@ -859,8 +873,16 @@ export class LearningTracker {
      */
     kindOf(item: VocabularyItem | JapaneseVocabularyItem | EnglishVocabularyItem): 'japanese' | 'english' | 'legacy' {
         if ('japaneseText' in item) return 'japanese';
-        if (this.settings.englishVocabItems[item.word] === item) return 'english';
+        if (keyOf(this.settings.englishVocabItems, item as EnglishVocabularyItem)) return 'english';
         return 'legacy';
+    }
+
+    /** 这个词还存了别的义项吗？有的话复习时把原句放在正面，提示问的是哪个意思。 */
+    hasOtherSenses(item: JapaneseVocabularyItem | EnglishVocabularyItem): boolean {
+        const store: Record<string, JapaneseVocabularyItem | EnglishVocabularyItem> =
+            'japaneseText' in item ? this.settings.japaneseVocabItems : this.settings.englishVocabItems;
+        const key = keyOf(store, item);
+        return !!key && senseKeys(store, baseKey(key)).length > 1;
     }
 
     /**
@@ -897,10 +919,9 @@ export class LearningTracker {
     async recordItemReview(item: VocabularyItem | JapaneseVocabularyItem | EnglishVocabularyItem, performance: number, timeSpent?: number): Promise<void> {
         const kind = this.kindOf(item);
         if (kind === 'japanese') {
-            const jp = item as JapaneseVocabularyItem;
-            await this.recordJapaneseReview(jp.originalText, jp.japaneseText, performance, timeSpent);
+            await this.recordJapaneseReview(item as JapaneseVocabularyItem, performance, timeSpent);
         } else if (kind === 'english') {
-            await this.recordEnglishReview((item as EnglishVocabularyItem).word, performance, timeSpent);
+            await this.recordEnglishReview(item as EnglishVocabularyItem, performance, timeSpent);
         } else {
             await this.recordReview((item as VocabularyItem).word, performance, timeSpent);
         }
@@ -923,11 +944,11 @@ export class LearningTracker {
     /**
      * 记录日语词汇复习结果
      */
-    async recordJapaneseReview(originalText: string, japaneseText: string, performance: number, timeSpent?: number): Promise<void> {
+    async recordJapaneseReview(entry: JapaneseVocabularyItem, performance: number, timeSpent?: number): Promise<void> {
         if (!this.settings.enableLearningTracker) return;
 
-        const key = `${originalText}_${japaneseText}`;
-        const item = this.settings.japaneseVocabItems[key];
+        const key = keyOf(this.settings.japaneseVocabItems, entry);
+        const item = key ? this.settings.japaneseVocabItems[key] : undefined;
         if (!item) return;
 
         // 记录本次复习
@@ -960,10 +981,11 @@ export class LearningTracker {
     /**
      * 记录英语词汇复习结果
      */
-    async recordEnglishReview(word: string, performance: number, timeSpent?: number): Promise<void> {
+    async recordEnglishReview(entry: EnglishVocabularyItem, performance: number, timeSpent?: number): Promise<void> {
         if (!this.settings.enableLearningTracker) return;
 
-        const item = this.settings.englishVocabItems[word];
+        const key = keyOf(this.settings.englishVocabItems, entry);
+        const item = key ? this.settings.englishVocabItems[key] : undefined;
         if (!item) return;
 
         // 记录本次复习
@@ -993,32 +1015,35 @@ export class LearningTracker {
         await this.saveSettings();
     }
 
-    async updateJapaneseVocabularyItem(originalText: string, japaneseText: string,
+    async updateJapaneseVocabularyItem(entry: JapaneseVocabularyItem,
         patch: Partial<Pick<JapaneseVocabularyItem, 'isFavorite' | 'difficulty'>>): Promise<void> {
-        const item = this.settings.japaneseVocabItems[`${originalText}_${japaneseText}`];
+        const key = keyOf(this.settings.japaneseVocabItems, entry);
+        const item = key ? this.settings.japaneseVocabItems[key] : undefined;
         if (!item) throw new Error('词汇已不存在，请刷新词库。');
         Object.assign(item, patch);
         await this.saveSettings();
     }
 
-    async updateEnglishVocabularyItem(word: string,
+    async updateEnglishVocabularyItem(entry: EnglishVocabularyItem,
         patch: Partial<Pick<EnglishVocabularyItem, 'isFavorite' | 'difficulty'>>): Promise<void> {
-        const item = this.settings.englishVocabItems[word];
+        const key = keyOf(this.settings.englishVocabItems, entry);
+        const item = key ? this.settings.englishVocabItems[key] : undefined;
         if (!item) throw new Error('词汇已不存在，请刷新词库。');
         Object.assign(item, patch);
         await this.saveSettings();
     }
 
-    async removeJapaneseVocabularyItem(originalText: string, japaneseText: string): Promise<void> {
-        const key = `${originalText}_${japaneseText}`;
-        if (!this.settings.japaneseVocabItems[key]) return;
+    async removeJapaneseVocabularyItem(entry: JapaneseVocabularyItem): Promise<void> {
+        const key = keyOf(this.settings.japaneseVocabItems, entry);
+        if (!key) return;
         delete this.settings.japaneseVocabItems[key];
         this.settings.learningStats.totalWords = Math.max(0, this.settings.learningStats.totalWords - 1);
         await this.saveSettings();
     }
-    async removeEnglishVocabularyItem(word: string): Promise<void> {
-        if (!this.settings.englishVocabItems[word]) return;
-        delete this.settings.englishVocabItems[word];
+    async removeEnglishVocabularyItem(entry: EnglishVocabularyItem): Promise<void> {
+        const key = keyOf(this.settings.englishVocabItems, entry);
+        if (!key) return;
+        delete this.settings.englishVocabItems[key];
         this.settings.learningStats.totalWords = Math.max(0, this.settings.learningStats.totalWords - 1);
         await this.saveSettings();
     }

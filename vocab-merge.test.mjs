@@ -55,5 +55,6 @@ test('exported cards carry the original sentence and where it came from', () => 
     {},
   );
   assert.equal(cards[0].front, 'postpone');
-  assert.match(cards[0].back, /推迟 · “They postponed the vote\.”（收自 \[\[Meeting notes\]\]）$/);
+  assert.match(cards[0].back, /推迟 · “They postponed the vote\.”$/);
+  assert.equal(cards[0].source, 'Meeting notes');
 });
