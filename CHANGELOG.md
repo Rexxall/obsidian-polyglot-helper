@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.9.0
 
 - **One word, several meanings.** Adding a word that is already in the word list asks where this sentence goes: into one of the meanings you saved, or as a new meaning (the meaning in this sentence comes first). Each meaning has its own reviews, and its card shows the sentence on the front so you know which meaning is asked.
 - **Exports keep their identity.** Every word has a stable id. The flashcard note marks each card with it, so re-exporting keeps each card's Spaced Repetition schedule even after you edit the meaning. The Anki file puts the id in Anki's GUID column, so importing it again updates the same notes instead of adding copies. The first import of this format into a deck made from an older Anki export can still add copies once.
