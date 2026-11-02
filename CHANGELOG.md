@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Releases are built by a GitHub workflow from the version tag, which checks that the tag matches every version file, then attests `main.js`, `manifest.json` and `styles.css` with signed build provenance. The README shows how to verify a download with `gh attestation verify`.
+- Every push and pull request runs lint, Stylelint, the tests and the build.
+
 ## 1.9.0
 
 - **One word, several meanings.** Adding a word that is already in the word list asks where this sentence goes: into one of the meanings you saved, or as a new meaning (the meaning in this sentence comes first). Each meaning has its own reviews, and its card shows the sentence on the front so you know which meaning is asked.

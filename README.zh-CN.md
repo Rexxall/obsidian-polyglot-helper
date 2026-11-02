@@ -56,6 +56,8 @@
 3. 在插件设置里选服务商、填密钥、点 **测试**。
 4. 在侧栏查词，或在命令面板运行“英语分析”“日语分析”。常用的话可以设快捷键。
 
+从 1.9.1 起，Release 里的三个文件都由发布工作流附上签名的构建来源证明（build provenance attestation）。核对下载的文件：`gh attestation verify main.js --repo Rexxall/obsidian-polyglot-helper`。
+
 **从 1.5 及更早版本升级：** 插件 ID 改为 `polyglot-helper`。先停用旧版再启用新版，新版首次启动会自动导入旧目录里的设置、API 密钥和两个生词本；确认无误后删除旧版，快捷键需要重设一次。
 
 ## AI 服务

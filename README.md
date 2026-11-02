@@ -54,6 +54,8 @@ English · [中文](README.zh-CN.md) · [日本語](README.ja.md)
 
 Download `main.js`, `manifest.json` and `styles.css` from the [latest release](https://github.com/Rexxall/obsidian-polyglot-helper/releases/latest) into `<your vault>/.obsidian/plugins/polyglot-helper/`, then enable **Polyglot Helper** in **Settings → Community plugins**. Once the plugin is listed, install it from **Settings → Community plugins → Browse** instead.
 
+From 1.9.1 on, the three release files carry a signed build provenance attestation from the release workflow. To check a download: `gh attestation verify main.js --repo Rexxall/obsidian-polyglot-helper`.
+
 **Upgrading from 1.5 or earlier.** The plugin ID changed from `obsidian-polyglot-helper` to `polyglot-helper`. Turn the old plugin off, then the new one on; do not run both, they register the same panes. On first start the new version copies the old settings, API keys and both word lists with their review history, and leaves the old folder untouched. The lookup cache is not carried over, and hotkeys need assigning again.
 
 ## AI services

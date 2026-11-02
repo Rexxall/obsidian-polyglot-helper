@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Type-aware ESLint with no warnings allowed, then Stylelint on styles.css.
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      # main.js is not committed; a release builds it from the tag. This proves the build works.
+      - name: Build
+        run: npm run build
