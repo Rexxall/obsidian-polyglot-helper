@@ -4,6 +4,7 @@
 
 - Releases are built by a GitHub workflow from the version tag, which checks that the tag matches every version file, then attests `main.js`, `manifest.json` and `styles.css` with signed build provenance. The README shows how to verify a download with `gh attestation verify`.
 - Every push and pull request runs lint, Stylelint, the tests and the build.
+- The first word added to a new word list now says where it went and how to review it (“Saved to your word list. Click “to review” in the status bar to review it.”), instead of “Word list turned on”.
 
 ## 1.9.0
 

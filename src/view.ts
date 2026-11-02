@@ -13,6 +13,7 @@ import { asTFile } from './file-utils';
 import { classifyAiFailure } from './ai/providers';
 import { tr } from './shared/i18n';
 import { showSenseMenu } from './ui/sense-menu';
+import { FIRST_WORD_NOTICE } from './shared/notices';
 export const POLYGLOT_HELPER_VIEW_TYPE = "polyglot-helper-view";
 
 export class PolyglotHelperView extends ItemView {
@@ -1504,7 +1505,8 @@ export class PolyglotHelperView extends ItemView {
 
         // Same store as the lookup popover and the review page.
         const settings = this.plugin.settings;
-        if (!settings.enableLearningTracker) settings.enableLearningTracker = true;
+        const firstWord = !settings.enableLearningTracker;
+        if (firstWord) settings.enableLearningTracker = true;
         // Definition bullets sit inside callouts ("> - ..."); skip the bold field labels.
         const definitions = result.split('\n')
             .map(line => line.replace(/^(\s*>)+/, '').match(/^\s*-\s+(?!\*\*)(.+)/)?.[1]?.replace(/[*_`]/g, '').trim() ?? '')
@@ -1534,7 +1536,9 @@ export class PolyglotHelperView extends ItemView {
             return;
         }
         await save(firstMeaning);
-        new Notice(tr(`已把 "${card?.headword || word}" 加入生词本`, `Added "${card?.headword || word}" to the word list`));
+        new Notice(firstWord
+            ? FIRST_WORD_NOTICE()
+            : tr(`已把 "${card?.headword || word}" 加入生词本`, `Added "${card?.headword || word}" to the word list`));
     }
 
     /**

@@ -8,6 +8,7 @@ import type { DictionaryInfo } from "./types";
 import { fire } from "./shared/fire";
 import { tr } from './shared/i18n';
 import { showSenseMenu } from './ui/sense-menu';
+import { FIRST_WORD_NOTICE } from './shared/notices';
 interface LookupResult {
     reading: string;
     pos: string;
@@ -257,10 +258,9 @@ export class LookupPopover {
             return;
         }
         const settings = this.plugin.settings;
-        if (!settings.enableLearningTracker) {
-            settings.enableLearningTracker = true;
-            new Notice(tr('已开启生词本', 'Word list turned on'));
-        }
+        // 第一次收词时生词本才打开；那时告诉用户词存到哪、怎么复习
+        const firstWord = !settings.enableLearningTracker;
+        if (firstWord) settings.enableLearningTracker = true;
         // 本地日期：toISOString 是 UTC，在日本早上 9 点前会记成前一天
         const now = new Date();
         const today = [now.getFullYear(), now.getMonth() + 1, now.getDate()].map((part) => String(part).padStart(2, '0')).join('-');
@@ -274,6 +274,7 @@ export class LookupPopover {
             }
             button.setText(tr('已收进生词本', 'Added to your word list'));
             button.disabled = true;
+            if (firstWord) new Notice(FIRST_WORD_NOTICE());
         };
         const store: Record<string, { translation: string }> = this.japanese ? settings.japaneseVocabItems : settings.englishVocabItems;
         const base = this.japanese ? `${this.word}_${this.word}` : this.word.toLowerCase();
