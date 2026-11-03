@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.9.1
 
 - Releases are built by a GitHub workflow from the version tag, which checks that the tag matches every version file, then attests `main.js`, `manifest.json` and `styles.css` with signed build provenance. The README shows how to verify a download with `gh attestation verify`.
 - Every push and pull request runs lint, Stylelint, the tests and the build.
