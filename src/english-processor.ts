@@ -61,8 +61,8 @@ async function _processSingleWordOrPhrase(
         const [dictionary, urban, thesaurus, medical, etymology, idioms, tatoeba, cambridge] = await Promise.all([
             safely('dictionary', sections.definitions, () => getDictionaryInfoTS(rootWord, logger)),
             safely('urban', sections.slang, () => getUrbanDictionaryInfoTS(word, logger)),
-            safely('thesaurus', sections.definitions, () => getMwThesaurusInfoTS(rootWord, settings.mwThesaurusKey, logger)),
-            safely('medical', sections.medical, () => getMwMedicalInfoTS(rootWord, settings.mwMedicalKey, logger)),
+            safely('thesaurus', sections.definitions, () => getMwThesaurusInfoTS(rootWord, settings.mwThesaurusKey ?? '', logger)),
+            safely('medical', sections.medical, () => getMwMedicalInfoTS(rootWord, settings.mwMedicalKey ?? '', logger)),
             safely('etymology', sections.etymology, () => getEtymologyInfoTS(rootWord, logger)),
             safely('idioms', sections.idioms, () => getRelatedIdiomsTS(word, logger)),
             safely('tatoeba', sections.tatoeba, () => getTatoebaExamplesTS(word, logger)),

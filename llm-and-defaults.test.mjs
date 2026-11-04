@@ -38,10 +38,10 @@ test('translation returns null when the reply has no choices', async () => {
 test('editing settings never changes the defaults', () => {
   const main = load('src/main.ts', obsidianStub(async () => ({})));
   const first = main.freshDefaultSettings();
-  first.apiConfigs[0].apiKey = 'changed';
+  first.apiConfigs[0].model = 'changed';
   first.queryHistory.push('word');
   const second = main.freshDefaultSettings();
-  assert.notEqual(second.apiConfigs[0].apiKey, 'changed');
+  assert.notEqual(second.apiConfigs[0].model, 'changed');
   assert.equal(second.queryHistory.length, 0);
 });
 

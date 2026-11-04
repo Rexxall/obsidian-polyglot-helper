@@ -21,7 +21,10 @@ export interface ApiConfig {
     name: string;
     /** Preset the endpoint came from; 'custom' for anything typed by hand. */
     provider?: import('./ai/providers').ProviderId;
-    apiKey: string;
+    /** Name of the key in Obsidian's secret storage. */
+    apiKeySecret?: string;
+    /** The key, read from secret storage when used (see secrets.ts); never saved. */
+    readonly apiKey?: string;
     baseUrl: string;
     model: string;
     enabled: boolean;
@@ -86,19 +89,22 @@ export interface PolyglotHelperSettings {
 		japaneseAnalysis: string; // 日语分析使用的API配置名称
 	};
 
+	/** Names in Obsidian's secret storage of the keys below. Each key field is read from there when used and never saved. */
+	keySecrets?: Partial<Record<import('./secrets').KeyField, string>>;
+
 	// English Processor Settings
-	englishLlmApiKey: string; // This might be the same as openaiApiKey
+	readonly englishLlmApiKey?: string;
 	englishLlmBaseUrl: string;
 	englishModelName: string;
-	mwThesaurusKey: string;
-	mwMedicalKey: string;
+	readonly mwThesaurusKey?: string;
+	readonly mwMedicalKey?: string;
 	englishSections: EnglishSections;
 	japaneseSections: JapaneseSections;
 
 	// Japanese Processor Settings
 	// LLM Provider for Japanese
 	llmProvider: 'openai' | 'ollama';
-	openaiApiKey?: string;
+	readonly openaiApiKey?: string;
 	openaiLlmBaseUrl?: string;
 	ollamaUrl?: string;
 	ollamaModel?: string;
@@ -107,7 +113,7 @@ export interface PolyglotHelperSettings {
 	ttsEngine: 'openai' | 'youdao' | 'gemini';
 	
 	// OpenAI TTS Settings
-	openaiTtsApiKey?: string; // This might be the same as openaiApiKey
+	readonly openaiTtsApiKey?: string;
 	openaiTtsBaseUrl?: string;
 	openaiTtsModel?: string;
 	openaiTtsVoice?: string;
@@ -115,10 +121,10 @@ export interface PolyglotHelperSettings {
 
 	// Youdao TTS Settings
 	youdaoAppKey?: string;
-	youdaoAppSecret?: string;
+	readonly youdaoAppSecret?: string;
 
 	// Gemini TTS Settings
-	geminiTtsApiKey?: string;
+	readonly geminiTtsApiKey?: string;
 	geminiTtsBaseUrl?: string;
 	geminiTtsModel?: string;
 	geminiTtsVoice?: string;
@@ -149,7 +155,6 @@ export interface PolyglotHelperSettings {
 	cloudSync: {
 		enabled: boolean;
 		endpoint: string;
-		apiKey: string;
 		autoSync: boolean;
 		syncInterval: number; // 分钟
 		lastSync: number;

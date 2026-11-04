@@ -1,8 +1,9 @@
-import { App, PluginSettingTab, Setting, type SettingDefinitionItem } from "obsidian";
+import { App, PluginSettingTab, SecretComponent, Setting, type SettingDefinitionItem } from "obsidian";
 import PolyglotHelper from "./main";
 // clearCache已移除
 import { Notice, requestUrl } from 'obsidian';
 import { ApiConfig, EnglishSections, PolyglotHelperSettings } from "./types";
+import type { KeyField } from './secrets';
 import { PROVIDERS, normalizeEndpoint, presetFor, testConnection } from './ai/providers';
 import { tr } from './shared/i18n';
 
@@ -56,6 +57,23 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 	display(): void {
 		this.renderPage(this.containerEl);
+	}
+
+	/** Picks a key from Obsidian's Keychain (its secret storage); only the key's name is saved. */
+	private addKeyPicker(setting: Setting, current: string | undefined, choose: (name: string) => void, redraw = false) {
+		setting.addComponent((el) =>
+			new SecretComponent(this.app, el).setValue(current ?? '').onChange(async (value) => {
+				choose(value ?? '');
+				await this.plugin.saveSettings();
+				if (redraw) this.redraw();
+			}),
+		);
+	}
+
+	private addFieldKeyPicker(setting: Setting, field: KeyField) {
+		this.addKeyPicker(setting, this.plugin.settings.keySecrets?.[field], (name) => {
+			this.plugin.settings.keySecrets = { ...this.plugin.settings.keySecrets, [field]: name };
+		});
 	}
 
 	private redraw() {
@@ -289,7 +307,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 			.setName(config.name)
 			.setDesc(
 				config.apiKey
-					? tr(`${preset.label} · ${config.model || '未填模型'} · 已填密钥`, `${preset.label} · ${config.model || 'no model'} · key set`)
+					? tr(`${preset.label} · ${config.model || '未填模型'} · 已选密钥`, `${preset.label} · ${config.model || 'no model'} · key set`)
 					: tr(`${preset.label} · 还没有密钥`, `${preset.label} · no key yet`),
 			)
 			.setHeading()
@@ -339,19 +357,14 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				});
 			});
 
-		const keySetting = new Setting(card)
-			.setName(tr('密钥', 'API key'))
-			.addText((text) => {
-				text.inputEl.type = 'password';
-				text.inputEl.autocomplete = 'off';
-				text.setPlaceholder(tr('粘贴服务商给的密钥', "Paste the provider's key"))
-					.setValue(config.apiKey)
-					.onChange(async (value) => {
-						config.apiKey = value.trim();
-						await save();
-					});
-			});
-		if (preset.keyUrl) {
+		const keySetting = new Setting(card).setName(tr('密钥', 'API key'));
+		// The heading above says whether a key is set, so draw the card again after a change.
+		this.addKeyPicker(keySetting, config.apiKeySecret, (name) => {
+			config.apiKeySecret = name;
+		}, true);
+		if (config.apiKeySecret && !config.apiKey) {
+			keySetting.descEl.appendText(tr(`这台设备的钥匙串里没有「${config.apiKeySecret}」，请重新选择或新建。`, `"${config.apiKeySecret}" is not in this device's Keychain. Choose or create a key.`));
+		} else if (preset.keyUrl) {
 			const desc = keySetting.descEl;
 			desc.appendText(tr('在这里申请：', 'Get one here: '));
 			desc.createEl('a', { text: preset.label, href: preset.keyUrl });
@@ -397,7 +410,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 					result.empty();
 					result.removeClass('is-ok', 'is-error');
 					result.setText(tr('测试中…', 'Testing…'));
-					const outcome = await testConnection(config, async (request) => {
+					const outcome = await testConnection({ apiKey: config.apiKey ?? '', baseUrl: config.baseUrl, model: config.model }, async (request) => {
 						const response = await requestUrl({ ...request, throw: false });
 						return { status: response.status, text: response.text };
 					});
@@ -439,8 +452,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		containerEl.createEl('p', {
 			cls: 'setting-item-description',
 			text: tr(
-				'查词典和读音不需要 AI。翻译和分析要填一个 AI 密钥；密钥加密存在这台设备上，换设备要重新填。',
-				'Dictionary lookups and pronunciation need no AI. Translation and analysis need an AI key, stored encrypted on this device; enter it again on another device.',
+				'查词典和读音不需要 AI。翻译和分析要选一个 AI 密钥；密钥存在本机 Obsidian 的钥匙串里，不随库同步，换设备后要重新选。',
+				"Dictionary lookups and pronunciation need no AI. Translation and analysis need an AI key, kept in Obsidian's Keychain on this device. Keys do not sync with the vault; choose them again on another device.",
 			),
 		});
 
@@ -456,7 +469,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 					this.plugin.settings.apiConfigs.push({
 						name: uniqueConfigName(this.plugin.settings.apiConfigs, preset.label),
 						provider: preset.id,
-						apiKey: '',
 						baseUrl: preset.endpoint,
 						model: preset.model,
 						enabled: true,
@@ -561,6 +573,13 @@ export class PolyglotSettingTab extends PluginSettingTab {
                     })
                 );
         });
+
+		// Merriam-Webster 的同义词和医学释义各要一个免费密钥；没选就跳过这两部分
+		const thesaurus = new Setting(containerEl).setName(tr('Merriam-Webster 同义词密钥', 'Merriam-Webster thesaurus key'));
+		thesaurus.descEl.appendText(tr('没有就跳过这部分。免费申请：', 'Without one, this part is skipped. Free from '));
+		thesaurus.descEl.createEl('a', { text: 'dictionaryapi.com', href: 'https://dictionaryapi.com/register/index' });
+		this.addFieldKeyPicker(thesaurus, 'mwThesaurusKey');
+		this.addFieldKeyPicker(new Setting(containerEl).setName(tr('Merriam-Webster 医学词典密钥', 'Merriam-Webster medical key')), 'mwMedicalKey');
 	}
 
 	private displayAudioSettings(containerEl: HTMLElement) {
@@ -845,7 +864,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	private displayOpenAITTSSettings(containerEl: HTMLElement) {
 		new Setting(containerEl).setName(tr('OpenAI 语音合成', 'OpenAI speech')).setHeading();
 		new Setting(containerEl).setName(tr('语音合成接口地址', 'Speech endpoint')).addText(text => text.setValue(this.plugin.settings.openaiTtsBaseUrl || '').onChange(async (value) => { this.plugin.settings.openaiTtsBaseUrl = value; await this.plugin.saveSettings(); }));
-		new Setting(containerEl).setName(tr('语音合成 API 密钥', 'Speech API key')).setDesc(tr("留空时使用上面的 OpenAI API 密钥", "Empty uses the OpenAI API key above")).addText(text => { text.inputEl.type = 'password'; text.setValue(this.plugin.settings.openaiTtsApiKey || '').onChange(async (value) => { this.plugin.settings.openaiTtsApiKey = value; await this.plugin.saveSettings(); }); });
+		this.addFieldKeyPicker(new Setting(containerEl).setName(tr('语音合成 API 密钥', 'Speech API key')), 'openaiTtsApiKey');
 		new Setting(containerEl).setName(tr('语音合成模型名称', 'Speech model')).setDesc(tr('例如：tts-1、tts-1-hd', 'For example tts-1, tts-1-hd')).addText(text => text.setValue(this.plugin.settings.openaiTtsModel || '').onChange(async (value) => { this.plugin.settings.openaiTtsModel = value; await this.plugin.saveSettings(); }));
 		new Setting(containerEl).setName(tr('语音合成声音', 'Voice')).setDesc(tr('例如：alloy、echo、fable、onyx、nova、shimmer', 'For example alloy, echo, fable, onyx, nova, shimmer')).addText(text => text.setValue(this.plugin.settings.openaiTtsVoice || '').onChange(async (value) => { this.plugin.settings.openaiTtsVoice = value; await this.plugin.saveSettings(); }));
 		new Setting(containerEl).setName(tr('语音合成语速', 'Speed')).setDesc(tr('范围：0.25 - 4.0（默认 1.0）', 'Range 0.25–4.0 (default 1.0)')).addText(text => text.setValue(String(this.plugin.settings.openaiTtsSpeed || 1.0)).onChange(async (value) => { const speed = parseFloat(value); if (!isNaN(speed)) { this.plugin.settings.openaiTtsSpeed = speed; await this.plugin.saveSettings(); } }));
@@ -880,8 +899,8 @@ export class PolyglotSettingTab extends PluginSettingTab {
 
 	private displayYoudaoTTSSettings(containerEl: HTMLElement) {
 		new Setting(containerEl).setName(tr('有道语音合成', 'Youdao speech')).setHeading();
-		new Setting(containerEl).setName(tr('有道应用 ID', 'Youdao app ID')).addText(text => { text.inputEl.type = 'password'; text.setValue(this.plugin.settings.youdaoAppKey || '').onChange(async (value) => { this.plugin.settings.youdaoAppKey = value; await this.plugin.saveSettings(); }); });
-		new Setting(containerEl).setName(tr('有道应用密钥', 'Youdao app secret')).addText(text => { text.inputEl.type = 'password'; text.setValue(this.plugin.settings.youdaoAppSecret || '').onChange(async (value) => { this.plugin.settings.youdaoAppSecret = value; await this.plugin.saveSettings(); }); });
+		new Setting(containerEl).setName(tr('有道应用 ID', 'Youdao app ID')).addText(text => { text.setValue(this.plugin.settings.youdaoAppKey || '').onChange(async (value) => { this.plugin.settings.youdaoAppKey = value; await this.plugin.saveSettings(); }); });
+		this.addFieldKeyPicker(new Setting(containerEl).setName(tr('有道应用密钥', 'Youdao app secret')), 'youdaoAppSecret');
 
 		// 添加测试按钮
 		new Setting(containerEl)
@@ -924,17 +943,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
-		new Setting(containerEl)
-			.setName(tr('Gemini 语音合成 API 密钥', 'Gemini speech API key'))
-			.setDesc(tr('输入你的 Gemini API 密钥', 'Your Gemini API key'))
-			.addText(text => {
-				text.inputEl.type = 'password';
-				text.setValue(this.plugin.settings.geminiTtsApiKey || '')
-					.onChange(async (value) => {
-						this.plugin.settings.geminiTtsApiKey = value;
-						await this.plugin.saveSettings();
-					});
-			});
+		this.addFieldKeyPicker(new Setting(containerEl).setName(tr('Gemini 语音合成 API 密钥', 'Gemini speech API key')), 'geminiTtsApiKey');
 
 		new Setting(containerEl)
 			.setName(tr('Gemini 语音合成模型名称', 'Gemini speech model'))

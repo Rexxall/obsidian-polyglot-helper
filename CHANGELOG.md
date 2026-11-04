@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.10.0
+
+- **Keys in secret storage.** API keys move out of `data.json` into Obsidian's Keychain, its secret storage; every key field in settings now picks a key by name. Keys saved before are moved on first start, under names other plugins can share, such as `deepseek-api-key` or `gemini-api-key`; if another plugin already keeps a different key under that name, this plugin uses its own name instead. Afterwards `data.json` holds no key, and the device key used to encrypt them is removed. Keys no longer sync with the vault: on another device, choose them again.
+- Requires Obsidian 1.11.4 or later, the first version with secret storage.
+- The Merriam-Webster thesaurus and medical keys can be chosen in settings, under English sections.
+- The Youdao app ID is an identifier, not a secret, so it is shown and saved as plain text; the app secret moves to secret storage.
+- The speech key no longer claims to fall back to another key, which it never did.
+- Lint uses Obsidian's own `eslint-plugin-obsidianmd` rules with type information, in a second pass without Node's types as the community directory scanner sees the code; warnings fail it.
 ## 1.9.1
 
 - Releases are built by a GitHub workflow from the version tag, which checks that the tag matches every version file, then attests `main.js`, `manifest.json` and `styles.css` with signed build provenance. The README shows how to verify a download with `gh attestation verify`.

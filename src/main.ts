@@ -22,6 +22,7 @@ import { chatContent, getChineseTranslationTS } from './apis/llm';
 
 import { Logger } from './shared/Logger';
 import { EncryptedSettings } from './shared/EncryptedSettings';
+import { KEY_FIELDS, bindKeys, moveKeysToStorage } from './secrets';
 import { JapaneseProcessor } from './japanese-processor';
 import { handlePriorityOutput, addQueryToHistory } from './utils';
 import { PolyglotHelperView, POLYGLOT_HELPER_VIEW_TYPE } from './view';
@@ -94,7 +95,6 @@ const DEFAULT_SETTINGS: PolyglotHelperSettings = {
 		{
 			name: 'DeepSeek',
 			provider: 'deepseek',
-			apiKey: '',
 			baseUrl: 'https://api.deepseek.com/chat/completions',
 			model: 'deepseek-flash',
 			enabled: true,
@@ -109,11 +109,8 @@ const DEFAULT_SETTINGS: PolyglotHelperSettings = {
 	},
 
 	// English Processor Settings
-	englishLlmApiKey: '', 
 	englishLlmBaseUrl: 'https://openrouter.ai/api/v1/chat/completions',
 	englishModelName: 'google/gemini-2.5-flash',
-	mwThesaurusKey: '',
-	mwMedicalKey: '',
 	englishSections: {
 		definitions: true,
 		example: true,
@@ -134,23 +131,19 @@ const DEFAULT_SETTINGS: PolyglotHelperSettings = {
 
 	// Japanese Processor Settings
 	llmProvider: 'openai',
-	openaiApiKey: '',
 	openaiLlmBaseUrl: '',
 	ollamaModel: 'llama3',
 
 	ttsEngine: 'openai',
 	
-	openaiTtsApiKey: '',
 	openaiTtsBaseUrl: '',
 	openaiTtsModel: 'tts-1',
 	openaiTtsVoice: 'nova',
 	openaiTtsSpeed: 1.0,
 
 	youdaoAppKey: '',
-	youdaoAppSecret: '',
 
 	// Gemini TTS Settings
-	geminiTtsApiKey: '',
 	geminiTtsBaseUrl: 'https://api.openai.com/v1',
 	geminiTtsModel: 'tts-1',
 	geminiTtsVoice: 'Zephyr',
@@ -187,7 +180,6 @@ const DEFAULT_SETTINGS: PolyglotHelperSettings = {
 	cloudSync: {
 		enabled: false,
 		endpoint: '',
-		apiKey: '',
 		autoSync: false,
 		syncInterval: 60, // 60分钟
 		lastSync: 0,
@@ -198,7 +190,7 @@ const DEFAULT_SETTINGS: PolyglotHelperSettings = {
 	// 语音合成功能已移除
 }
 
-// Deep copy, so editing settings (e.g. an API key inside apiConfigs) never changes DEFAULT_SETTINGS itself.
+// Deep copy, so editing settings (e.g. a model inside apiConfigs) never changes DEFAULT_SETTINGS itself.
 export function freshDefaultSettings(): PolyglotHelperSettings {
 	return JSON.parse(JSON.stringify(DEFAULT_SETTINGS)) as PolyglotHelperSettings;
 }
@@ -207,8 +199,6 @@ export function freshDefaultSettings(): PolyglotHelperSettings {
 export default class PolyglotHelper extends Plugin {
 	settings: PolyglotHelperSettings;
 	logger: Logger;
-	secureSettings: EncryptedSettings;
-	legacySecureSettings: EncryptedSettings;
 	japaneseProcessor: JapaneseProcessor;
 	learningTracker: LearningTracker;
 	performanceOptimizer: PerformanceOptimizer;
@@ -217,8 +207,6 @@ export default class PolyglotHelper extends Plugin {
 
 	async onload() {
 		setInterfaceLanguage(getLanguage());
-		this.secureSettings = new EncryptedSettings({ namespace: 'polyglot-helper', passphrase: this.getDeviceKey() });
-		this.legacySecureSettings = new EncryptedSettings({ namespace: 'polyglot-helper' });
 		await this.loadSettings();
 
 		// 移动端兼容性：安全获取插件目录
@@ -1706,8 +1694,10 @@ Input text: "${inputText}"`;
 		}
 		this.settings = Object.assign(freshDefaultSettings(), stored);
 
-		// Decrypt API keys loaded from disk
-		await this.decryptSensitiveFields();
+		// 1.10: keys move from the settings into Obsidian's secret storage
+		await this.decryptLegacyKeys();
+		if (moveKeysToStorage(this.settings, this.app.secretStorage)) this.settingsNeedSave = true;
+		bindKeys(this.settings, this.app.secretStorage);
 
 		// Versions up to 1.3.x shipped an OpenRouter host that does not resolve.
 		const brokenHost = 'https://api.openrouter.ai/';
@@ -1730,9 +1720,8 @@ Input text: "${inputText}"`;
 			}
 		}
 		if (repaired) this.settingsNeedSave = true;
-
-		// One-time migration: if plain text API keys exist, encrypt and re-save
-		if (await this.needsEncryptionMigration()) {
+		if (this.settingsNeedSave) {
+			this.settingsNeedSave = false;
 			await this.saveSettings();
 		}
 
@@ -1807,8 +1796,9 @@ Input text: "${inputText}"`;
 	}
 
 	async saveSettings() {
-		const storageCopy = await this.encryptSensitiveFields();
-		await this.saveData(storageCopy);
+		// A configuration added since the last save gets its key getter too; keys are never written.
+		bindKeys(this.settings, this.app.secretStorage);
+		await this.saveData(this.settings);
 		this.updateDueStatus();
 		this.app.workspace.trigger('polyglot-settings-change');
 	}
@@ -1859,93 +1849,47 @@ Input text: "${inputText}"`;
 		}
 	}
 
-	// ── Encrypted settings helpers ──
-
-	private readonly ENCRYPTED_FLAT_FIELDS = ['englishLlmApiKey', 'openaiApiKey', 'openaiTtsApiKey', 'youdaoAppKey', 'youdaoAppSecret', 'geminiTtsApiKey', 'mwThesaurusKey', 'mwMedicalKey'];
-
-	/** Key material lives in this device's local storage, never in data.json. */
-	private getDeviceKey(): string {
-		const id = 'polyglot-helper-device-key';
-		const saved: unknown = this.app.loadLocalStorage(id);
-		if (typeof saved === 'string' && saved.length >= 32) return saved;
-		const bytes = crypto.getRandomValues(new Uint8Array(32));
-		const key = btoa(String.fromCharCode(...bytes));
-		this.app.saveLocalStorage(id, key);
-		return key;
-	}
-
 	private settingsNeedSave = false;
 
-	private async decryptOne(value: string): Promise<string> {
-		try {
-			return await this.secureSettings.decryptValue(value);
-		} catch {
-			try {
-				const plain = await this.legacySecureSettings.decryptValue(value);
-				this.settingsNeedSave = true;
-				return plain;
-			} catch {
-				this.settingsNeedSave = true;
-				new Notice(tr('语言助手：本设备读不出已保存的 API 密钥，请在设置中重新填写。', 'Polyglot Helper: this device cannot read the saved API keys. Enter them again in settings.'));
-				return '';
+	/**
+	 * Up to 1.9.x keys were encrypted with a device key kept in this device's local storage (before
+	 * that, with a fixed one). Decrypt them once so they can move to secret storage; one that cannot
+	 * be read is dropped with a notice, as before.
+	 */
+	private async decryptLegacyKeys() {
+		type Holder = { target: Record<string, unknown>; field: string };
+		const holders: Holder[] = [
+			...[...KEY_FIELDS, 'youdaoAppKey'].map((field) => ({ target: this.settings as unknown as Record<string, unknown>, field })),
+			...this.settings.apiConfigs.map((config) => ({ target: config as unknown as Record<string, unknown>, field: 'apiKey' })),
+		];
+		const encrypted = holders.flatMap(({ target, field }) => {
+			const value = target[field];
+			return typeof value === 'string' && value.startsWith('__ENC__:') ? [{ target, field, value }] : [];
+		});
+		if (!encrypted.length) return;
+		const deviceKeyId = 'polyglot-helper-device-key';
+		const deviceKey: unknown = this.app.loadLocalStorage(deviceKeyId);
+		const readers = [
+			...(typeof deviceKey === 'string' ? [new EncryptedSettings({ namespace: 'polyglot-helper', passphrase: deviceKey })] : []),
+			new EncryptedSettings({ namespace: 'polyglot-helper' }),
+		];
+		let unreadable = false;
+		for (const { target, field, value } of encrypted) {
+			let plain = '';
+			for (const reader of readers) {
+				try {
+					plain = await reader.decryptValue(value);
+					break;
+				} catch {
+					// try the next key
+				}
 			}
+			if (!plain) unreadable = true;
+			target[field] = plain;
 		}
-	}
-
-	private async decryptSensitiveFields() {
-		const es = this.secureSettings;
-		if (!es) return;
-		for (const key of this.ENCRYPTED_FLAT_FIELDS) {
-			const fields = this.settings as unknown as Record<string, unknown>;
-			const val = fields[key];
-			if (typeof val === 'string' && es.isEncryptedValue(val)) {
-				fields[key] = await this.decryptOne(val);
-			}
-		}
-		for (const config of this.settings.apiConfigs) {
-			if (typeof config.apiKey === 'string' && es.isEncryptedValue(config.apiKey)) {
-				config.apiKey = await this.decryptOne(config.apiKey);
-			}
-		}
-		if (this.settings.cloudSync?.apiKey && es.isEncryptedValue(this.settings.cloudSync.apiKey)) {
-			this.settings.cloudSync.apiKey = await this.decryptOne(this.settings.cloudSync.apiKey);
-		}
-	}
-
-	private async needsEncryptionMigration(): Promise<boolean> {
-		const es = this.secureSettings;
-		if (!es) return false;
-		if (this.settingsNeedSave) return true;
-		for (const key of this.ENCRYPTED_FLAT_FIELDS) {
-			const val = (this.settings as unknown as Record<string, unknown>)[key];
-			if (typeof val === 'string' && val.length > 0 && !es.isEncryptedValue(val)) return true;
-		}
-		for (const config of this.settings.apiConfigs) {
-			if (typeof config.apiKey === 'string' && config.apiKey.length > 0 && !es.isEncryptedValue(config.apiKey)) return true;
-		}
-		return false;
-	}
-
-	private async encryptSensitiveFields(): Promise<PolyglotHelperSettings> {
-		const es = this.secureSettings;
-		const copy = { ...this.settings };
-		if (!es) return copy;
-		for (const key of this.ENCRYPTED_FLAT_FIELDS) {
-			const fields = copy as unknown as Record<string, unknown>;
-			const val = fields[key];
-			if (typeof val === 'string' && val.length > 0 && !es.isEncryptedValue(val)) {
-				fields[key] = await es.encryptValue(val);
-			}
-		}
-		copy.apiConfigs = await Promise.all(copy.apiConfigs.map(async config => ({
-			...config,
-			apiKey: (typeof config.apiKey === 'string' && config.apiKey.length > 0 && !es.isEncryptedValue(config.apiKey))
-				? await es.encryptValue(config.apiKey) : config.apiKey,
-		})));
-		if (copy.cloudSync?.apiKey && !es.isEncryptedValue(copy.cloudSync.apiKey)) {
-			copy.cloudSync = { ...copy.cloudSync, apiKey: await es.encryptValue(copy.cloudSync.apiKey) };
-		}
-		return copy;
+		if (unreadable) new Notice(tr('语言助手：本设备读不出已保存的 API 密钥，请在设置中重新选择。', 'Polyglot Helper: this device cannot read the saved API keys. Choose them again in settings.'));
+		this.app.saveLocalStorage(deviceKeyId, null);
+		this.settingsNeedSave = true;
 	}
 
 	async resetSettings() {

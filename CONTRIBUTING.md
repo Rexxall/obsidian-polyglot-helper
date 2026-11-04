@@ -15,7 +15,7 @@ Copy `main.js`, `manifest.json` and `styles.css` into `<your vault>/.obsidian/pl
 
 - `english-processor.ts` and `japanese-processor.ts` run a lookup: check the cache, query the enabled sources in parallel, ask the model for one JSON entry, render Markdown.
 - Model and dictionary requests go through Obsidian's `requestUrl` with a timeout; an error reply is shown, not swallowed.
-- API keys are encrypted with AES-GCM (Web Crypto); the key is derived with PBKDF2 from a random value stored per device.
+- API keys live in Obsidian's secret storage (`app.secretStorage`); settings keep only each key's name. `secrets.ts` moves keys from older settings there and turns the old key fields into getters that read storage when used and are never saved.
 
 ## Releases
 

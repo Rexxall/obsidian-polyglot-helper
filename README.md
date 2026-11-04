@@ -14,14 +14,14 @@ English · [中文](README.zh-CN.md) · [日本語](README.ja.md)
 
 1. Install and enable Polyglot Helper, then click the book icon in the left ribbon to open the side panel.
 2. Press **Load example**. It writes a short note marked as a demo (delete it whenever you like) and puts “postpone” in the lookup box.
-3. Paste one AI key: **Settings → Polyglot Helper → Translation and models**. DeepSeek is preset; press **Test** to check it.
+3. Choose or create one AI key: **Settings → Polyglot Helper → Translation and models**. DeepSeek is preset; press **Test** to check it.
 4. Press **Look up**. Next time, select any word in a note and look it up the same way; **Add to word list** keeps it for review.
 
 ## What you need and what it costs
 
 |                                |                                                                                                                                                                                                                                                                                                       |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The plugin                     | Free, no account. Works on desktop and mobile.                                                                                                                                                                                                                                                        |
+| The plugin                     | Free, no account. Works on desktop and mobile with Obsidian 1.11.4 or later.                                                                                                                                                                                                                         |
 | An AI service                  | One OpenAI-compatible key. Presets: DeepSeek (default), Qwen (通义千问), SiliconFlow (硅基流动), Kimi, Zhipu GLM (智谱), OpenRouter, OpenAI, or any compatible endpoint. Billed by that provider per use; one word lookup is a short request. **Test** costs a tiny fraction of a cent. SiliconFlow refuses even its free models while the account balance is zero. |
 | Dictionaries and pronunciation | Free public sources, no key. Optional keys: Merriam-Webster (thesaurus and medical sections) and OpenAI, Gemini or Youdao for Japanese speech.                                                                                                                                                       |
 
@@ -60,7 +60,7 @@ From 1.9.1 on, the three release files carry a signed build provenance attestati
 
 ## AI services
 
-Pick a provider in **Settings → Translation and models**; the endpoint and model are filled in and you paste the key. A base URL ending in `/v1` is fine.
+Pick a provider in **Settings → Translation and models**; the endpoint and model are filled in and you choose the key. A base URL ending in `/v1` is fine.
 
 | Provider               | Default model                     | Key                                                             |
 | ---------------------- | --------------------------------- | --------------------------------------------------------------- |
@@ -80,7 +80,7 @@ Pick a provider in **Settings → Translation and models**; the endpoint and mod
 | What                               | Goes to                                         | Stored                                                                                                                                                                             |
 | ---------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | The word or sentence you look up   | The dictionaries you enable and your AI service | Lookup cache in the plugin folder                                                                                                                                                  |
-| Your API keys                      | Only to the service they belong to              | Encrypted in the plugin's `data.json`. The decryption key stays in this device's local storage for this vault, so a synced or copied `data.json` does not expose your keys; on another device you enter them once more. |
+| Your API keys                      | Only to the service they belong to              | In Obsidian's Keychain on this device (**Settings → Keychain**). `data.json` keeps only each key's name, such as `deepseek-api-key`, so other plugins using the same name can pick the same key. Keys do not sync with the vault; on another device you choose them once more. |
 | Word list and review history       | Nowhere                                         | `data.json` in the plugin folder                                                                                                                                                   |
 | Debug log                          | Nowhere                                         | Written only when debug mode is on; keys and looked-up text are left out                                                                                                           |
 

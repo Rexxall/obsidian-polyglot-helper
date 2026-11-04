@@ -16,12 +16,12 @@ Obsidian が中国語以外の設定のとき、プラグインの画面は英�
 
 1. Polyglot Helper を有効にし、左のリボンの本のアイコンでサイドパネルを開きます。
 2. **Load example** を押すと、例のノートが作られ、検索欄に “postpone” が入ります。
-3. **Settings → Polyglot Helper → Translation and models** で AI のキーを一つ貼り付けます。既定は DeepSeek です。**Test** で確認できます。
+3. **Settings → Polyglot Helper → Translation and models** で AI のキーを一つ選ぶか新しく作ります。既定は DeepSeek です。**Test** で確認できます。
 4. **Look up** を押します。以後はノートで単語を選んで同じように調べ、**Add to word list** で単語帳に入れます。
 
 ## 必要なものと費用
 
-- プラグイン：無料、アカウント不要。デスクトップとモバイルで使えます。
+- プラグイン：無料、アカウント不要。Obsidian 1.11.4 以降のデスクトップとモバイルで使えます。
 - AI サービス：OpenAI 互換のキーが一つ必要です（DeepSeek、Qwen、SiliconFlow、Kimi、Zhipu、OpenRouter、OpenAI など）。料金は各社の従量課金で、1 回の検索は短いリクエストです。
 - 辞書と発音：無料の公開ソースを使い、キーは不要です。
 
@@ -31,7 +31,7 @@ Obsidian が中国語以外の設定のとき、プラグインの画面は英�
 
 ## プライバシー
 
-API キーは暗号化して保存し、復号の鍵はこの端末にだけ残ります。調べた語は、有効にした辞書と AI サービスに送られます。作者のサーバーはありません。
+API キーはこの端末の Obsidian のキーチェーン（Settings → Keychain）に保存され、`data.json` にはキーの名前だけが残ります。キーは保管庫と一緒に同期されないので、別の端末では選び直してください。調べた語は、有効にした辞書と AI サービスに送られます。作者のサーバーはありません。
 
 ## ライセンス
 
