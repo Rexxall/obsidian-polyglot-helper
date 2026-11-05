@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" viewBox="0 0 1200 400" role="img" aria-labelledby="t d">
+  <title id="t">Polyglot Helper</title>
+  <desc id="d">Polyglot Helper: a word card for 蔵書 (ぞうしょ, collection of books) opens next to the sentence, with Add to word list; saved words are underlined when you read.</desc>
+  <rect width="1200" height="400" rx="28" fill="#F7F6FB"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'PingFang SC', sans-serif">
+    <text x="64" y="118" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="17" letter-spacing="2" fill="#7A5AF0">OBSIDIAN PLUGIN · ENGLISH AND JAPANESE</text>
+    <text x="62" y="196" font-size="64" font-weight="700" letter-spacing="-1.5" fill="#1D1B26">Polyglot Helper</text>
+    <text x="64" y="252" font-size="29" fill="#1D1B26">Look up a word where you read.</text>
+    <text x="64" y="292" font-size="29" fill="#6B6780">Keep it, and meet it again.</text>
+    <text x="64" y="346" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="17" fill="#6B6780">free dictionaries · no account · Anki</text>
+  </g>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'PingFang SC', sans-serif">
+    <rect x="700" y="48" width="436" height="304" rx="20" fill="#FFFFFF" stroke="#E4E1EE"/>
+    <text x="728" y="98" font-size="22" fill="#1D1B26">月の予定で、<tspan font-weight="600">蔵書</tspan>は約十二万冊。</text>
+    <rect x="861" y="106" width="44" height="3" rx="1.5" fill="#B9A6F7"/>
+    <rect x="724" y="128" width="388" height="200" rx="16" fill="#F7F6FB" stroke="#E4E1EE"/>
+    <text x="748" y="178" font-size="34" font-weight="700" fill="#1D1B26">蔵書</text>
+    <text x="830" y="176" font-size="18" fill="#6B6780">ぞうしょ</text>
+    <circle cx="930" cy="169" r="14" fill="#EEE9FF"/>
+    <path d="M926 162 L926 176 L937 169 Z" fill="#7A5AF0"/>
+    <text x="748" y="224" font-size="19" fill="#1D1B26">collection of books; (personal) library</text>
+    <rect x="748" y="244" width="340" height="1" fill="#E4E1EE"/>
+    <rect x="748" y="262" width="168" height="40" rx="20" fill="#7A5AF0"/>
+    <text x="832" y="288" font-size="17" font-weight="600" text-anchor="middle" fill="#FFFFFF">Add to word list</text>
+    <text x="1088" y="288" font-size="15" text-anchor="end" fill="#6B6780">Jisho</text>
+  </g>
+</svg>
