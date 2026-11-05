@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Saved words are marked while you read.** In reading view, words from your word list are underlined; point at one to see its reading, meaning and the note it came from, with no lookup. Japanese verbs and adjectives are found in their conjugated forms (発表した for 発表する, 足りなく for 足りる, 新しかった for 新しい), English words with common endings (queues, studied). Mastered words are left alone. One matcher is built per word-list change, so a long article opens as fast as before. Turn it off under **Learning and interface**.
+- **Send word list to Anki.** A new command sends every card straight to Anki through the AnkiConnect add-on, into the deck set in settings (default "Polyglot"), with a "Polyglot Helper" note type. Each note keeps the card's stable id, so sending again updates changed cards and adds only new ones, even after you move them to another deck. Anki must be open with AnkiConnect installed; the import file export stays for those without it.
+- Building the Japanese processor and counting due words wait until the workspace is drawn.
+- `CONTRIBUTING.md`: check startup time before a release.
+
 ## 1.10.0
 
 - **Keys in secret storage.** API keys move out of `data.json` into Obsidian's Keychain, its secret storage; every key field in settings now picks a key by name. Keys saved before are moved on first start, under names other plugins can share, such as `deepseek-api-key` or `gemini-api-key`; if another plugin already keeps a different key under that name, this plugin uses its own name instead. Afterwards `data.json` holds no key, and the device key used to encrypt them is removed. Keys no longer sync with the vault: on another device, choose them again.

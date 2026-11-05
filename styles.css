@@ -1717,3 +1717,37 @@ button.polyglot-page-btn:hover { background: var(--pg-hover); }
 
 /* Side panel: the setup card lines up with the input and the mode row */
 .polyglot-helper-view-container .polyglot-status { margin: var(--ap-s3) 0; }
+
+/* 阅读视图：生词本里的词。下划线跟正文同色系，不抢阅读；悬停卡片只读，不挡指针 */
+.pg-word {
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--interactive-accent) 60%, transparent);
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 0.22em;
+    text-decoration-skip-ink: none;
+    cursor: help;
+    transition: background-color 120ms ease-out;
+    border-radius: 3px;
+}
+.pg-word:hover { background-color: color-mix(in srgb, var(--interactive-accent) 12%, transparent); }
+.polyglot-popover.pg-word-card {
+    pointer-events: none;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    animation: pg-word-card-in 120ms ease-out;
+}
+.polyglot-popover.pg-word-card::before { display: none; }
+.pg-word-card .polyglot-pop-word { font-size: 1.25em; }
+.pg-word-card .polyglot-pop-head:not(:first-child) { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--pg-line); }
+@keyframes pg-word-card-in { from { opacity: 0; transform: translateY(-2px); } }
+@media (prefers-reduced-motion: reduce) {
+    .pg-word { transition: none; }
+    .polyglot-popover.pg-word-card { animation: none; }
+}
+.pg-word-card .polyglot-pop-src { margin: 4px 0 0; }
+.polyglot-popover.pg-word-card { width: max-content; min-width: 140px; }
+.pg-word-card .polyglot-pop-src { color: var(--pg-ink-2); }
+.pg-word-card .polyglot-pop-src { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pg-word-card .polyglot-pop-src + .polyglot-pop-meaning { margin-top: 6px; }

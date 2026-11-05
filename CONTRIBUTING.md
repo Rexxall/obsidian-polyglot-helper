@@ -20,3 +20,5 @@ Copy `main.js`, `manifest.json` and `styles.css` into `<your vault>/.obsidian/pl
 ## Releases
 
 The release tag must equal the `version` in `manifest.json`, and the release must contain `main.js`, `manifest.json` and `styles.css`. Update `package.json`, `manifest.json`, `versions.json` and `CHANGELOG.md` together. Do not commit `data.json`, logs or cache folders.
+
+Before a release, check startup time: reload Obsidian with the plugin enabled and time its `onload`. It should stay under 50 ms on a vault with a year of data. Anything that reads many files, calls the network or renders waits for `onLayoutReady` or runs on first use.

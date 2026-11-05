@@ -650,6 +650,16 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
+			.setName(tr('阅读时标出生词', 'Mark saved words while reading'))
+			.setDesc(tr('阅读视图里，生词本里的词加下划线，指针停上去看读音和意思。已掌握的词不标。', 'In reading view, words from your word list are underlined; point at one to see its reading and meaning. Mastered words are left alone.'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.highlightSavedWords !== false)
+				.onChange(async (value) => {
+					this.plugin.settings.highlightSavedWords = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
 			.setName(tr('词库导出文件夹', 'Word list export folder'))
 			.setDesc(tr('命令“导出词库为闪卡笔记”“导出词库为 Anki 导入文件”写到这里。闪卡笔记可直接用间隔重复插件复习，重新导出会保留它的复习排程。', 'The "Export word list as flashcard notes" and "Export word list as an Anki import file" commands write here. Flashcard notes work with the Spaced Repetition plugin, and exporting again keeps its review schedule.'))
 			.addText(text => text
@@ -657,6 +667,17 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.vocabExportFolder || 'Polyglot')
 				.onChange(async (value) => {
 					this.plugin.settings.vocabExportFolder = value.trim() || 'Polyglot';
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName(tr('Anki 牌组', 'Anki deck'))
+			.setDesc(tr('命令“发送词库到 Anki”把卡片放进这个牌组。要先打开 Anki 并装好 AnkiConnect 插件；再发一次只更新改过的卡，不会重复。', 'The "Send word list to Anki" command puts cards in this deck. Anki must be open with the AnkiConnect add-on; sending again updates changed cards without duplicates.'))
+			.addText(text => text
+				.setPlaceholder('Polyglot')
+				.setValue(this.plugin.settings.ankiDeck || 'Polyglot')
+				.onChange(async (value) => {
+					this.plugin.settings.ankiDeck = value.trim() || 'Polyglot';
 					await this.plugin.saveSettings();
 				}));
 

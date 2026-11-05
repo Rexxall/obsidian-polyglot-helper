@@ -40,6 +40,8 @@ import { CacheCleanupModal } from './cache-cleanup-modal';
 import { LookupPopover, sentenceAround } from './lookup-popover';
 import { readLegacyPluginData } from './legacy-migration';
 import { collectCards, toAnkiText, toFlashcardNote } from './vocab-export';
+import { ankiConnectInvoke, syncToAnki } from './anki-connect';
+import { WordHighlight } from './word-highlight';
 import { ensureIds } from './vocab-senses';
 
 import { fire } from './shared/fire';
@@ -81,6 +83,8 @@ const DEFAULT_SETTINGS: PolyglotHelperSettings = {
 	wordSelectionMode: false, // 选词模式：默认关闭
 	showDueInStatusBar: true,
 	vocabExportFolder: 'Polyglot',
+	highlightSavedWords: true,
+	ankiDeck: 'Polyglot',
 
 	// Audio Settings
 	enableTTS: true,
@@ -233,41 +237,19 @@ export default class PolyglotHelper extends Plugin {
 		try {
 			this.logger.info("Polyglot Helper plugin starting to load...");
 			
-			// 移动端兼容性：简化初始化，避免复杂依赖
-			if ('ontouchstart' in window) {
-				// 移动端：只初始化必要的组件
-				this.audioCacheManager = new AudioCacheManager(this.app, this.settings, this.logger);
-				this.cacheManager = new CacheManager(this.app, this.logger, pluginDir);
-				this.learningTracker = new LearningTracker(this.app, this.settings, this.saveSettings.bind(this));
-				
-				// 延迟初始化复杂组件
-				window.setTimeout(() => {
-					try {
-						this.performanceOptimizer = new PerformanceOptimizer(this.app, this);
-						this.japaneseProcessor = new JapaneseProcessor(this.app, this.settings, this.logger, pluginDir, this.audioCacheManager);
-						this.logger.info("Polyglot Helper plugin loaded successfully on mobile.");
-					} catch (error) {
-						console.warn("Some components failed to initialize on mobile:", error);
-					}
-				}, 200);
-			} else {
-				// 桌面端：完整初始化
-				this.audioCacheManager = new AudioCacheManager(this.app, this.settings, this.logger);
-				this.cacheManager = new CacheManager(this.app, this.logger, pluginDir);
-				this.learningTracker = new LearningTracker(this.app, this.settings, this.saveSettings.bind(this));
-				this.performanceOptimizer = new PerformanceOptimizer(this.app, this);
-				
-				window.setTimeout(() => {
-					try {
-						this.japaneseProcessor = new JapaneseProcessor(this.app, this.settings, this.logger, pluginDir, this.audioCacheManager);
-						this.logger.info("Polyglot Helper plugin loaded successfully on desktop.");
-						this.performanceOptimizer.warmupCache();
-					} catch (error) {
-						this.logger.error("Failed to initialize Japanese processor:", error);
-					}
-				}, 100);
-			}
-			
+			this.audioCacheManager = new AudioCacheManager(this.app, this.settings, this.logger);
+			this.cacheManager = new CacheManager(this.app, this.logger, pluginDir);
+			this.learningTracker = new LearningTracker(this.app, this.settings, this.saveSettings.bind(this));
+			this.performanceOptimizer = new PerformanceOptimizer(this.app, this);
+			// Not needed to draw the workspace: build it once the layout is ready.
+			this.app.workspace.onLayoutReady(() => {
+				try {
+					this.japaneseProcessor = new JapaneseProcessor(this.app, this.settings, this.logger, pluginDir, this.audioCacheManager);
+					this.logger.info("Polyglot Helper plugin loaded.");
+				} catch (error) {
+					this.logger.error("Failed to initialize the Japanese processor:", error);
+				}
+			});
 		} catch (error) {
 			console.error("Failed to initialize core components:", error);
 			new Notice(tr("插件初始化失败：核心组件", "Plugin failed to start: core components"));
@@ -306,6 +288,7 @@ export default class PolyglotHelper extends Plugin {
 		});
 
 		this.setupDueStatus();
+		new WordHighlight(this).register();
 
 		// === 查词小卡 ===
 		this.addCommand({
@@ -492,6 +475,12 @@ export default class PolyglotHelper extends Plugin {
 		});
 
 		// === 系统工具 ===
+		this.addCommand({
+			id: 'send-vocab-anki',
+			name: tr('发送词库到 Anki', 'Send word list to Anki'),
+			callback: () => void this.sendToAnki(),
+		});
+
 		this.addCommand({
 			id: 'export-vocab-flashcards',
 			name: tr('导出词库为闪卡笔记（间隔重复插件格式）', 'Export word list as flashcard notes (Spaced Repetition format)'),
@@ -1813,7 +1802,8 @@ Input text: "${inputText}"`;
 		this.dueStatusEl.setAttr('data-tooltip-position', 'top');
 		this.registerDomEvent(this.dueStatusEl, 'click', () => void this.activateReviewView());
 		this.registerInterval(window.setInterval(() => this.updateDueStatus(), 10 * 60 * 1000));
-		this.updateDueStatus();
+		// Counting due words walks the whole list; do it after the workspace is drawn.
+		this.app.workspace.onLayoutReady(() => this.updateDueStatus());
 	}
 
 	private updateDueStatus() {
@@ -1846,6 +1836,36 @@ Input text: "${inputText}"`;
 		if (format === 'flashcards') {
 			const file = vault.getAbstractFileByPath(path);
 			if (file instanceof TFile) await this.app.workspace.getLeaf(false).openFile(file);
+		}
+	}
+
+	/** 通过 AnkiConnect 把词库直接送进 Anki：已有的卡按稳定 ID 更新，只新增没有的。 */
+	async sendToAnki() {
+		const cards = collectCards(this.settings.englishVocabItems || {}, this.settings.japaneseVocabItems || {});
+		if (cards.length === 0) {
+			new Notice(tr('词库是空的，先查几个词再发送', 'The word list is empty; look up a few words first'));
+			return;
+		}
+		const url = this.settings.ankiConnectUrl?.trim() || 'http://127.0.0.1:8765';
+		const deck = this.settings.ankiDeck?.trim() || 'Polyglot';
+		const invoke = ankiConnectInvoke(async (body) => (await requestUrl({ url, method: 'POST', contentType: 'application/json', body, throw: true })).json as unknown);
+		const working = new Notice(tr('正在发送到 Anki…', 'Sending to Anki…'), 0);
+		try {
+			const { added, updated, unchanged } = await syncToAnki(invoke, cards, deck, this.app.vault.getName());
+			working.hide();
+			new Notice(tr(
+				`已发送到 Anki 牌组“${deck}”：新增 ${added}，更新 ${updated}，没变 ${unchanged}`,
+				`Sent to the Anki deck "${deck}": ${added} added, ${updated} updated, ${unchanged} unchanged`,
+			));
+		} catch (error) {
+			working.hide();
+			const message = errorMessage(error);
+			const unreachable = /ECONNREFUSED|ERR_CONNECTION|net::|Failed to fetch|Not an AnkiConnect reply|status 40[0-9]|status 50[0-9]/i.test(message);
+			new Notice(unreachable
+				? tr('连不上 Anki。先打开 Anki，并装好 AnkiConnect 插件（代码 2055492159），再发一次。用不了的话，可以用“导出词库为 Anki 导入文件”。',
+					'Could not reach Anki. Open Anki with the AnkiConnect add-on installed (code 2055492159) and send again, or use "Export word list as an Anki import file".')
+				: tr(`Anki 没有收下：${message}`, `Anki did not accept the cards: ${message}`), 12000);
+			this.logger.error('Send to Anki failed', error);
 		}
 	}
 

@@ -34,6 +34,8 @@ English · [中文](README.zh-CN.md) · [日本語](README.ja.md)
 - **Where results go:** the side panel, the selection, the end of the note, a new note or a fixed file, with separate paths per language.
 - **Word list:** one click adds a word with the note and sentence it came from; adding it again merges. Review on a schedule you can change (default 1, 3, 7, 14, 30, 90, 180 days); the status bar shows how many are due.
 - **Several meanings:** adding a word you already saved lets you put this sentence under an existing meaning or keep it as a new one, reviewed on its own.
+- **Saved words while reading:** in reading view, words from your list are underlined, Japanese verbs and adjectives in any conjugated form too (食べた for 食べる); point at one for its reading and meaning.
+- **Send to Anki** in one command through the AnkiConnect add-on: new words become cards in your deck, changed ones are updated, nothing is duplicated.
 - **Export** to a Spaced Repetition flashcard note or an Anki import file. Each card has a stable id and a link back to its note, so re-exporting keeps the schedule and re-importing into Anki updates the same cards.
 - **Cache:** the same lookup costs nothing the second time; the cleanup panel only touches the plugin's own cache.
 
@@ -84,7 +86,7 @@ Pick a provider in **Settings → Translation and models**; the endpoint and mod
 | Word list and review history       | Nowhere                                         | `data.json` in the plugin folder                                                                                                                                                   |
 | Debug log                          | Nowhere                                         | Written only when debug mode is on; keys and looked-up text are left out                                                                                                           |
 
-**Network use.** Depending on the sections you enable, lookups go to your AI service and to dictionaryapi.dev, Cambridge Dictionary, Etymonline, Merriam-Webster (with your key), Jisho, Tatoeba, YourDictionary, WordHippo, The Free Dictionary idioms and an unofficial Urban Dictionary API. Speech uses the OpenAI, Gemini or Youdao service you pick. There is no account and no server of our own.
+**Network use.** Depending on the sections you enable, lookups go to your AI service and to dictionaryapi.dev, Cambridge Dictionary, Etymonline, Merriam-Webster (with your key), Jisho, Tatoeba, YourDictionary, WordHippo, The Free Dictionary idioms and an unofficial Urban Dictionary API. Speech uses the OpenAI, Gemini or Youdao service you pick. **Send word list to Anki** talks only to AnkiConnect on your computer (`127.0.0.1:8765`). There is no account and no server of our own.
 
 ## Known limits
 
