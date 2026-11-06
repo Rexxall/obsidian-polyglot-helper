@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.11.0
 
 - **Saved words are marked while you read.** In reading view, words from your word list are underlined; point at one to see its reading, meaning and the note it came from, with no lookup. Japanese verbs and adjectives are found in their conjugated forms (発表した for 発表する, 足りなく for 足りる, 新しかった for 新しい), English words with common endings (queues, studied). Mastered words are left alone. One matcher is built per word-list change, so a long article opens as fast as before. Turn it off under **Learning and interface**.
 - **Send word list to Anki.** A new command sends every card straight to Anki through the AnkiConnect add-on, into the deck set in settings (default "Polyglot"), with a "Polyglot Helper" note type. Each note keeps the card's stable id, so sending again updates changed cards and adds only new ones, even after you move them to another deck. Anki must be open with AnkiConnect installed; the import file export stays for those without it.
