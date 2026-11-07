@@ -671,6 +671,16 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
+			.setName(tr('笔记样式类', 'Note CSS class'))
+			.setDesc(tr('写进插件新建的词条笔记和固定记录文件的 cssclasses，让库里的 CSS 片段给它换样子；插件本身不带这个样式，也不改你自己的笔记。留空就不加。', "Added to the cssclasses of word-card notes and the fixed log file the plugin creates, so a CSS snippet in your vault can style them; the plugin ships no style for it and never changes your own notes. Leave empty to add none."))
+			.addText(text => text
+				.setValue(this.plugin.settings.noteCssClass ?? '')
+				.onChange(async (value) => {
+					this.plugin.settings.noteCssClass = value.trim();
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
 			.setName(tr('Anki 牌组', 'Anki deck'))
 			.setDesc(tr('命令“发送词库到 Anki”把卡片放进这个牌组。要先打开 Anki 并装好 AnkiConnect 插件；再发一次只更新改过的卡，不会重复。', 'The "Send word list to Anki" command puts cards in this deck. Anki must be open with the AnkiConnect add-on; sending again updates changed cards without duplicates.'))
 			.addText(text => text

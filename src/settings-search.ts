@@ -81,6 +81,8 @@ export const SETTINGS_SEARCH_TERMS: string[] = [
 	'Mark saved words while reading',
 	'词库导出文件夹',
 	'Word list export folder',
+	'笔记样式类',
+	'Note CSS class',
 	'Anki 牌组',
 	'Anki deck',
 	'启用学习进度追踪',

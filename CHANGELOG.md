@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **A class for your own note style.** Word-card notes and the fixed log file the plugin creates get `ih-clip` in their `cssclasses`, so a CSS snippet in your vault can style them. The plugin ships no style for it and never changes your own notes; change or clear the class under **Settings → Note CSS class**. Classes already on the note are kept.
+
 ## 1.11.0
 
 - **Saved words are marked while you read.** In reading view, words from your word list are underlined; point at one to see its reading, meaning and the note it came from, with no lookup. Japanese verbs and adjectives are found in their conjugated forms (発表した for 発表する, 足りなく for 足りる, 新しかった for 新しい), English words with common endings (queues, studied). Mastered words are left alone. One matcher is built per word-list change, so a long article opens as fast as before. Turn it off under **Learning and interface**.

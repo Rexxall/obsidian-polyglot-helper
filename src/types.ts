@@ -70,6 +70,7 @@ export interface PolyglotHelperSettings {
 	wordSelectionMode?: boolean; // 选词模式：开启后鼠标选择的词汇直接加入文本框
 	showDueInStatusBar?: boolean; // 状态栏显示待复习数，点一下进复习
 	vocabExportFolder?: string; // 词库导出（闪卡笔记、Anki 文本）所在文件夹
+	noteCssClass?: string; // 写进插件新建笔记（词条文件、固定记录文件）的 cssclasses，留空不加
 	highlightSavedWords?: boolean; // 阅读视图里给词库里的词加下划线，悬停看释义
 	ankiDeck?: string; // “发送到 Anki”放进的牌组
 	ankiConnectUrl?: string; // AnkiConnect 地址，默认 http://127.0.0.1:8765

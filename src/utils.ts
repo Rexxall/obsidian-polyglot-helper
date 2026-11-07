@@ -122,6 +122,29 @@ export const ENGLISH_STOP_WORDS = new Set([
     'you', "you'd", "you'll", "you're", "you've", 'your', 'yours', 'yourself', 'yourselves'
 ]);
 
+/** Class added to notes the plugin creates (word-card files, the fixed log file), for a vault snippet to style. */
+let noteCssClass = '';
+export function setNoteCssClass(value: string | undefined) {
+    noteCssClass = (value || '').trim();
+}
+
+/** Adds the note class to cssclasses, keeping the ones already there. Never touches the user's own notes. */
+export function withNoteClass(frontmatter: Record<string, unknown>, cssClass: string) {
+    if (!/^[A-Za-z][\w-]*$/.test(cssClass)) return;
+    const raw = frontmatter.cssclasses ?? frontmatter.cssclass;
+    const list = (Array.isArray(raw) ? raw : typeof raw === 'string' ? raw.split(/[\s,]+/) : [])
+        .map((value) => String(value).trim())
+        .filter(Boolean);
+    if (!list.includes(cssClass)) list.push(cssClass);
+    delete frontmatter.cssclass;
+    frontmatter.cssclasses = list;
+}
+
+async function markPluginNote(app: App, file: TFile | null) {
+    if (!file || !noteCssClass) return;
+    await app.fileManager.processFrontMatter(file, (frontmatter: Record<string, unknown>) => withNoteClass(frontmatter, noteCssClass));
+}
+
 async function createNewFileWithResult(
     app: App,
     folderPath: string,
@@ -145,9 +168,11 @@ async function createNewFileWithResult(
         const existingFile = app.vault.getAbstractFileByPath(fullPath);
         if (existingFile instanceof TFile) {
             await app.vault.append(existingFile, `\n\n---\n${result}`);
+            await markPluginNote(app, existingFile);
             new Notice(tr(`结果已追加到现有文件: ${fullPath}`, `Appended to the existing file: ${fullPath}`));
         } else {
             const newFile = await app.vault.create(fullPath, result);
+            await markPluginNote(app, newFile);
             new Notice(tr(`结果已保存到新文件: ${newFile.path}`, `Saved to a new file: ${newFile.path}`));
         }
     } catch (e) {
@@ -258,6 +283,7 @@ export async function handleSpecificOutput(
                     const timestamp = new Date().toLocaleString('zh-CN');
                     const content = `\n\n---\n**${timestamp}**\n\n${result}\n\n\n`;
                     await app.vault.append(fixedFile, content);
+                    await markPluginNote(app, fixedFile);
                     new Notice(tr(`结果已追加到固定文件: ${fixedFile.name}`, `Appended to the fixed file: ${fixedFile.name}`));
                 } else {
                     // 文件不存在，创建文件
@@ -272,6 +298,7 @@ export async function handleSpecificOutput(
                         }
 
                         const newFile = await app.vault.create(outputSettings.fixedOutputFile, content);
+                        await markPluginNote(app, newFile);
                         new Notice(tr(`固定文件已创建并保存结果: ${newFile.name}`, `Created the fixed file and saved the result: ${newFile.name}`));
                     } catch (e) {
                         new Notice(tr(`创建固定文件失败: ${errorMessage(e)}`, `Could not create the fixed file: ${errorMessage(e)}`));
@@ -377,6 +404,7 @@ export async function handlePriorityOutput(
                     const timestamp = new Date().toLocaleString('zh-CN');
                     const content = `\n\n---\n**${timestamp}**\n\n${result}\n\n\n`;
                     await app.vault.append(fixedFile, content);
+                    await markPluginNote(app, fixedFile);
                     new Notice(tr(`结果已追加到固定文件: ${fixedFile.name}`, `Appended to the fixed file: ${fixedFile.name}`));
                 } else {
                     try {
@@ -390,6 +418,7 @@ export async function handlePriorityOutput(
                         }
 
                         const newFile = await app.vault.create(fixedFilePath, content);
+                        await markPluginNote(app, newFile);
                         new Notice(tr(`固定文件已创建并保存结果: ${newFile.name}`, `Created the fixed file and saved the result: ${newFile.name}`));
                     } catch (e) {
                         new Notice(tr(`创建固定文件失败: ${errorMessage(e)}`, `Could not create the fixed file: ${errorMessage(e)}`));
@@ -502,6 +531,7 @@ export async function handleOutput(
                 const timestamp = new Date().toLocaleString('zh-CN');
                 const content = `\n\n---\n**${timestamp}**\n**查询:** ${query}\n\n${result}\n\n\n`;
                 await app.vault.append(fixedFile, content);
+                    await markPluginNote(app, fixedFile);
                 new Notice(tr(`结果已追加到固定文件: ${fixedFile.name}`, `Appended to the fixed file: ${fixedFile.name}`));
             } else {
                 // 文件不存在，创建文件
@@ -516,6 +546,7 @@ export async function handleOutput(
                     }
 
                     const newFile = await app.vault.create(settings.fixedOutputFile, content);
+                        await markPluginNote(app, newFile);
                     new Notice(tr(`固定文件已创建并保存结果: ${newFile.name}`, `Created the fixed file and saved the result: ${newFile.name}`));
                 } catch (e) {
                     new Notice(tr(`创建固定文件失败: ${errorMessage(e)}`, `Could not create the fixed file: ${errorMessage(e)}`));

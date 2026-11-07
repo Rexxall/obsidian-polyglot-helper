@@ -24,7 +24,7 @@ import { Logger } from './shared/Logger';
 import { EncryptedSettings } from './shared/EncryptedSettings';
 import { KEY_FIELDS, bindKeys, moveKeysToStorage } from './secrets';
 import { JapaneseProcessor } from './japanese-processor';
-import { handlePriorityOutput, addQueryToHistory } from './utils';
+import { handlePriorityOutput, addQueryToHistory, setNoteCssClass } from './utils';
 import { PolyglotHelperView, POLYGLOT_HELPER_VIEW_TYPE } from './view';
 import { PolyglotSettingTab } from './settings';
 import { getFromCache, saveToCache } from './cache';
@@ -84,6 +84,7 @@ const DEFAULT_SETTINGS: PolyglotHelperSettings = {
 	showDueInStatusBar: true,
 	vocabExportFolder: 'Polyglot',
 	highlightSavedWords: true,
+	noteCssClass: 'ih-clip',
 	ankiDeck: 'Polyglot',
 
 	// Audio Settings
@@ -212,6 +213,7 @@ export default class PolyglotHelper extends Plugin {
 	async onload() {
 		setInterfaceLanguage(getLanguage());
 		await this.loadSettings();
+		setNoteCssClass(this.settings.noteCssClass);
 
 		// 移动端兼容性：安全获取插件目录
 		const pluginDir = this.manifest.dir || '';
@@ -1785,6 +1787,7 @@ Input text: "${inputText}"`;
 	}
 
 	async saveSettings() {
+		setNoteCssClass(this.settings.noteCssClass);
 		// A configuration added since the last save gets its key getter too; keys are never written.
 		bindKeys(this.settings, this.app.secretStorage);
 		await this.saveData(this.settings);
