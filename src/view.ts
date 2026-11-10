@@ -2279,7 +2279,6 @@ export class PolyglotHelperView extends ItemView {
         let lastSelection = '';
         let lastClipboardText = '';
         let selectionTimeout: number | null = null;
-        let clipboardCheckInterval: number | null = null;
 
         // 添加文本到输入框的通用方法
         const addTextToInput = (text: string) => {
@@ -2371,7 +2370,7 @@ export class PolyglotHelperView extends ItemView {
             window.setTimeout(handleSelection, 150);
         };
 
-        // 剪贴板监听功能
+        // 只在用户于 Obsidian 内复制时读一次剪贴板；不做定时轮询，避免读到其他应用里复制的内容
         const checkClipboard = async () => {
             if (!this.plugin.settings.wordSelectionMode) {
                 return;
@@ -2417,13 +2416,6 @@ export class PolyglotHelperView extends ItemView {
         // 监听复制事件
         document.addEventListener('copy', handleCopy);
         
-        // 定期检查剪贴板（作为补充，用于阅读模式）
-        if (this.plugin.settings.wordSelectionMode) {
-            clipboardCheckInterval = window.setInterval(() => {
-                void checkClipboard();
-            }, 1000); // 每秒检查一次剪贴板
-        }
-        
         // 监听活动文件变化，重置状态
         this.registerEvent(
             this.app.workspace.on('active-leaf-change', () => {
@@ -2431,34 +2423,12 @@ export class PolyglotHelperView extends ItemView {
             })
         );
 
-        // 监听设置变化，动态开启/关闭剪贴板检查
-        this.registerEvent(
-            // @ts-ignore
-            this.app.workspace.on('polyglot-settings-change', () => {
-                if (this.plugin.settings.wordSelectionMode) {
-                    if (!clipboardCheckInterval) {
-                        clipboardCheckInterval = window.setInterval(() => {
-                            void checkClipboard();
-                        }, 1000);
-                    }
-                } else {
-                    if (clipboardCheckInterval) {
-                        window.clearInterval(clipboardCheckInterval);
-                        clipboardCheckInterval = null;
-                    }
-                }
-            })
-        );
-        
         // 清理函数
         this.register(() => {
             document.removeEventListener('mouseup', handleMouseUp);
             document.removeEventListener('copy', handleCopy);
             if (selectionTimeout) {
                 window.clearTimeout(selectionTimeout);
-            }
-            if (clipboardCheckInterval) {
-                window.clearInterval(clipboardCheckInterval);
             }
         });
     }

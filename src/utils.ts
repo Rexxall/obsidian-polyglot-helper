@@ -249,17 +249,10 @@ export async function handleSpecificOutput(
                 if (selection) {
                     const file = app.vault.getAbstractFileByPath(filePath);
                     if (file instanceof TFile) {
-                        const content = await app.vault.read(file);
-                        const lines = content.split('\n');
-
-                        // 替换选中的内容
-                        const beforeSelection = lines.slice(0, selection.from.line).join('\n') +
-                                              (selection.from.line < lines.length ? '\n' + lines[selection.from.line].substring(0, selection.from.ch) : '');
-                        const afterSelection = (selection.to.line < lines.length ? lines[selection.to.line].substring(selection.to.ch) : '') +
-                                             (selection.to.line + 1 < lines.length ? '\n' + lines.slice(selection.to.line + 1).join('\n') : '');
-
-                        const newContent = beforeSelection + result + afterSelection;
-                        await app.vault.modify(file, newContent);
+                        // 读和写放在同一步，查询期间的其他修改不会被整篇覆盖
+                        await app.vault.process(file, (content) =>
+                            replaceSelectionInText(content, selection, result)
+                        );
                         new Notice(tr("结果已替换选中内容。", "Replaced the selection."));
                     }
                 } else {

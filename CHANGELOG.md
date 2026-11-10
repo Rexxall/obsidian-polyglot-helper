@@ -3,6 +3,8 @@
 ## Unreleased
 
 - **A class for your own note style.** Word-card notes and the fixed log file the plugin creates get `ih-clip` in their `cssclasses`, so a CSS snippet in your vault can style them. The plugin ships no style for it and never changes your own notes; change or clear the class under **Settings → Note CSS class**. Classes already on the note are kept.
+- **Word selection mode no longer reads the clipboard every second.** The clipboard is read once, when you copy inside Obsidian. Text copied in other apps is no longer picked up.
+- Replacing a selection in a file reads and writes in one step, so an edit made while the lookup ran is not overwritten.
 
 ## 1.11.0
 
