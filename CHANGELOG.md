@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.11.2
 
 - **Common English words are no longer underlined or auto-saved.** Articles, prepositions, pronouns, forms of "be" and conjunctions (the, of, it, is, and…) are left alone in reading view even if they are in your word list, and **Add to the word list automatically** skips them. Saving one by hand still works; remove old entries from the word list yourself.
 
