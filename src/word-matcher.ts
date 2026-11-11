@@ -1,4 +1,5 @@
 import type { EnglishVocabularyItem, JapaneseVocabularyItem } from './types';
+import { isFunctionWord } from './function-words';
 
 /**
  * Finds saved words in running text, for highlighting while reading.
@@ -122,7 +123,7 @@ export class WordMatcher {
 		for (const item of Object.values(english)) {
 			if (item.difficulty === 0) continue;
 			const word = oneLine(item.word).toLowerCase();
-			if (word.length < 2 || word.length > 40) continue;
+			if (word.length < 2 || word.length > 40 || isFunctionWord(word)) continue;
 			const saved = {
 				word: oneLine(item.word),
 				reading: oneLine(item.phonetics),

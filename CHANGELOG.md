@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Common English words are no longer underlined or auto-saved.** Articles, prepositions, pronouns, forms of "be" and conjunctions (the, of, it, is, and…) are left alone in reading view even if they are in your word list, and **Add to the word list automatically** skips them. Saving one by hand still works; remove old entries from the word list yourself.
+
 ## 1.11.1
 
 - **A class for your own note style.** Word-card notes and the fixed log file the plugin creates get `ih-clip` in their `cssclasses`, so a CSS snippet in your vault can style them. The plugin ships no style for it and never changes your own notes; change or clear the class under **Settings → Note CSS class**. Classes already on the note are kept.

@@ -47,6 +47,7 @@ import { ensureIds } from './vocab-senses';
 import { fire } from './shared/fire';
 import { errorMessage } from './shared/errors';
 import { tr } from './shared/i18n';
+import { autoAddEnglishWord } from './function-words';
 // --- Interfaces and Defaults ---
 const DEFAULT_SETTINGS: PolyglotHelperSettings = {
 	// General Settings
@@ -1087,7 +1088,9 @@ export default class PolyglotHelper extends Plugin {
 	private async extractAndAddEnglishVocab(query: string, result: string): Promise<void> {
 		try {
 			// 提取主要单词（去除短语中的介词等）
-			const word = query.trim().split(/\s+/)[0].toLowerCase();
+			// Function words (the, of, is…) are in every sentence; saving them by hand still works.
+			const word = autoAddEnglishWord(query);
+			if (!word) return;
 
 			// 从结果中提取音标
 			const phoneticMatch = result.match(/\[([^\]]+)\]|\/([^/]+)\//);
