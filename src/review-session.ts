@@ -85,13 +85,16 @@ export class ReviewSession {
         });
 
         const stats = card.createDiv({ cls: 'ap-stats polyglot-due-stats' });
-        const stat = (label: string, value: number, unit: string) => {
+        // Signature: the due count, the one number this card is for, in Didot italic (setting, on by default).
+        this.host.closest('.ap')?.toggleClass('ap-signed', this.plugin.settings.serifNumbers !== false);
+        const stat = (label: string, value: number, unit: string, signed = false) => {
             const cell = stats.createDiv({ cls: 'ap-stat' });
             cell.createDiv({ cls: 'ap-stat-label', text: label });
-            const v = cell.createDiv({ cls: 'ap-stat-value', text: String(value) });
+            const v = cell.createDiv({ cls: 'ap-stat-value' });
+            v.createSpan({ cls: signed ? 'ap-sig-num' : '', text: String(value) });
             v.createSpan({ cls: 'ap-unit', text: unit });
         };
-        stat(tr('到期', 'Due'), due.total, tr('个', ' '));
+        stat(tr('到期', 'Due'), due.total, tr('个', ' '), true);
         stat(tr('英语', 'English'), due.english, tr('个', ' '));
         stat(tr('日语', 'Japanese'), due.japanese, tr('个', ' '));
 

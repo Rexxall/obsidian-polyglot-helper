@@ -83,6 +83,8 @@ export const SETTINGS_SEARCH_TERMS: string[] = [
 	'Word list export folder',
 	'笔记样式类',
 	'Note CSS class',
+	'数字用衬线',
+	'Serif numbers',
 	'Anki 牌组',
 	'Anki deck',
 	'启用学习进度追踪',

@@ -682,6 +682,17 @@ export class PolyglotSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
+			.setName(tr('数字用衬线', 'Serif numbers'))
+			.setDesc(tr('复习卡上的到期数用 Didot 斜体；没装 Didot 的系统用 Georgia。', 'The due count on the review card in Didot italic; Georgia where Didot is not installed.'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.serifNumbers !== false)
+				.onChange(async (value) => {
+					this.plugin.settings.serifNumbers = value;
+					await this.plugin.saveSettings();
+					activeDocument.querySelectorAll('.polyglot-due-stats').forEach(el => el.closest('.ap')?.toggleClass('ap-signed', value));
+				}));
+
+		new Setting(containerEl)
 			.setName(tr('Anki 牌组', 'Anki deck'))
 			.setDesc(tr('命令“发送词库到 Anki”把卡片放进这个牌组。要先打开 Anki 并装好 AnkiConnect 插件；再发一次只更新改过的卡，不会重复。', 'The "Send word list to Anki" command puts cards in this deck. Anki must be open with the AnkiConnect add-on; sending again updates changed cards without duplicates.'))
 			.addText(text => text

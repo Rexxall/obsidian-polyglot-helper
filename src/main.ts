@@ -86,6 +86,7 @@ const DEFAULT_SETTINGS: PolyglotHelperSettings = {
 	vocabExportFolder: 'Polyglot',
 	highlightSavedWords: true,
 	noteCssClass: '', // 公开版不带任何库的类名，用户自己填
+	serifNumbers: true,
 	ankiDeck: 'Polyglot',
 
 	// Audio Settings
