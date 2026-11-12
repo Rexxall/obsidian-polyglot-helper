@@ -3,6 +3,7 @@ import { ApiConfig, PolyglotHelperSettings } from "../types";
 import { Logger } from '../shared/Logger';
 
 import { errorMessage } from '../shared/errors';
+import { temperatureFor } from '../ai/sampling';
 export const LLM_TIMEOUT_MS = 60_000;
 
 // One place for the OpenAI-compatible chat request used by all three helpers below.
@@ -128,7 +129,7 @@ ${contextStr}
         const response = await postChatCompletion(baseUrl, apiKey, {
             model: modelName,
             messages: messages,
-            temperature: 0.2, // Slightly increased for better generation
+            ...temperatureFor(modelName, 0.2), // Slightly increased for better generation
             response_format: { "type": "json_object" } // Enforce JSON output
         });
 
@@ -170,7 +171,7 @@ English text: "${text}"`;
         const response = await postChatCompletion(baseUrl, apiKey, {
             model: modelName,
             messages: messages,
-            temperature: 0.0, // Set to 0 for deterministic translation
+            ...temperatureFor(modelName, 0.0), // Set to 0 for deterministic translation
         });
 
         if (response.status === 200) {
@@ -205,7 +206,7 @@ Chinese text: "${text}"`;
         const response = await postChatCompletion(baseUrl, apiKey, {
             model: modelName,
             messages: messages,
-            temperature: 0.0, // Set to 0 for deterministic translation
+            ...temperatureFor(modelName, 0.0), // Set to 0 for deterministic translation
         });
 
         if (response.status === 200) {

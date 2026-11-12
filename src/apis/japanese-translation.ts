@@ -5,6 +5,7 @@ import { Logger } from '../logger';
 
 import { errorMessage } from '../shared/errors';
 import { tr } from '../shared/i18n';
+import { temperatureFor } from '../ai/sampling';
 export async function getJapaneseTranslationTS(
     text: string,
     settings: PolyglotHelperSettings,
@@ -121,7 +122,7 @@ export async function getJapaneseTranslationTS(
                     { "role": "system", "content": "You are a Japanese language teacher who provides analysis in Markdown format." },
                     { "role": "user", "content": prompt }
                 ],
-                temperature: 0.3
+                ...temperatureFor(model, 0.3)
             })
         });
 
@@ -203,7 +204,7 @@ export async function getJapaneseSimpleTranslationTS(
             { "role": "system", "content": "You are a translation assistant that only returns pure JSON objects." },
             { "role": "user", "content": prompt }
         ],
-        temperature: 0.1,
+        ...temperatureFor(model, 0.1),
     };
 
     if (settings.llmProvider === 'openai') {

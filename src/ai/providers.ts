@@ -4,6 +4,7 @@
  * takes the transport as a parameter.
  */
 import { tr } from '../shared/i18n';
+import { isReasoningModel } from './sampling';
 
 export type ProviderId =
 	| 'deepseek'
@@ -265,8 +266,8 @@ export async function testConnection(
 				body: JSON.stringify({
 					model: config.model,
 					messages: [{ role: 'user', content: 'Reply with OK.' }],
-					max_tokens: 5,
-					temperature: 0,
+					// Reasoning models spend tokens thinking first and reject max_tokens; leave both out.
+					...(isReasoningModel(config.model) ? {} : { max_tokens: 5, temperature: 0 }),
 				}),
 			}),
 			timeout,

@@ -48,6 +48,7 @@ import { fire } from './shared/fire';
 import { errorMessage } from './shared/errors';
 import { tr } from './shared/i18n';
 import { autoAddEnglishWord } from './function-words';
+import { temperatureFor } from './ai/sampling';
 // --- Interfaces and Defaults ---
 const DEFAULT_SETTINGS: PolyglotHelperSettings = {
 	// General Settings
@@ -1230,7 +1231,7 @@ Japanese text: "${text}"`;
 					body: JSON.stringify({
 						model: apiConfig.model,
 						messages: messages,
-						temperature: 0.0,
+						...temperatureFor(apiConfig.model, 0.0),
 					})
 				});
 
@@ -1261,7 +1262,7 @@ English text: "${text}"`;
 					body: JSON.stringify({
 						model: apiConfig.model,
 						messages: messages,
-						temperature: 0.0,
+						...temperatureFor(apiConfig.model, 0.0),
 					})
 				});
 
@@ -1350,7 +1351,7 @@ Input text: "${inputText}"`;
 				body: JSON.stringify({
 					model: apiConfig.model,
 					messages: messages,
-					temperature: 0.0, // Set to 0 for deterministic translation
+					...temperatureFor(apiConfig.model, 0.0), // Set to 0 for deterministic translation
 				})
 			});
 
@@ -1372,7 +1373,7 @@ Input text: "${inputText}"`;
 							'Content-Type': 'application/json',
 							'Authorization': `Bearer ${apiConfig.apiKey}`
 						},
-						body: JSON.stringify({ model: apiConfig.model, messages: strictMessages, temperature: 0.0 })
+						body: JSON.stringify({ model: apiConfig.model, messages: strictMessages, ...temperatureFor(apiConfig.model, 0.0) })
 					});
 					if (retry.status === 200) {
 						translation = chatContent(retry).trim();
@@ -1409,7 +1410,7 @@ Input text: "${inputText}"`;
 			];
 
 			// 要求 JSON 输出（支持 OpenAI 兼容）
-			const body = { model: apiConfig.model, messages, temperature: 0.0, response_format: { type: 'json_object' } };
+			const body = { model: apiConfig.model, messages, ...temperatureFor(apiConfig.model, 0.0), response_format: { type: 'json_object' } };
 
 			const res = await requestUrl({
 				url: apiConfig.baseUrl,
@@ -1454,7 +1455,7 @@ Input text: "${inputText}"`;
 				url: apiConfig.baseUrl,
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiConfig.apiKey}` },
-				body: JSON.stringify({ model: apiConfig.model, messages, temperature: 0.0 })
+				body: JSON.stringify({ model: apiConfig.model, messages, ...temperatureFor(apiConfig.model, 0.0) })
 			});
 			if (res.status === 200) {
 				const kana = chatContent(res).trim();

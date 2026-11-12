@@ -9,6 +9,7 @@ import { fire } from "./shared/fire";
 import { tr } from './shared/i18n';
 import { showSenseMenu } from './ui/sense-menu';
 import { FIRST_WORD_NOTICE } from './shared/notices';
+import { temperatureFor } from './ai/sampling';
 interface LookupResult {
     reading: string;
     pos: string;
@@ -224,7 +225,7 @@ export class LookupPopover {
         try {
             const res = await postChatCompletion(config.baseUrl, config.apiKey, {
                 model: config.model,
-                temperature: 0,
+                ...temperatureFor(config.model, 0),
                 messages: [
                     { role: 'system', content: 'You are a concise bilingual dictionary. Output strict JSON only.' },
                     { role: 'user', content: prompt },
