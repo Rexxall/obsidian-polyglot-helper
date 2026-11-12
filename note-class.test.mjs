@@ -26,3 +26,9 @@ test('the note class joins existing cssclasses once and replaces the old cssclas
   withNoteClass(none, 'two words');
   assert.equal('cssclasses' in none, false);
 });
+
+test('the public build adds no note class until the user sets one', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const source = await readFile(path.join(import.meta.dirname, 'src/main.ts'), 'utf8');
+  assert.match(source, /\n\tnoteCssClass: '',/);
+});

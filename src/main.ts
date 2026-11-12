@@ -85,7 +85,7 @@ const DEFAULT_SETTINGS: PolyglotHelperSettings = {
 	showDueInStatusBar: true,
 	vocabExportFolder: 'Polyglot',
 	highlightSavedWords: true,
-	noteCssClass: 'ih-clip',
+	noteCssClass: '', // 公开版不带任何库的类名，用户自己填
 	ankiDeck: 'Polyglot',
 
 	// Audio Settings

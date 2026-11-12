@@ -674,6 +674,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 			.setName(tr('笔记样式类', 'Note CSS class'))
 			.setDesc(tr('写进插件新建的词条笔记和固定记录文件的 cssclasses，让库里的 CSS 片段给它换样子；插件本身不带这个样式，也不改你自己的笔记。留空就不加。', "Added to the cssclasses of word-card notes and the fixed log file the plugin creates, so a CSS snippet in your vault can style them; the plugin ships no style for it and never changes your own notes. Leave empty to add none."))
 			.addText(text => text
+				.setPlaceholder(tr('例如 word-note', 'For example word-note'))
 				.setValue(this.plugin.settings.noteCssClass ?? '')
 				.onChange(async (value) => {
 					this.plugin.settings.noteCssClass = value.trim();
