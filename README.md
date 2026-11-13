@@ -1,5 +1,7 @@
 <p align="right"><a href="README.zh-CN.md">中文</a> · <a href="README.ja.md">日本語</a></p>
 
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/icon-dark.svg"><img src="assets/readme/icon-light.svg" width="96" height="96" alt="Polyglot Helper icon"></picture></p>
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/readme/hero-dark.svg">
   <img src="assets/readme/hero-light.svg" width="100%" alt="Polyglot Helper: look up a word where you read, keep it, and meet it again. A word card for 蔵書 (ぞうしょ, collection of books) with Add to word list.">

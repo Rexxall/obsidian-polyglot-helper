@@ -1,5 +1,7 @@
 <div align="center">
 
+<picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/icon-dark.svg"><img src="assets/readme/icon-light.svg" width="96" height="96" alt="Polyglot Helper icon"></picture>
+
 # Polyglot Helper
 
 **ノートで英語や日本語の単語を調べると、意味・読み・例文・音声をまとめた学習カードが返り、復習用の単語帳に入ります。**

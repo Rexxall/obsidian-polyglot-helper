@@ -1,5 +1,7 @@
 <p align="right"><a href="README.md">English</a> · <a href="README.ja.md">日本語</a></p>
 
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/readme/icon-dark.svg"><img src="assets/readme/icon-light.svg" width="96" height="96" alt="Polyglot Helper icon"></picture></p>
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/readme/hero-zh-dark.svg">
   <img src="assets/readme/hero-zh-light.svg" width="100%" alt="Polyglot Helper：在读的地方查词，存下来，下次读到还认得。图中是 蔵書（ぞうしょ，藏书）的词卡和“加入生词本”按钮。">
