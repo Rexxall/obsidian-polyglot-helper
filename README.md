@@ -114,7 +114,7 @@ Pick a provider in **Settings → Translation and models**; the endpoint and mod
 <details>
 <summary><b>Install by hand, verify a release, upgrade from 1.5</b></summary>
 
-Download `main.js`, `manifest.json` and `styles.css` from the [latest release](https://github.com/Rexxall/obsidian-polyglot-helper/releases/latest) into `<your vault>/.obsidian/plugins/polyglot-helper/`, then enable **Polyglot Helper** in **Settings → Community plugins**. Once the plugin is listed, install it from **Settings → Community plugins → Browse** instead.
+Download `main.js`, `manifest.json` and `styles.css` from the [latest release](https://github.com/Rexxall/obsidian-polyglot-helper/releases/latest) into `<your vault>/.obsidian/plugins/polyglot-helper/`, then enable **Polyglot Helper** in **Settings → Community plugins**. Most people install it from **Settings → Community plugins → Browse**; these steps are only for installing by hand.
 
 From 1.9.1 on, the three release files carry a signed build provenance attestation from the release workflow. To check a download: `gh attestation verify main.js --repo Rexxall/obsidian-polyglot-helper`.
 

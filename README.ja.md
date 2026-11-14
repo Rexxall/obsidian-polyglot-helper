@@ -114,7 +114,7 @@
 <details>
 <summary><b>手動インストール・リリースの検証・1.5 からの更新</b></summary>
 
-[最新リリース](https://github.com/Rexxall/obsidian-polyglot-helper/releases/latest)から `main.js`、`manifest.json`、`styles.css` をダウンロードし、`<your vault>/.obsidian/plugins/polyglot-helper/` に置きます。次に **「Settings → Community plugins」** で **Polyglot Helper** を有効にします。プラグイン一覧に掲載されたら、**「Settings → Community plugins → Browse」** からインストールしてください。
+[最新リリース](https://github.com/Rexxall/obsidian-polyglot-helper/releases/latest)から `main.js`、`manifest.json`、`styles.css` をダウンロードし、`<your vault>/.obsidian/plugins/polyglot-helper/` に置きます。次に **「Settings → Community plugins」** で **Polyglot Helper** を有効にします。通常は **「Settings → Community plugins → Browse」** からインストールできます。ここは手動で入れる場合の手順です。
 
 1.9.1 以降は、リリース用ワークフローで 3 つの配布ファイルに署名付きのビルド来歴証明を付けています。ダウンロードしたファイルは、`gh attestation verify main.js --repo Rexxall/obsidian-polyglot-helper` で検証できます。
 

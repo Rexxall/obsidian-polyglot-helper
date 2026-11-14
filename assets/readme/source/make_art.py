@@ -5,10 +5,11 @@
 from pathlib import Path
 
 THEMES = {
-    "light": dict(bg="#F7F6FB", fg="#1D1B26", muted="#6B6780", line="#E4E1EE", card="#FFFFFF",
-                  accent="#7A5AF0", accent_soft="#EEE9FF", under="#B9A6F7"),
-    "dark": dict(bg="#15141B", fg="#EEECF5", muted="#9C98AF", line="#2C2A36", card="#1E1D26",
-                 accent="#A48BFF", accent_soft="#2C2643", under="#6E5BB8"),
+    # Riso trio from the icon: cobalt for text accents, fluorescent pink for the action, lemon for the glyph pads.
+    "light": dict(bg="#F7F6F2", fg="#16151A", muted="#66636E", line="#E3E1DA", card="#FFFFFF",
+                  accent="#1E5BFF", accent_soft="#E4FF5A", under="#FF2D7A", btn="#FF2D7A", btn_text="#141414", play="#FFE1EC"),
+    "dark": dict(bg="#141416", fg="#F0EFEA", muted="#9D9AA3", line="#2C2B30", card="#1E1D21",
+                 accent="#6F98FF", accent_soft="#3B4610", under="#FF2D7A", btn="#FF2D7A", btn_text="#141414", play="#3A1A27"),
 }
 SANS = "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'PingFang SC', sans-serif"
 MONO = "ui-monospace, SFMono-Regular, Menlo, monospace"
@@ -52,16 +53,16 @@ HERO = """<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" view
   <g font-family="{sans}">
     <rect x="700" y="48" width="436" height="304" rx="20" fill="{card}" stroke="{line}"/>
     <text x="728" y="98" font-size="22" fill="{fg}">月の予定で、<tspan font-weight="600">蔵書</tspan>は約十二万冊。</text>
-    <rect x="861" y="106" width="44" height="3" rx="1.5" fill="{under}"/>
+    <rect x="861" y="106" width="44" height="4" rx="2" fill="{under}"/>
     <rect x="724" y="128" width="388" height="200" rx="16" fill="{bg}" stroke="{line}"/>
     <text x="748" y="178" font-size="34" font-weight="700" fill="{fg}">蔵書</text>
     <text x="830" y="176" font-size="18" fill="{muted}">ぞうしょ</text>
-    <circle cx="930" cy="169" r="14" fill="{accent_soft}"/>
+    <circle cx="930" cy="169" r="14" fill="{play}"/>
     <path d="M926 162 L926 176 L937 169 Z" fill="{accent}"/>
     <text x="748" y="224" font-size="19" fill="{fg}">{meaning}</text>
     <rect x="748" y="244" width="340" height="1" fill="{line}"/>
-    <rect x="748" y="262" width="168" height="40" rx="20" fill="{accent}"/>
-    <text x="832" y="288" font-size="17" font-weight="600" text-anchor="middle" fill="#FFFFFF">{add}</text>
+    <rect x="748" y="262" width="168" height="40" rx="20" fill="{btn}"/>
+    <text x="832" y="288" font-size="17" font-weight="600" text-anchor="middle" fill="{btn_text}">{add}</text>
     <text x="1088" y="288" font-size="15" text-anchor="end" fill="{muted}">Jisho</text>
   </g>
 </svg>

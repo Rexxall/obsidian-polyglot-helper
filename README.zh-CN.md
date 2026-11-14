@@ -110,7 +110,7 @@
 <details>
 <summary><b>安装</b></summary>
 
-1. 从 [最新版本](https://github.com/Rexxall/obsidian-polyglot-helper/releases/latest) 下载 `main.js`、`manifest.json`、`styles.css`，放进 `<库>/.obsidian/plugins/polyglot-helper/`。（上架社区插件后，可以直接在 **设置 → 第三方插件 → 浏览** 里安装。）
+1. 从 [最新版本](https://github.com/Rexxall/obsidian-polyglot-helper/releases/latest) 下载 `main.js`、`manifest.json`、`styles.css`，放进 `<库>/.obsidian/plugins/polyglot-helper/`。（一般直接在 **设置 → 第三方插件 → 浏览** 里安装，这几步只用于手动安装。）
 2. 在 **设置 → 第三方插件** 里启用 **Polyglot Helper**。
 3. 在插件设置里选服务商、选密钥、点 **测试**。
 4. 在侧栏查词，或在命令面板运行“英语分析”“日语分析”。常用的话可以设快捷键。
