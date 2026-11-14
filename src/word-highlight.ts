@@ -86,7 +86,8 @@ export class WordHighlight {
 		this.signature = next;
 		this.plugin.app.workspace.iterateAllLeaves((leaf) => {
 			const view = leaf.view;
-			if (view instanceof MarkdownView && view.getMode() === 'preview') view.previewMode.rerender(true);
+			// Also views in editing mode: their cached reading render would otherwise show the old words on switching back.
+			if (view instanceof MarkdownView) view.previewMode.rerender(true);
 		});
 	}
 
