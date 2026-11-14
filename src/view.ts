@@ -289,6 +289,7 @@ export class PolyglotHelperView extends ItemView {
 
         // 输入框回车：执行当前模式
         this.queryInput.inputEl.addEventListener('keydown', (e: KeyboardEvent) => {
+            if (e.isComposing || e.keyCode === 229) return;
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 this.runActiveMode();
