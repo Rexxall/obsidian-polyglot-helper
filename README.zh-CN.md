@@ -9,10 +9,7 @@
 
 <p align="center"><a href="https://community.obsidian.md/plugins/polyglot-helper"><b>在 Obsidian 里安装</b></a></p>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/demo-dark.gif">
-  <img src="assets/readme/demo-light.gif" width="100%" alt="在一篇日语新闻笔记里选中 蔵書，右键选“查词小卡”。卡片显示 ぞうしょ 和释义，点“加入生词本”。切到阅读视图后，蔵書 和其他存过的词都加了下划线，指针停上去显示读音和意思。">
-</picture>
+<img src="assets/readme/demo.webp" width="100%" alt="一篇 Ithaca 日记里有一段写 Kaede Books 的日文。在编辑视图选中“蔵書”，从命令面板选“查词小卡”，卡片显示 ぞうしょ、collection of books; (personal) library。点“加入生词本”后，阅读视图里“蔵書”带上下划线，指针停上去显示读音和意思，并注明出自那天的日记。">
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/readme/cards-zh-dark.svg">
@@ -28,6 +25,8 @@
 **需要** Obsidian 1.11.4 或更新，电脑和手机都能用。**费用** 插件和词典不要钱，不用注册。完整词条和“本句里的意思”要用你自己的一个兼容 OpenAI 格式的密钥（默认 DeepSeek），由服务商按用量收费，查一个词是一次很短的请求。
 
 截图是英文界面。Obsidian 设为中文时，插件界面也是中文。
+
+遇到问题？[复制一段排查提示词](docs/troubleshooting.zh-CN.md) 给你的 AI 助手。
 
 ## 其余内容
 

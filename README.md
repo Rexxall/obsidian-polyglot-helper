@@ -9,10 +9,7 @@
 
 <p align="center"><a href="https://community.obsidian.md/plugins/polyglot-helper"><b>Install from Obsidian</b></a></p>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/readme/demo-dark.gif">
-  <img src="assets/readme/demo-light.gif" width="100%" alt="In a Japanese news note, 蔵書 is selected and Quick word card is chosen from the right-click menu. A card shows ぞうしょ, collection of books; (personal) library, and Add to word list. After adding it, reading view underlines 蔵書 with the other saved words, and pointing at it shows the reading and meaning.">
-</picture>
+<img src="assets/readme/demo.webp" width="100%" alt="An Ithaca diary page with a Japanese paragraph about Kaede Books. In editing view, 蔵書 is selected, Quick word card is chosen from the command palette, and the card shows ぞうしょ, collection of books; (personal) library. After Add to word list, reading view underlines 蔵書, and pointing at it shows the reading and meaning, saved from that day’s note.">
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/readme/cards-dark.svg">
@@ -26,6 +23,8 @@
 3. Press **Add to word list**. It comes back for review, and is underlined wherever you read it.
 
 **Needs** Obsidian 1.11.4+, desktop or mobile. **Costs** nothing for the plugin and the dictionaries, no account. Full entries and the sentence meaning use one OpenAI-compatible key of your own (DeepSeek is preset), billed by that provider; one lookup is a short request.
+
+Something not working? [Copy a fix-it prompt](docs/troubleshooting.md) for your AI assistant.
 
 ## Everything else
 
