@@ -29,7 +29,7 @@ export async function getJishoInfoTS(word: string, logger: Logger): Promise<Jish
         }
 
         const wordText = resultBlock.querySelector(".text")?.textContent?.trim() || '';
-        const readingText = resultBlock.querySelector(".furigana")?.textContent?.trim() || '';
+        const readingText = fullReading(resultBlock);
         const tags = Array.from(resultBlock.querySelectorAll(".concept_light-tag")).map(tag => tag.textContent?.trim() || '').filter(Boolean);
 
         const meanings: { pos: string; definition: string; }[] = [];
@@ -53,3 +53,14 @@ export async function getJishoInfoTS(word: string, logger: Logger): Promise<Jish
         return null;
     }
 } 
+/**
+ * Jisho puts furigana over kanji only, one span per character of the word, so 匂い reads にお.
+ * Fill in the kana the word writes out itself to get におい, 取り扱い とりあつかい, お茶 おちゃ.
+ * An empty span over a kanji belongs to the compound reading before it (今日 きょう).
+ */
+export function fullReading(block: ParentNode): string {
+    const spans = Array.from(block.querySelectorAll('.furigana > span')).map(s => s.textContent?.trim() || '');
+    const chars = Array.from(block.querySelector('.text')?.textContent?.trim() || '');
+    if (spans.length !== chars.length) return spans.join('');
+    return chars.map((ch, i) => spans[i] || (/[\u3040-\u30ff]/.test(ch) ? ch : '')).join('');
+}
