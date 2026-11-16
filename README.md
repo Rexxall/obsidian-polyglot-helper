@@ -22,7 +22,7 @@
 2. Select a word in a note, right-click and choose **Quick word card**.
 3. Press **Add to word list**. It comes back for review, and is underlined wherever you read it.
 
-**Needs** Obsidian 1.11.4+, desktop or mobile. **Costs** nothing for the plugin and the dictionaries, no account. Full entries and the sentence meaning use one OpenAI-compatible key of your own (DeepSeek is preset), billed by that provider; one lookup is a short request.
+**Needs** Obsidian <!-- DOCS-SYNC:START min -->1.11.4<!-- DOCS-SYNC:END -->+, <!-- DOCS-SYNC:START platform -->desktop or mobile<!-- DOCS-SYNC:END -->. **Costs** nothing for the plugin and the dictionaries, no account. Full entries and the sentence meaning use one OpenAI-compatible key of your own (DeepSeek is preset), billed by that provider; one lookup is a short request.
 
 Something not working? [Copy a fix-it prompt](docs/troubleshooting.md) for your AI assistant.
 
@@ -71,7 +71,7 @@ Something not working? [Copy a fix-it prompt](docs/troubleshooting.md) for your 
 
 |                                |                                                                                                                                                                                                                                                                                                       |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The plugin                     | Free, no account. Works on desktop and mobile with Obsidian 1.11.4 or later.                                                                                                                                                                                                                         |
+| The plugin                     | Free, no account. Works on desktop and mobile with Obsidian <!-- DOCS-SYNC:START min -->1.11.4<!-- DOCS-SYNC:END --> or later.                                                                                                                                                                                                                         |
 | An AI service                  | One OpenAI-compatible key. Presets: DeepSeek (default), Qwen (通义千问), SiliconFlow (硅基流动), Kimi, Zhipu GLM (智谱), OpenRouter, OpenAI, or any compatible endpoint. Billed by that provider per use; one word lookup is a short request. **Test** costs a tiny fraction of a cent. SiliconFlow refuses even its free models while the account balance is zero. |
 | Dictionaries and pronunciation | Free public sources, no key. Optional keys: Merriam-Webster (thesaurus and medical sections) and OpenAI, Gemini or Youdao for Japanese speech.                                                                                                                                                       |
 
