@@ -17,17 +17,11 @@ export interface JapaneseSections {
     jisho: boolean;
 }
 
+/** One named AI configuration. The key stays in Obsidian's Keychain; the slot holds only its name. */
 export interface ApiConfig {
     name: string;
-    /** Preset the endpoint came from; 'custom' for anything typed by hand. */
-    provider?: import('./ai/providers').ProviderId;
-    /** Name of the key in Obsidian's secret storage. */
-    apiKeySecret?: string;
-    /** The key, read from secret storage when used (see secrets.ts); never saved. */
-    readonly apiKey?: string;
-    baseUrl: string;
-    model: string;
     enabled: boolean;
+    ai: import('./vendor/rex-ai-kit/index').AiSlot & { grantExpiry?: string };
 }
 
 export interface PolyglotHelperSettings {
@@ -97,22 +91,13 @@ export interface PolyglotHelperSettings {
 	/** Names in Obsidian's secret storage of the keys below. Each key field is read from there when used and never saved. */
 	keySecrets?: Partial<Record<import('./secrets').KeyField, string>>;
 
-	// English Processor Settings
-	readonly englishLlmApiKey?: string;
-	englishLlmBaseUrl: string;
-	englishModelName: string;
+	/** Model lists fetched by Check or Refresh, so opening the settings needs no request. */
+	modelCache?: import('./vendor/rex-ai-kit/index').ModelCacheData;
+
 	readonly mwThesaurusKey?: string;
 	readonly mwMedicalKey?: string;
 	englishSections: EnglishSections;
 	japaneseSections: JapaneseSections;
-
-	// Japanese Processor Settings
-	// LLM Provider for Japanese
-	llmProvider: 'openai' | 'ollama';
-	readonly openaiApiKey?: string;
-	openaiLlmBaseUrl?: string;
-	ollamaUrl?: string;
-	ollamaModel?: string;
 
 	// TTS Engine for Japanese
 	ttsEngine: 'openai' | 'youdao' | 'gemini';

@@ -1,4 +1,3 @@
-import { inferProvider } from './ai/providers';
 
 /** How a lookup ended; the side panel turns this into its status card. */
 export type ProcessOutcome =
@@ -15,14 +14,17 @@ export interface ProcessOptions {
 	isCancelled?: () => boolean;
 }
 import { Editor, MarkdownView, Notice, Plugin, TFile, getLanguage, normalizePath, requestUrl } from 'obsidian';
+import { chat, initAi, isUsable } from './ai/kit';
+import { defaultConfigs, migrateAiSettings } from './ai/migrate';
+import type { AiClient } from './vendor/rex-ai-kit/index';
 import { setInterfaceLanguage } from './shared/i18n';
 import { PolyglotHelperSettings, HistoryItem, SimpleVocabularyItem } from './types';
 import { runEnglishProcess } from './english-processor';
-import { chatContent, getChineseTranslationTS } from './apis/llm';
+import { getChineseTranslationTS } from './apis/llm';
 
 import { Logger } from './shared/Logger';
 import { EncryptedSettings } from './shared/EncryptedSettings';
-import { KEY_FIELDS, bindKeys, moveKeysToStorage } from './secrets';
+import { KEY_FIELDS, LEGACY_KEY_FIELDS, bindKeys, moveKeysToStorage } from './secrets';
 import { JapaneseProcessor } from './japanese-processor';
 import { handlePriorityOutput, addQueryToHistory, setNoteCssClass } from './utils';
 import { PolyglotHelperView, POLYGLOT_HELPER_VIEW_TYPE } from './view';
@@ -48,7 +50,6 @@ import { fire } from './shared/fire';
 import { errorMessage } from './shared/errors';
 import { tr } from './shared/i18n';
 import { autoAddEnglishWord } from './function-words';
-import { temperatureFor } from './ai/sampling';
 // --- Interfaces and Defaults ---
 const DEFAULT_SETTINGS: PolyglotHelperSettings = {
 	// General Settings
@@ -99,26 +100,15 @@ const DEFAULT_SETTINGS: PolyglotHelperSettings = {
 	autoPlayAudio: false,
 
 	// API配置管理
-	apiConfigs: [
-		{
-			name: 'DeepSeek',
-			provider: 'deepseek',
-			baseUrl: 'https://api.deepseek.com/chat/completions',
-			model: 'deepseek-flash',
-			enabled: true,
-		},
-	],
+	apiConfigs: defaultConfigs(),
 
 	// 功能API选择器
 	apiSelectors: {
-		quickTranslation: 'DeepSeek',
-		englishAnalysis: 'DeepSeek',
-		japaneseAnalysis: 'DeepSeek',
+		quickTranslation: 'OpenAI',
+		englishAnalysis: 'OpenAI',
+		japaneseAnalysis: 'OpenAI',
 	},
 
-	// English Processor Settings
-	englishLlmBaseUrl: 'https://openrouter.ai/api/v1/chat/completions',
-	englishModelName: 'google/gemini-2.5-flash',
 	englishSections: {
 		definitions: true,
 		example: true,
@@ -136,11 +126,6 @@ const DEFAULT_SETTINGS: PolyglotHelperSettings = {
 		exercise: true,
 		jisho: true,
 	},
-
-	// Japanese Processor Settings
-	llmProvider: 'openai',
-	openaiLlmBaseUrl: '',
-	ollamaModel: 'llama3',
 
 	ttsEngine: 'openai',
 	
@@ -897,10 +882,10 @@ export default class PolyglotHelper extends Plugin {
 
 		try {
 			// 检查API配置
-			const { englishLlmApiKey, englishLlmBaseUrl, ttsEngine } = this.settings;
-			if (!englishLlmApiKey || !englishLlmBaseUrl) {
+			const { ttsEngine } = this.settings;
+			if (!isUsable(this.tryGetApiConfig('quickTranslation'))) {
 				processingNotice.hide();
-				new Notice(tr("❌ 请先在设置中配置 LLM 的 API 密钥和接口地址", "❌ Add an AI key and endpoint in settings first"));
+				new Notice(tr("❌ 请先在设置 → 翻译与模型里加一套 AI 配置并选好密钥", "❌ Add an AI configuration and pick its key in settings → Translation and models first"));
 				return;
 			}
 
@@ -1207,74 +1192,18 @@ export default class PolyglotHelper extends Plugin {
 		const { type = 'auto' } = options;
 
 		try {
-			// 使用新的API配置系统
 			const apiConfig = this.getApiConfig('quickTranslation');
+			const source = type === 'japanese' || this.isJapanese(text) ? 'Japanese' : 'English';
+			const reply = await chat(apiConfig, {
+				system: "You are a highly efficient translation engine. You only output the translated Chinese text, with no additional content.",
+				user: `Translate the following ${source} text to Chinese. Provide only the translation, without any explanations, introductory phrases, or extra text. The output should be the Chinese text and nothing else.
 
-			if (type === 'japanese' || this.isJapanese(text)) {
-				// 对于日语翻译，使用简化的API调用
-				const prompt_content = `Translate the following Japanese text to Chinese. Provide only the translation, without any explanations, introductory phrases, or extra text. The output should be the Chinese text and nothing else.
-
-Japanese text: "${text}"`;
-
-				const messages = [
-					{ "role": "system", "content": "You are a highly efficient translation engine. You only output the translated Chinese text, with no additional content." },
-					{ "role": "user", "content": prompt_content }
-				];
-
-				const response = await requestUrl({
-					url: apiConfig.baseUrl,
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						'Authorization': `Bearer ${apiConfig.apiKey}`
-					},
-					body: JSON.stringify({
-						model: apiConfig.model,
-						messages: messages,
-						...temperatureFor(apiConfig.model, 0.0),
-					})
-				});
-
-				if (response.status === 200) {
-					return chatContent(response).trim();
-				} else {
-					this.logger.error(`Translation API request failed with status ${response.status}`, { response: response.text });
-					return null;
-				}
-			} else {
-				// 对于英语翻译，使用简化的API调用
-				const prompt_content = `Translate the following English text to Chinese. Provide only the translation, without any explanations, introductory phrases, or extra text. The output should be the Chinese text and nothing else.
-
-English text: "${text}"`;
-
-				const messages = [
-					{ "role": "system", "content": "You are a highly efficient translation engine. You only output the translated Chinese text, with no additional content." },
-					{ "role": "user", "content": prompt_content }
-				];
-
-				const response = await requestUrl({
-					url: apiConfig.baseUrl,
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						'Authorization': `Bearer ${apiConfig.apiKey}`
-					},
-					body: JSON.stringify({
-						model: apiConfig.model,
-						messages: messages,
-						...temperatureFor(apiConfig.model, 0.0),
-					})
-				});
-
-				if (response.status === 200) {
-					return chatContent(response).trim();
-				} else {
-					this.logger.error(`Translation API request failed with status ${response.status}`, { response: response.text });
-					return null;
-				}
-			}
+${source} text: "${text}"`,
+				temperature: 0,
+			});
+			return reply.trim();
 		} catch (error) {
-			this.logger.error('翻译失败', error);
+			this.logger.error('翻译失败', errorMessage(error));
 			return null;
 		}
 	}
@@ -1306,17 +1235,10 @@ English text: "${text}"`;
 	private getApiConfig(functionName: keyof typeof this.settings.apiSelectors) {
 		const selectedConfigName = this.settings.apiSelectors[functionName];
 		const config = this.settings.apiConfigs.find(c => c.name === selectedConfigName && c.enabled);
-
-		if (!config) {
-			// 回退到第一个启用的配置
-			const fallbackConfig = this.settings.apiConfigs.find(c => c.enabled);
-			if (!fallbackConfig) {
-				throw new Error('没有可用的API配置，请在设置中配置并启用至少一个API');
-			}
-			return fallbackConfig;
-		}
-
-		return config;
+		// 回退到第一个启用的配置；没有就让请求自己说清楚缺什么（比如“还没选密钥”）
+		const chosen = config ?? this.settings.apiConfigs.find(c => c.enabled);
+		if (!chosen) throw new Error(tr('没有启用的 AI 配置，请在设置 → 翻译与模型里启用一套。', 'No AI configuration is on. Turn one on in settings → Translation and models.'));
+		return chosen;
 	}
 
 	/**
@@ -1326,71 +1248,25 @@ English text: "${text}"`;
 		try {
 			// 使用新的API配置系统
 			const apiConfig = this.getApiConfig('quickTranslation');
+			let translation = (await chat(apiConfig, {
+				system: "You are a highly efficient translation engine. You automatically detect the source language and only output the translated Japanese text, with no additional content.",
+				user: `Translate the following text to Japanese. Automatically detect the source language and provide only the Japanese translation, without any explanations, introductory phrases, or extra text. The output should be the Japanese text and nothing else.
 
-			if (!apiConfig.apiKey || !apiConfig.baseUrl) {
-				this.logger.error("无法执行翻译，因为缺少 LLM API Key 或 Base URL。");
-				throw new Error('LLM API配置不完整，请检查API密钥和Base URL');
+Input text: "${inputText}"`,
+				temperature: 0,
+			})).trim();
+			// 语言校验：必须包含日文字符（平假名/片假名/汉字），否则重试一次
+			if (!/[\u3040-\u30FF\u4E00-\u9FFF]/.test(translation)) {
+				translation = (await chat(apiConfig, {
+					system: "あなたは高精度の翻訳エンジンです。出力は日本語のみです。",
+					user: `次のテキストを日本語に翻訳してください。出力は日本語のみ（アルファベットを含めない）で、説明や前置きは一切不要です。\n\n入力: "${inputText}"`,
+					temperature: 0,
+				})).trim() || translation;
 			}
-
-			const prompt_content = `Translate the following text to Japanese. Automatically detect the source language and provide only the Japanese translation, without any explanations, introductory phrases, or extra text. The output should be the Japanese text and nothing else.
-
-Input text: "${inputText}"`;
-
-			const messages = [
-				{ "role": "system", "content": "You are a highly efficient translation engine. You automatically detect the source language and only output the translated Japanese text, with no additional content." },
-				{ "role": "user", "content": prompt_content }
-			];
-
-			const response = await requestUrl({
-				url: apiConfig.baseUrl,
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${apiConfig.apiKey}`
-				},
-				body: JSON.stringify({
-					model: apiConfig.model,
-					messages: messages,
-					...temperatureFor(apiConfig.model, 0.0), // Set to 0 for deterministic translation
-				})
-			});
-
-			if (response.status === 200) {
-				let translation = chatContent(response).trim();
-				// 语言校验：必须包含日文字符（平假名/片假名/汉字），否则重试一次
-				const hasJapanese = /[\u3040-\u30FF\u4E00-\u9FFF]/.test(translation);
-				if (!hasJapanese) {
-					const strictPrompt = `次のテキストを日本語に翻訳してください。出力は日本語のみ（アルファベットを含めない）で、説明や前置きは一切不要です。\n\n入力: "${inputText}"`;
-					const strictMessages = [
-						{ "role": "system", "content": "あなたは高精度の翻訳エンジンです。出力は日本語のみです。" },
-						{ "role": "user", "content": strictPrompt }
-					];
-
-					const retry = await requestUrl({
-						url: apiConfig.baseUrl,
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							'Authorization': `Bearer ${apiConfig.apiKey}`
-						},
-						body: JSON.stringify({ model: apiConfig.model, messages: strictMessages, ...temperatureFor(apiConfig.model, 0.0) })
-					});
-					if (retry.status === 200) {
-						translation = chatContent(retry).trim();
-					}
-				}
-				this.logger.info('翻译成功', { original: inputText, translation });
-				return translation;
-			} else {
-				this.logger.error(`Translation API request failed with status ${response.status}`, { response: response.text });
-				throw new Error(`翻译API请求失败 (${response.status})`);
-			}
+			this.logger.info('翻译成功', { original: inputText, translation });
+			return translation;
 		} catch (error) {
-			this.logger.error('翻译失败', {
-				error: errorMessage(error),
-				text: inputText,
-				apiConfigured: !!(this.settings.englishLlmApiKey && this.settings.englishLlmBaseUrl)
-			});
+			this.logger.error('翻译失败', { error: errorMessage(error), text: inputText });
 			throw error;
 		}
 	}
@@ -1401,34 +1277,19 @@ Input text: "${inputText}"`;
 	async translateToJapaneseRich(inputText: string): Promise<{ jp: string; romaji?: string } | null> {
 		try {
 			const apiConfig = this.getApiConfig('quickTranslation');
-			if (!apiConfig.apiKey || !apiConfig.baseUrl) return null;
-
-			const prompt = `Translate the following text to Japanese. Detect the source language automatically. Return a strict JSON object with two fields only: {"jp":"<Japanese>", "romaji":"<romaji>"}. Do not add any extra text, code fences, or explanations.\n\nInput: "${inputText}"`;
-			const messages = [
-				{ role: 'system', content: 'You are a precise translation engine. Output STRICT JSON ONLY.' },
-				{ role: 'user', content: prompt }
-			];
-
-			// 要求 JSON 输出（支持 OpenAI 兼容）
-			const body = { model: apiConfig.model, messages, ...temperatureFor(apiConfig.model, 0.0), response_format: { type: 'json_object' } };
-
-			const res = await requestUrl({
-				url: apiConfig.baseUrl,
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiConfig.apiKey}` },
-				body: JSON.stringify(body)
-			});
-
-			if (res.status === 200) {
-				let raw = chatContent(res).trim();
-				try {
-					// 去掉围栏
-					raw = raw.replace(/```(?:json)?\s*([\s\S]*?)\s*```/g, '$1');
-					const data = JSON.parse(raw) as { jp?: unknown; romaji?: unknown } | null;
-					if (typeof data?.jp === 'string') return { jp: data.jp.trim(), romaji: typeof data.romaji === 'string' ? data.romaji.trim() : undefined };
-				} catch {
-					// 模型没按 JSON 回答，交给调用方走普通翻译
-				}
+			if (!isUsable(apiConfig)) return null;
+			let raw = (await chat(apiConfig, {
+				system: 'You are a precise translation engine. Output STRICT JSON ONLY.',
+				user: `Translate the following text to Japanese. Detect the source language automatically. Return a strict JSON object with two fields only: {"jp":"<Japanese>", "romaji":"<romaji>"}. Do not add any extra text, code fences, or explanations.\n\nInput: "${inputText}"`,
+				temperature: 0,
+				json: true,
+			})).trim();
+			try {
+				raw = raw.replace(/```(?:json)?\s*([\s\S]*?)\s*```/g, '$1');
+				const data = JSON.parse(raw) as { jp?: unknown; romaji?: unknown } | null;
+				if (typeof data?.jp === 'string') return { jp: data.jp.trim(), romaji: typeof data.romaji === 'string' ? data.romaji.trim() : undefined };
+			} catch {
+				// 模型没按 JSON 回答，交给调用方走普通翻译
 			}
 			return null;
 		} catch (e) {
@@ -1443,27 +1304,15 @@ Input text: "${inputText}"`;
 	async getJapaneseReading(japaneseText: string): Promise<string | null> {
 		try {
 			const apiConfig = this.getApiConfig('quickTranslation');
-			if (!apiConfig.apiKey || !apiConfig.baseUrl) return null;
-
-			const prompt = `以下の日本語の語句/文について、読み（かな）だけを返してください。記号や説明は不要。かな以外は含めないでください。\n\n入力: "${japaneseText}"`;
-			const messages = [
-				{ role: 'system', content: 'あなたは日本語の読み仮名変換器です。出力はかな（ひらがな/カタカナ）のみです。' },
-				{ role: 'user', content: prompt }
-			];
-
-			const res = await requestUrl({
-				url: apiConfig.baseUrl,
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiConfig.apiKey}` },
-				body: JSON.stringify({ model: apiConfig.model, messages, ...temperatureFor(apiConfig.model, 0.0) })
-			});
-			if (res.status === 200) {
-				const kana = chatContent(res).trim();
-				// 仅保留假名
-				if (/^[\u3040-\u30FF\s]+$/.test(kana)) return kana;
-				return kana.replace(/[^\u3040-\u30FF\s]/g, '').trim() || null;
-			}
-			return null;
+			if (!isUsable(apiConfig)) return null;
+			const kana = (await chat(apiConfig, {
+				system: 'あなたは日本語の読み仮名変換器です。出力はかな（ひらがな/カタカナ）のみです。',
+				user: `以下の日本語の語句/文について、読み（かな）だけを返してください。記号や説明は不要。かな以外は含めないでください。\n\n入力: "${japaneseText}"`,
+				temperature: 0,
+			})).trim();
+			// 仅保留假名
+			if (/^[\u3040-\u30FF\s]+$/.test(kana)) return kana;
+			return kana.replace(/[^\u3040-\u30FF\s]/g, '').trim() || null;
 		} catch (e) {
 			this.logger.error('获取日语读音失败', e);
 			return null;
@@ -1678,6 +1527,9 @@ Input text: "${inputText}"`;
 		}
 	}
 
+	/** Shared AI layer: providers, Keychain keys, model lists. */
+	ai: AiClient;
+
 	async loadSettings() {
 		let stored: unknown = await this.loadData();
 		if (!stored) {
@@ -1695,27 +1547,9 @@ Input text: "${inputText}"`;
 		if (moveKeysToStorage(this.settings, this.app.secretStorage)) this.settingsNeedSave = true;
 		bindKeys(this.settings, this.app.secretStorage);
 
-		// Versions up to 1.3.x shipped an OpenRouter host that does not resolve.
-		const brokenHost = 'https://api.openrouter.ai/';
-		let repaired = false;
-		for (const config of this.settings.apiConfigs) {
-			if (config.baseUrl?.startsWith(brokenHost)) {
-				config.baseUrl = config.baseUrl.replace(brokenHost, 'https://openrouter.ai/');
-				repaired = true;
-			}
-		}
-		if (this.settings.englishLlmBaseUrl?.startsWith(brokenHost)) {
-			this.settings.englishLlmBaseUrl = this.settings.englishLlmBaseUrl.replace(brokenHost, 'https://openrouter.ai/');
-			repaired = true;
-		}
-		// 1.7: every configuration names its provider preset, inferred from the endpoint.
-		for (const config of this.settings.apiConfigs) {
-			if (!config.provider) {
-				config.provider = inferProvider(config.baseUrl || '');
-				repaired = true;
-			}
-		}
-		if (repaired) this.settingsNeedSave = true;
+		// 1.12: AI configurations become rex-ai-kit slots (the OpenRouter host repair of 1.4 is part of it).
+		if (migrateAiSettings(this.settings, this.app.secretStorage)) this.settingsNeedSave = true;
+		this.ai = initAi(this.app.secretStorage, this.settings.modelCache);
 		if (this.settingsNeedSave) {
 			this.settingsNeedSave = false;
 			await this.saveSettings();
@@ -1795,6 +1629,7 @@ Input text: "${inputText}"`;
 		setNoteCssClass(this.settings.noteCssClass);
 		// A configuration added since the last save gets its key getter too; keys are never written.
 		bindKeys(this.settings, this.app.secretStorage);
+		if (this.ai) this.settings.modelCache = this.ai.cache.toJSON();
 		await this.saveData(this.settings);
 		this.updateDueStatus();
 		this.app.workspace.trigger('polyglot-settings-change');
@@ -1887,7 +1722,7 @@ Input text: "${inputText}"`;
 	private async decryptLegacyKeys() {
 		type Holder = { target: Record<string, unknown>; field: string };
 		const holders: Holder[] = [
-			...[...KEY_FIELDS, 'youdaoAppKey'].map((field) => ({ target: this.settings as unknown as Record<string, unknown>, field })),
+			...[...KEY_FIELDS, ...LEGACY_KEY_FIELDS, 'youdaoAppKey'].map((field) => ({ target: this.settings as unknown as Record<string, unknown>, field })),
 			...this.settings.apiConfigs.map((config) => ({ target: config as unknown as Record<string, unknown>, field: 'apiKey' })),
 		];
 		const encrypted = holders.flatMap(({ target, field }) => {

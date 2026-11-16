@@ -42,10 +42,9 @@ test('written keys move to shared names and leave nothing in the saved settings'
   assert.equal(s.keySecrets.openaiTtsApiKey, 'openai-api-key');
   assert.equal(s.keySecrets.youdaoAppSecret, 'youdao-app-secret');
   assert.equal(s.keySecrets.englishLlmApiKey, undefined);
-  // Keys still read the same while running…
-  assert.equal(s.apiConfigs[0].apiKey, 'fake-deepseek');
+  // Keys still read the same while running (AI configurations read theirs through rex-ai-kit)…
+  assert.equal(store.map.get('deepseek-api-key'), 'fake-deepseek');
   assert.equal(s.openaiTtsApiKey, 'fake-tts');
-  assert.equal(s.apiConfigs[2].apiKey, '');
   // …but what saveData writes has none of them; the app ID is not a key and stays.
   const saved = JSON.parse(JSON.stringify(s));
   assert.doesNotMatch(JSON.stringify(saved), /fake-|"apiKey"/);
@@ -68,17 +67,8 @@ test('a second start changes nothing, and a key changed elsewhere is read at onc
   const reloaded = JSON.parse(JSON.stringify(s));
   assert.equal(moveKeysToStorage(reloaded, store), false);
   bindKeys(reloaded, store);
-  store.setSecret('deepseek-api-key', 'fake-new');
-  assert.equal(reloaded.apiConfigs[0].apiKey, 'fake-new');
-});
-
-test('a configuration added later gets a key getter on the next bind', () => {
-  const store = storage({ 'kimi-api-key': 'fake-kimi' }), s = settings();
-  moveKeysToStorage(s, store); bindKeys(s, store);
-  s.apiConfigs.push({ name: 'Kimi', provider: 'kimi', apiKeySecret: 'kimi-api-key', baseUrl: '', model: 'k', enabled: true });
-  bindKeys(s, store);
-  assert.equal(s.apiConfigs[3].apiKey, 'fake-kimi');
-  assert.doesNotMatch(JSON.stringify(s), /fake-kimi/);
+  store.setSecret('openai-api-key', 'fake-new');
+  assert.equal(reloaded.openaiTtsApiKey, 'fake-new');
 });
 
 test('custom configurations recognise a known provider by address', () => {

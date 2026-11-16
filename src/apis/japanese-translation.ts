@@ -1,51 +1,23 @@
-import { chatContent } from "./llm";
-import { requestUrl, Notice } from 'obsidian';
+import { Notice } from 'obsidian';
 import { ApiConfig, PolyglotHelperSettings } from '../types';
 import { Logger } from '../logger';
 
 import { errorMessage } from '../shared/errors';
 import { tr } from '../shared/i18n';
-import { temperatureFor } from '../ai/sampling';
+import { chat, describeAiError, isUsable } from '../ai/kit';
+
+/** A full analysis is long; the strongest models take most of a minute. */
+const ANALYSIS_TIMEOUT_MS = 150_000;
+const NO_CONFIG = () => tr('还没有可用的 AI 配置。到设置 → 翻译与模型里加一套，选好密钥。', 'No AI configuration is ready. Add one in settings → Translation and models and pick a key.');
 export async function getJapaneseTranslationTS(
     text: string,
     settings: PolyglotHelperSettings,
     logger: Logger,
-    apiConfig?: ApiConfig
+    apiConfig?: ApiConfig | null
 ): Promise<string> {
     logger.info("获取日语翻译 (TS)...");
 
-    let apiUrl: string;
-    let apiKey: string | undefined;
-    let model: string;
-
-    if (apiConfig) {
-        // 使用传入的API配置
-        apiUrl = apiConfig.baseUrl;
-        apiKey = apiConfig.apiKey;
-        model = apiConfig.model;
-        if (!apiKey || !apiUrl) {
-            return tr("错误：API 配置不完整，请检查 API 密钥和接口地址。", "Error: the API configuration is incomplete. Check the API key and endpoint.");
-        }
-    } else {
-        // 回退到旧的设置方式
-        if (settings.llmProvider === 'openai') {
-            apiUrl = settings.openaiLlmBaseUrl || 'https://api.openai.com/v1/chat/completions';
-            apiKey = settings.openaiApiKey;
-            model = settings.englishModelName || 'gpt-4o';
-            if (!apiKey) {
-                return tr("错误：请在设置中提供 OpenAI API 密钥。", "Error: add an OpenAI API key in settings.");
-            }
-        } else if (settings.llmProvider === 'ollama') {
-            if (!settings.ollamaUrl || !settings.ollamaModel) {
-                return tr("错误：请在设置中填写本地模型服务的地址和模型名称。", "Error: fill in the local model server address and model name in settings.");
-            }
-            apiUrl = settings.ollamaUrl.replace(/\/$/, '') + '/api/chat';
-            model = settings.ollamaModel;
-            apiKey = undefined;
-        } else {
-            return tr("错误：未知的 LLM 提供商。", "Error: unknown LLM provider.");
-        }
-    }
+    if (!isUsable(apiConfig)) return NO_CONFIG();
 
     const sections = settings.japaneseSections;
 
@@ -106,43 +78,20 @@ export async function getJapaneseTranslationTS(
         分析対象: "${text}"
     `;
 
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (apiKey) {
-        headers['Authorization'] = `Bearer ${apiKey}`;
-    }
-
     try {
-        const response = await requestUrl({
-            url: apiUrl,
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify({
-                model: model,
-                messages: [
-                    { "role": "system", "content": "You are a Japanese language teacher who provides analysis in Markdown format." },
-                    { "role": "user", "content": prompt }
-                ],
-                ...temperatureFor(model, 0.3)
-            })
+        const content = await chat(apiConfig, {
+            system: "You are a Japanese language teacher who provides analysis in Markdown format.",
+            user: prompt,
+            temperature: 0.3,
+            maxTokens: 8192,
+            timeoutMs: ANALYSIS_TIMEOUT_MS,
         });
-
-        if (response.status === 200) {
-            let content: string | null = chatContent(response) || null;
-            const ollama = (response.json as { message?: { content?: unknown } } | null)?.message?.content;
-            if (!content && settings.llmProvider === 'ollama' && typeof ollama === 'string') {
-                content = ollama;
-            }
-            if (content) {
-                return content;
-            }
-        }
-        
-        logger.error('获取日语分析时LLM API返回错误状态', { status: response.status, response: response.text });
-        return tr("从LLM获取分析失败。", "Could not get an analysis from the model.");
-
+        if (content.trim()) return content;
+        logger.error('获取日语分析时模型返回了空内容');
+        return tr("模型没有返回内容。换一个模型再试。", "The model returned nothing. Try another model.");
     } catch (error) {
-        logger.error("调用LLM进行日语分析时出错", error);
-        return tr(`调用LLM API时出错: ${errorMessage(error)}`, `Error calling the model API: ${errorMessage(error)}`);
+        logger.error("调用LLM进行日语分析时出错", errorMessage(error));
+        return describeAiError(error);
     }
 }
 
@@ -150,100 +99,37 @@ export async function getJapaneseSimpleTranslationTS(
     query: string,
     settings: PolyglotHelperSettings,
     logger: Logger,
-    apiConfig?: ApiConfig
+    apiConfig?: ApiConfig | null
 ): Promise<{ translation: string; reading: string; } | null> {
     const prompt = `あなたはプロの日本語翻訳家です。以下の日本語の単語やフレーズを、最も一般的で口語的な中国語に翻訳してください。結果は純粋なJSONオブジェクト（\`\`\`json\`のようなマークダウンなし）で、{"translation": "翻译结果", "reading": "日文假名"}の形式で返してください。例：入力が「こんにちは」の場合、{"translation": "你好", "reading": "こんにちは"}を返します。
 
 入力: "${query}"`;
 
-    let apiUrl: string;
-    let apiKey: string | undefined;
-    let model: string;
-
-    if (apiConfig) {
-        // 使用传入的API配置
-        apiUrl = apiConfig.baseUrl;
-        apiKey = apiConfig.apiKey;
-        model = apiConfig.model;
-        if (!apiKey || !apiUrl) {
-            new Notice(tr("错误：API 配置不完整，请检查 API 密钥和接口地址。", "Error: the API configuration is incomplete. Check the API key and endpoint."));
-            return null;
-        }
-    } else {
-        // 回退到旧的设置方式
-        if (settings.llmProvider === 'openai') {
-            apiUrl = settings.openaiLlmBaseUrl || 'https://api.openai.com/v1/chat/completions';
-            apiKey = settings.openaiApiKey;
-            model = settings.englishModelName || 'gpt-4o';
-            if (!apiKey) {
-                new Notice(tr("错误：请在设置中提供 OpenAI API 密钥。", "Error: add an OpenAI API key in settings."));
-                return null;
-            }
-        } else if (settings.llmProvider === 'ollama') {
-            if (!settings.ollamaUrl || !settings.ollamaModel) {
-                new Notice(tr("错误：请在设置中填写本地模型服务的地址和模型名称。", "Error: fill in the local model server address and model name in settings."));
-                return null;
-            }
-            apiUrl = settings.ollamaUrl.replace(/\/$/, '') + '/api/chat';
-            model = settings.ollamaModel;
-            apiKey = undefined;
-        } else {
-            new Notice(tr("错误：未知的 LLM 提供商。", "Error: unknown LLM provider."));
-            return null;
-        }
-    }
-    
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (apiKey) {
-        headers['Authorization'] = `Bearer ${apiKey}`;
-    }
-
-    const body: Record<string, unknown> = {
-        model: model,
-        messages: [
-            { "role": "system", "content": "You are a translation assistant that only returns pure JSON objects." },
-            { "role": "user", "content": prompt }
-        ],
-        ...temperatureFor(model, 0.1),
-    };
-
-    if (settings.llmProvider === 'openai') {
-        body.response_format = { "type": "json_object" };
+    if (!isUsable(apiConfig)) {
+        new Notice(NO_CONFIG());
+        return null;
     }
 
     try {
-        const response = await requestUrl({
-            url: apiUrl,
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(body)
+        const content = await chat(apiConfig, {
+            system: "You are a translation assistant that only returns pure JSON objects.",
+            user: prompt,
+            temperature: 0.1,
+            json: true,
         });
-        
-        if (response.status === 200) {
-            const content = chatContent(response);
-
-            if (content) {
-                try {
-                    const jsonRegex = /```json\n([\s\S]*?)\n```/;
-                    const match = content.match(jsonRegex);
-                    const jsonString = match ? match[1] : content;
-                    
-                    const result = JSON.parse(jsonString) as { translation: string; reading: string };
-                    logger.info(`成功解析快捷日语翻译: ${query} -> ${result.translation}`);
-                    return result;
-                } catch (e) {
-                    logger.error("解析快捷日语翻译的JSON响应失败.", { error: errorMessage(e), content: content });
-                    return null;
-                }
-            }
+        try {
+            const match = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+            const result = JSON.parse(match ? match[1] : content) as { translation?: unknown; reading?: unknown };
+            if (typeof result.translation !== 'string') throw new Error('no translation field');
+            logger.info(`成功解析快捷日语翻译: ${query} -> ${result.translation}`);
+            return { translation: result.translation, reading: typeof result.reading === 'string' ? result.reading : '' };
+        } catch (e) {
+            logger.error("解析快捷日语翻译的JSON响应失败.", { error: errorMessage(e), content });
+            return null;
         }
-        
-        logger.error('获取日语快捷翻译时LLM API返回错误状态', { status: response.status, response: response.text });
-        return null;
-
     } catch (error) {
-        logger.error("调用LLM进行快捷翻译时出错", error);
-        new Notice(tr(`调用快捷翻译API时出错: ${errorMessage(error)}`, `Error calling the quick translation API: ${errorMessage(error)}`));
+        logger.error("调用LLM进行快捷翻译时出错", errorMessage(error));
+        new Notice(describeAiError(error));
         return null;
     }
 } 

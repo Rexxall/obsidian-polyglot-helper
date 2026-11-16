@@ -1,50 +1,10 @@
-import { requestUrl, RequestUrlResponse } from "obsidian";
 import { ApiConfig, PolyglotHelperSettings } from "../types";
 import { Logger } from '../shared/Logger';
 
 import { errorMessage } from '../shared/errors';
-import { temperatureFor } from '../ai/sampling';
+import { chat, isUsable } from '../ai/kit';
+
 export const LLM_TIMEOUT_MS = 60_000;
-
-// One place for the OpenAI-compatible chat request used by all three helpers below.
-export async function postChatCompletion(
-    baseUrl: string,
-    apiKey: string,
-    body: Record<string, unknown>,
-    timeoutMs: number = LLM_TIMEOUT_MS
-): Promise<RequestUrlResponse> {
-    let timer: number | undefined;
-    const timeout = new Promise<never>((_, reject) => {
-        timer = window.setTimeout(
-            () => reject(new Error(`LLM 请求超过 ${Math.round(timeoutMs / 1000)} 秒未响应`)),
-            timeoutMs
-        );
-    });
-    try {
-        return await Promise.race([
-            requestUrl({
-                url: baseUrl,
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: JSON.stringify(body),
-                throw: false
-            }),
-            timeout
-        ]);
-    } finally {
-        window.clearTimeout(timer);
-    }
-}
-
-/** OpenAI 兼容接口返回的 choices[0].message.content；格式不对时为空串。 */
-export function chatContent(response: { json: unknown }): string {
-    const body = response.json as { choices?: { message?: { content?: unknown } }[] } | null | undefined;
-    const content = body?.choices?.[0]?.message?.content;
-    return typeof content === 'string' ? content : '';
-}
 
 /** LLM 补全词条时返回的字段，全部可缺。 */
 export interface LlmWordInfo {
@@ -80,13 +40,8 @@ function safeJsonParse(text: string, logger: Logger): unknown {
     }
 }
 
-export async function getLlmInfoTS(word: string, settings: PolyglotHelperSettings, existingData: unknown, logger: Logger, apiConfig?: ApiConfig): Promise<LlmWordInfo | null> {
-    // 使用传入的API配置，如果没有则回退到设置中的配置
-    const apiKey = apiConfig?.apiKey || settings.englishLlmApiKey;
-    const baseUrl = apiConfig?.baseUrl || settings.englishLlmBaseUrl;
-    const modelName = apiConfig?.model || settings.englishModelName;
-
-    if (!apiKey || !baseUrl) return null;
+export async function getLlmInfoTS(word: string, _settings: PolyglotHelperSettings, existingData: unknown, logger: Logger, apiConfig?: ApiConfig | null): Promise<LlmWordInfo | null> {
+    if (!isUsable(apiConfig)) return null;
 
     const contextStr = JSON.stringify(existingData, null, 2);
 
@@ -120,103 +75,39 @@ ${contextStr}
 \`\`\`
 `;
 
-    const messages = [
-        { "role": "system", "content": "You are a professional dictionary assistant that integrates information and generates JSON. Strictly follow user requirements and prioritize the provided context." },
-        { "role": "user", "content": prompt_content }
-    ];
-
     try {
-        const response = await postChatCompletion(baseUrl, apiKey, {
-            model: modelName,
-            messages: messages,
-            ...temperatureFor(modelName, 0.2), // Slightly increased for better generation
-            response_format: { "type": "json_object" } // Enforce JSON output
+        const reply = await chat(apiConfig, {
+            system: "You are a professional dictionary assistant that integrates information and generates JSON. Strictly follow user requirements and prioritize the provided context.",
+            user: prompt_content,
+            temperature: 0.2,
+            json: true,
+            timeoutMs: LLM_TIMEOUT_MS,
         });
-
-        if (response.status === 200) {
-            const parsed = safeJsonParse(chatContent(response), logger);
-            return parsed && typeof parsed === 'object' ? parsed : null;
-        } else {
-            logger.error(`LLM API request failed with status ${response.status}`, { response: response.text });
-            return null;
-        }
+        const parsed = safeJsonParse(reply, logger);
+        return parsed && typeof parsed === 'object' ? parsed : null;
     } catch (error) {
-        // Handle potential rate limit errors in the future if needed
-        logger.error(`LLM call failed for word "${word}"`, error);
-        return null;
-    }
-} 
-
-export async function getChineseTranslationTS(text: string, settings: PolyglotHelperSettings, logger: Logger, apiConfig?: ApiConfig): Promise<string | null> {
-    // 使用传入的API配置，如果没有则回退到设置中的配置
-    const apiKey = apiConfig?.apiKey || settings.englishLlmApiKey;
-    const baseUrl = apiConfig?.baseUrl || settings.englishLlmBaseUrl;
-    const modelName = apiConfig?.model || settings.englishModelName;
-
-    if (!apiKey || !baseUrl) {
-        logger.error("无法执行英译汉，因为缺少 LLM API Key 或 Base URL。");
-        return null;
-    }
-
-    const prompt_content = `Translate the following English text to Chinese. Provide only the translation, without any explanations, introductory phrases, or extra text. The output should be the Chinese text and nothing else.
-
-English text: "${text}"`;
-
-    const messages = [
-        { "role": "system", "content": "You are a highly efficient translation engine. You only output the translated Chinese text, with no additional content." },
-        { "role": "user", "content": prompt_content }
-    ];
-
-    try {
-        const response = await postChatCompletion(baseUrl, apiKey, {
-            model: modelName,
-            messages: messages,
-            ...temperatureFor(modelName, 0.0), // Set to 0 for deterministic translation
-        });
-
-        if (response.status === 200) {
-            return chatContent(response).trim() || null;
-        } else {
-            logger.error(`Chinese translation API request failed with status ${response.status}`, { response: response.text });
-            return null;
-        }
-    } catch (error) {
-        logger.error(`Chinese translation call failed for text "${text}"`, error);
+        logger.error(`LLM call failed for word "${word}"`, errorMessage(error));
         return null;
     }
 }
 
-export async function getJapaneseTranslationTS(text: string, settings: PolyglotHelperSettings, logger: Logger): Promise<string | null> {
-    const { englishLlmApiKey: apiKey, englishLlmBaseUrl: baseUrl, englishModelName: modelName } = settings;
-    if (!apiKey || !baseUrl) {
-        logger.error("无法执行中译日，因为缺少 LLM API Key 或 Base URL。");
+export async function getChineseTranslationTS(text: string, _settings: PolyglotHelperSettings, logger: Logger, apiConfig?: ApiConfig | null): Promise<string | null> {
+    if (!isUsable(apiConfig)) {
+        logger.error("无法执行英译汉：没有可用的 AI 配置。");
         return null;
     }
-
-    const prompt_content = `Translate the following Chinese text to Japanese. Provide only the translation, without any explanations, introductory phrases, or extra text. The output should be the Japanese text and nothing else.
-
-Chinese text: "${text}"`;
-
-    const messages = [
-        { "role": "system", "content": "You are a highly efficient translation engine. You only output the translated Japanese text, with no additional content." },
-        { "role": "user", "content": prompt_content }
-    ];
-
     try {
-        const response = await postChatCompletion(baseUrl, apiKey, {
-            model: modelName,
-            messages: messages,
-            ...temperatureFor(modelName, 0.0), // Set to 0 for deterministic translation
-        });
+        const reply = await chat(apiConfig, {
+            system: "You are a highly efficient translation engine. You only output the translated Chinese text, with no additional content.",
+            user: `Translate the following English text to Chinese. Provide only the translation, without any explanations, introductory phrases, or extra text. The output should be the Chinese text and nothing else.
 
-        if (response.status === 200) {
-            return chatContent(response).trim() || null;
-        } else {
-            logger.error(`Japanese translation API request failed with status ${response.status}`, { response: response.text });
-            return null;
-        }
+English text: "${text}"`,
+            temperature: 0,
+            timeoutMs: LLM_TIMEOUT_MS,
+        });
+        return reply.trim() || null;
     } catch (error) {
-        logger.error(`Japanese translation call failed for text "${text}"`, error);
+        logger.error(`Chinese translation call failed for text "${text}"`, errorMessage(error));
         return null;
     }
 }

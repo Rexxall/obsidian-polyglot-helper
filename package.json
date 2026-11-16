@@ -5,7 +5,8 @@
   "main": "src/main.ts",
   "scripts": {
     "dev": "node esbuild.config.mjs",
-    "build": "tsc --noEmit --skipLibCheck && node esbuild.config.mjs production",
+    "build": "node scripts/kit-styles.mjs && tsc --noEmit --skipLibCheck && node esbuild.config.mjs production",
+    "styles:kit": "node scripts/kit-styles.mjs",
     "build-with-check": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "test": "node --test *.test.mjs",
     "lint": "eslint --max-warnings 0 . && eslint --max-warnings 0 -c eslint.scorecard.config.mjs . && stylelint --max-warnings 0 styles.css"

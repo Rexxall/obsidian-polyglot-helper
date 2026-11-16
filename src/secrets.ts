@@ -4,8 +4,18 @@
  * that read the key from storage when it is used. They are not enumerable, so saveData never
  * writes a key into data.json. Free of Obsidian imports so it can be tested in Node.
  */
-import { inferProvider } from './ai/providers';
-import type { ApiConfig, PolyglotHelperSettings } from './types';
+import { inferProviderId } from './vendor/rex-ai-kit/index';
+import type { PolyglotHelperSettings } from './types';
+
+/** An AI configuration as versions before 1.12 saved it: full endpoint, model and key name. */
+interface OldApiConfig {
+	name: string;
+	provider?: string;
+	baseUrl?: string;
+	apiKeySecret?: string;
+}
+
+const inferProvider = (url: string) => inferProviderId(url);
 
 export interface KeyStore {
 	getSecret(id: string): string | null;
@@ -14,15 +24,15 @@ export interface KeyStore {
 
 /** Settings fields that hold a key while the plugin runs; the key's name is in settings.keySecrets. */
 export const KEY_FIELDS = [
-	'englishLlmApiKey',
-	'openaiApiKey',
 	'openaiTtsApiKey',
 	'youdaoAppSecret',
 	'geminiTtsApiKey',
 	'mwThesaurusKey',
 	'mwMedicalKey',
 ] as const;
-export type KeyField = (typeof KEY_FIELDS)[number];
+/** Keys of the old single AI settings; moved like the others, then turned into AI configurations (ai/migrate.ts). */
+export const LEGACY_KEY_FIELDS = ['englishLlmApiKey', 'openaiApiKey'] as const;
+export type KeyField = (typeof KEY_FIELDS)[number] | (typeof LEGACY_KEY_FIELDS)[number];
 
 /** Keys for these providers go under a name other plugins share, such as deepseek-api-key, so one key serves them all. */
 const SHARED_PROVIDERS = new Set(['deepseek', 'qwen', 'siliconflow', 'kimi', 'zhipu', 'openrouter', 'openai']);
@@ -39,7 +49,7 @@ function sharedName(endpoint: string | undefined): string[] {
 }
 
 /** Names to try for one AI configuration's key, the shared one first. */
-export function namesForConfig(config: Pick<ApiConfig, 'name' | 'provider' | 'baseUrl'>): string[] {
+export function namesForConfig(config: Pick<OldApiConfig, 'name' | 'provider' | 'baseUrl'>): string[] {
 	const provider = config.provider && config.provider !== 'custom' ? config.provider : inferProvider(config.baseUrl || '');
 	const own = `polyglot-helper-${slug(config.name) || 'ai'}-api-key`;
 	return SHARED_PROVIDERS.has(provider) ? [`${provider}-api-key`, own] : [own];
@@ -48,11 +58,12 @@ export function namesForConfig(config: Pick<ApiConfig, 'name' | 'provider' | 'ba
 /** Names to try for one of the single key fields, the shared one first. */
 export function namesForField(field: KeyField, settings: PolyglotHelperSettings): string[] {
 	const own = `polyglot-helper-${slug(field.replace(/([a-z])([A-Z])/g, '$1-$2'))}`;
+	const old = settings as PolyglotHelperSettings & { englishLlmBaseUrl?: string; openaiLlmBaseUrl?: string };
 	switch (field) {
 		case 'englishLlmApiKey':
-			return [...sharedName(settings.englishLlmBaseUrl), own];
+			return [...sharedName(old.englishLlmBaseUrl), own];
 		case 'openaiApiKey':
-			return [...sharedName(settings.openaiLlmBaseUrl), own];
+			return [...sharedName(old.openaiLlmBaseUrl || 'https://api.openai.com/v1'), own];
 		case 'openaiTtsApiKey':
 			return [...sharedName(settings.openaiTtsBaseUrl), own];
 		case 'geminiTtsApiKey':
@@ -93,13 +104,13 @@ function takeWritten(target: object, field: string): string | undefined {
 export function moveKeysToStorage(settings: PolyglotHelperSettings, storage: KeyStore): boolean {
 	let changed = false;
 	const names = (settings.keySecrets ??= {});
-	for (const field of KEY_FIELDS) {
+	for (const field of [...KEY_FIELDS, ...LEGACY_KEY_FIELDS]) {
 		const key = takeWritten(settings, field);
 		if (key === undefined) continue;
 		changed = true;
 		if (key && !names[field]) names[field] = storeSecret(storage, namesForField(field, settings), key);
 	}
-	for (const config of settings.apiConfigs) {
+	for (const config of settings.apiConfigs as unknown as OldApiConfig[]) {
 		const key = takeWritten(config, 'apiKey');
 		if (key === undefined) continue;
 		changed = true;
@@ -110,11 +121,10 @@ export function moveKeysToStorage(settings: PolyglotHelperSettings, storage: Key
 	return changed;
 }
 
-/** Turns the key fields into getters that read storage. Call again after adding a configuration. */
+/** Turns the key fields into getters that read storage. AI configurations read their keys through rex-ai-kit. */
 export function bindKeys(settings: PolyglotHelperSettings, storage: KeyStore) {
 	const read = (name: string | undefined) => (name && storage.getSecret(name)) || '';
 	const define = (target: object, field: string, name: () => string | undefined) =>
 		Object.defineProperty(target, field, { get: () => read(name()), enumerable: false, configurable: true });
 	for (const field of KEY_FIELDS) define(settings, field, () => settings.keySecrets?.[field]);
-	for (const config of settings.apiConfigs) define(config, 'apiKey', () => config.apiKeySecret);
 }

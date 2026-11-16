@@ -10,7 +10,7 @@ import { createObsidianPicker } from './ui/obsidian-picker';
 import { fire } from './shared/fire';
 import { errorMessage } from './shared/errors';
 import { asTFile } from './file-utils';
-import { classifyAiFailure } from './ai/providers';
+import { AiError, describeAiError, isSetupError, isUsable } from './ai/kit';
 import { tr } from './shared/i18n';
 import { showSenseMenu } from './ui/sense-menu';
 import { FIRST_WORD_NOTICE } from './shared/notices';
@@ -954,15 +954,12 @@ export class PolyglotHelperView extends ItemView {
 
     /** 失败卡片：按 AI 错误分类说原因和改法，给“重试”；配置类问题再给“打开设置”。 */
     private showFailure(error: unknown, retry: () => void) {
-        const message = errorMessage(error);
-        const status = Number(/status (\d{3})/.exec(message)?.[1] ?? /\((\d{3})\)/.exec(message)?.[1] ?? 0) || undefined;
-        const noConfig = /没有可用的API配置|配置不完整/.test(message);
-        const failure = classifyAiFailure({ status, error, hasKey: !noConfig });
-        const configProblem = ['no-key', 'auth', 'quota', 'model'].includes(failure.kind);
+        // Kit errors already name the service and the next step; anything else is shown as it is.
+        const configProblem = !(error instanceof AiError) || isSetupError(error);
         this.showStatus({
             kind: 'failed',
-            title: failure.message,
-            detail: failure.fix,
+            title: error instanceof AiError ? describeAiError(error) : errorMessage(error),
+            detail: '',
             action: { label: tr('重试', 'Retry'), run: retry },
             secondary: configProblem ? { label: tr('打开设置', 'Open settings'), run: () => this.openSettings() } : undefined,
         });
@@ -975,7 +972,7 @@ export class PolyglotHelperView extends ItemView {
     }
 
     private hasAiService(): boolean {
-        return this.plugin.settings.apiConfigs.some((config) => config.enabled && !!config.apiKey);
+        return this.plugin.settings.apiConfigs.some((config) => isUsable(config));
     }
 
     /** 结果区没有内容时：先看有没有配 AI，再提示怎么开始。 */
@@ -1054,10 +1051,10 @@ export class PolyglotHelperView extends ItemView {
 
         try {
             // 检查API配置
-            const { englishLlmApiKey, englishLlmBaseUrl, ttsEngine } = this.plugin.settings;
-            if (!englishLlmApiKey || !englishLlmBaseUrl) {
+            const { ttsEngine } = this.plugin.settings;
+            if (!isUsable(this.plugin.tryGetApiConfig('quickTranslation'))) {
                 processingNotice.hide();
-                new Notice(tr("❌ 请先在设置中配置 LLM 的 API 密钥和接口地址", "❌ Add an AI key and endpoint in settings first"));
+                new Notice(tr("❌ 请先在设置 → 翻译与模型里加一套 AI 配置并选好密钥", "❌ Add an AI configuration and pick its key in settings → Translation and models first"));
                 return;
             }
 
@@ -1282,10 +1279,9 @@ export class PolyglotHelperView extends ItemView {
 
         try {
             // 检查API配置
-            const { englishLlmApiKey, englishLlmBaseUrl } = this.plugin.settings;
-            if (!englishLlmApiKey || !englishLlmBaseUrl) {
+            if (!isUsable(this.plugin.tryGetApiConfig('quickTranslation'))) {
                 processingNotice.hide();
-                new Notice(tr("❌ 请先在设置中配置 LLM 的 API 密钥和接口地址", "❌ Add an AI key and endpoint in settings first"));
+                new Notice(tr("❌ 请先在设置 → 翻译与模型里加一套 AI 配置并选好密钥", "❌ Add an AI configuration and pick its key in settings → Translation and models first"));
                 return;
             }
 

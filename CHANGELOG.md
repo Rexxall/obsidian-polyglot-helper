@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Every AI configuration uses the shared AI service.** OpenAI, Anthropic and Gemini come first, then DeepSeek, OpenRouter, Qwen, Kimi, Zhipu, SiliconFlow, Ollama, LM Studio, Claude Code and Codex on this computer, and any OpenAI-compatible server. Keys are picked from Obsidian's Keychain under shared names, so a key saved once serves every plugin. **Check** lists the models the key can use and shows the balance where the provider offers one; the model menu puts recommended picks first. New configurations start on OpenAI `gpt-6-luna`.
+- Your configurations, their names, models and on/off state, and which one each feature uses, move over on first start. The old single English and OpenAI settings become a configuration only if a key was chosen for them; speech and dictionary keys are unchanged.
+- When an analysis fails, it says which service failed and what to do next: no key, key rejected, out of quota, model missing, timed out, offline.
+- Quick translation and the word card no longer ask for the old English AI key when a configuration is ready.
+- Claude 5 models get no temperature, like OpenAI's reasoning models, so their requests are not refused.
 - **Serif numbers** (on by default): the due count on the review card is set in Didot italic, Georgia where Didot is not installed. Turn it off in settings.
 
 ## 1.11.2

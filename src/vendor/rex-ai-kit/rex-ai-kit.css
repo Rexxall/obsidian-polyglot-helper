@@ -1,0 +1,52 @@
+/* rex-ai-kit: shared "AI service" settings group. Theme variables only. */
+.rak-ai .rak-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	margin-inline: 4px 8px;
+	flex: none;
+	background: var(--background-modifier-border);
+}
+.rak-ai .rak-dot.is-ok { background: var(--color-green); }
+.rak-ai .rak-dot.is-invalid { background: var(--color-red); }
+.rak-ai .rak-dot.is-missing { background: var(--color-orange); }
+.rak-ai .rak-dot.is-error { background: var(--text-faint); }
+.rak-ai .rak-dot.is-busy { background: var(--interactive-accent); }
+@media (prefers-reduced-motion: no-preference) {
+	.rak-ai .rak-dot.is-busy { animation: rak-pulse 1s ease-in-out infinite; }
+}
+@keyframes rak-pulse { 50% { opacity: 0.35; } }
+
+.rak-ai .rak-keyline {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 12px;
+	margin-top: 4px;
+}
+.rak-ai .rak-keyline:empty { display: none; }
+/* Status words mix the system colour with the text colour, so they pass 4.5:1 as small text:
+   mostly text colour on light themes (measured 4.8–5.0:1), mostly colour on dark ones (5.7–9:1). */
+.rak-ai { --rak-ok: color-mix(in srgb, var(--color-green) 35%, var(--text-normal)); --rak-bad: color-mix(in srgb, var(--color-red) 60%, var(--text-normal)); --rak-warn: color-mix(in srgb, var(--color-orange) 40%, var(--text-normal)); }
+.theme-dark .rak-ai { --rak-ok: color-mix(in srgb, var(--color-green) 75%, var(--text-normal)); --rak-bad: color-mix(in srgb, var(--color-red) 75%, var(--text-normal)); --rak-warn: color-mix(in srgb, var(--color-orange) 75%, var(--text-normal)); }
+.rak-ai .rak-status.is-ok { color: var(--rak-ok); }
+.rak-ai .rak-status.is-invalid { color: var(--rak-bad); }
+.rak-ai .rak-status.is-missing { color: var(--rak-warn); }
+.rak-ai .rak-balance { color: var(--text-normal); font-variant-numeric: tabular-nums; }
+/* Links stay quiet next to status colours; the accent comes on hover. */
+.rak-ai .rak-link { color: var(--text-muted); text-decoration: underline; text-underline-offset: 2px; }
+.rak-ai .rak-link:hover { color: var(--text-accent); }
+.rak-ai .setting-item-description { text-wrap-style: pretty; }
+.rak-ai .rak-expiry { color: var(--rak-warn); }
+.rak-ai .rak-warn .setting-item-name { color: var(--rak-warn); }
+
+.rak-ai .rak-manual { width: 14em; }
+
+.rak-ai .rak-advanced { padding-top: 4px; }
+.rak-ai .rak-advanced > summary {
+	cursor: var(--cursor);
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	padding: 8px 0;
+	list-style-position: inside;
+}
+.rak-ai .rak-advanced[open] > summary { color: var(--text-normal); }

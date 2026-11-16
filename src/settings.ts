@@ -1,10 +1,11 @@
 import { App, PluginSettingTab, SecretComponent, Setting, type SettingDefinitionItem } from "obsidian";
 import PolyglotHelper from "./main";
 // clearCache已移除
-import { Notice, requestUrl } from 'obsidian';
+import { Notice } from 'obsidian';
 import { ApiConfig, EnglishSections, PolyglotHelperSettings } from "./types";
 import type { KeyField } from './secrets';
-import { PROVIDERS, normalizeEndpoint, presetFor, testConnection } from './ai/providers';
+import { aiLang } from './ai/kit';
+import { renderAiSettings } from './vendor/rex-ai-kit/settingsUI';
 import { tr } from './shared/i18n';
 
 import { fire } from './shared/fire';
@@ -86,10 +87,12 @@ export class PolyglotSettingTab extends PluginSettingTab {
 	hide(): void {
 		this.stopGroupMarks?.();
 		this.stopGroupMarks = null;
+		this.clearAiGroups();
 	}
 
 	private renderPage(containerEl: HTMLElement): void {
 		this.host = containerEl;
+		this.clearAiGroups();
 		containerEl.empty();
 		containerEl.addClass('ap', 'ap-settings', 'polyglot-settings');
 
@@ -297,19 +300,47 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		this.createLanguagePathSettings(containerEl, tr('快捷翻译', 'Quick translation'), 'quickTranslationOutputSettings');
 	}
 
-	/** 一套 AI 配置：服务商、密钥、接口地址、模型分开填，可以单独测试。 */
+	/** The shared AI groups drawn on this page; destroyed before a redraw so no request outlives its card. */
+	private aiGroups: { destroy(): void }[] = [];
+
+	private clearAiGroups() {
+		for (const group of this.aiGroups) group.destroy();
+		this.aiGroups = [];
+	}
+
+	private configSummary(config: ApiConfig): string {
+		const provider = this.plugin.ai.provider(config.ai).name;
+		const parts = [config.name === provider ? '' : provider, this.plugin.ai.hasKey(config.ai) ? config.ai.model || tr('未选模型', 'no model') : tr('还没选密钥', 'no key yet')].filter(Boolean);
+		// A full-width bracket already leaves room; no extra space before the dot.
+		return parts.join(' · ').replace(/） · /g, '）· ');
+	}
+
+	/** A feature pointing at a configuration that was just turned off moves to the first one still on, and says so. */
+	private reassignSelectors(off: ApiConfig) {
+		const next = this.plugin.settings.apiConfigs.find((c) => c.enabled && c !== off);
+		const labels: Record<keyof PolyglotHelperSettings['apiSelectors'], string> = {
+			quickTranslation: tr('快速翻译', 'Quick translation'),
+			englishAnalysis: tr('英语分析', 'English analysis'),
+			japaneseAnalysis: tr('日语分析', 'Japanese analysis'),
+		};
+		const moved: string[] = [];
+		for (const key of Object.keys(labels) as (keyof typeof labels)[]) {
+			if (this.plugin.settings.apiSelectors[key] === off.name && next) {
+				this.plugin.settings.apiSelectors[key] = next.name;
+				moved.push(labels[key]);
+			}
+		}
+		if (moved.length && next) new Notice(tr(`${moved.join('、')}改用“${next.name}”。`, `${moved.join(', ')} now use "${next.name}".`));
+	}
+
+	/** 一套 AI 配置：名称和开关，下面是各插件共用的“AI 服务”分组（服务商、钥匙串密钥和检查、模型）。 */
 	private renderApiConfigCard(containerEl: HTMLElement, config: ApiConfig, index: number) {
 		const card = containerEl.createDiv({ cls: 'api-config-container' });
 		const save = () => this.plugin.saveSettings();
-		const preset = presetFor(config.provider);
 
 		const head = new Setting(card)
 			.setName(config.name)
-			.setDesc(
-				config.apiKey
-					? tr(`${preset.label} · ${config.model || '未填模型'} · 已选密钥`, `${preset.label} · ${config.model || 'no model'} · key set`)
-					: tr(`${preset.label} · 还没有密钥`, `${preset.label} · no key yet`),
-			)
+			.setDesc(this.configSummary(config))
 			.setHeading()
 			.addToggle((toggle) =>
 				toggle
@@ -317,6 +348,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 					.setValue(config.enabled)
 					.onChange(async (value) => {
 						config.enabled = value;
+						if (!value) this.reassignSelectors(config);
 						await save();
 						this.redraw();
 					}),
@@ -341,95 +373,6 @@ export class PolyglotSettingTab extends PluginSettingTab {
 		}
 
 		new Setting(card)
-			.setName(tr('服务商', 'Provider'))
-			.setDesc(tr('选好后自动填接口地址和默认模型。', 'Fills in the endpoint and default model.'))
-			.addDropdown((dropdown) => {
-				for (const option of PROVIDERS) dropdown.addOption(option.id, option.label);
-				dropdown.setValue(preset.id).onChange(async (value) => {
-					const next = presetFor(value);
-					config.provider = next.id;
-					if (next.id !== 'custom') {
-						config.baseUrl = next.endpoint;
-						config.model = next.model;
-					}
-					await save();
-					this.redraw();
-				});
-			});
-
-		const keySetting = new Setting(card).setName(tr('密钥', 'API key'));
-		// The heading above says whether a key is set, so draw the card again after a change.
-		this.addKeyPicker(keySetting, config.apiKeySecret, (name) => {
-			config.apiKeySecret = name;
-		}, true);
-		if (config.apiKeySecret && !config.apiKey) {
-			keySetting.descEl.appendText(tr(`这台设备的钥匙串里没有「${config.apiKeySecret}」，请重新选择或新建。`, `"${config.apiKeySecret}" is not in this device's Keychain. Choose or create a key.`));
-		} else if (preset.keyUrl) {
-			const desc = keySetting.descEl;
-			desc.appendText(tr('在这里申请：', 'Get one here: '));
-			desc.createEl('a', { text: preset.label, href: preset.keyUrl });
-		}
-
-		new Setting(card)
-			.setName(tr('接口地址', 'Endpoint'))
-			.setDesc(tr('只填到 /v1 也可以，会自动补全。', 'A base URL ending in /v1 is fine; the rest is added.'))
-			.addText((text) =>
-				text
-					.setPlaceholder(tr('例如 https://api.deepseek.com', 'For example https://api.deepseek.com'))
-					.setValue(config.baseUrl)
-					.onChange(async (value) => {
-						config.baseUrl = normalizeEndpoint(value);
-						await save();
-					}),
-			);
-
-		new Setting(card)
-			.setName(tr('模型', 'Model'))
-			.addText((text) =>
-				text
-					.setPlaceholder(preset.model || 'model-name')
-					.setValue(config.model)
-					.onChange(async (value) => {
-						config.model = value.trim();
-						await save();
-					}),
-			);
-
-		const result = card.createDiv({ cls: 'ph-test-result' });
-		new Setting(card)
-			.setName(tr('测试连接', 'Test connection'))
-			.setDesc(
-				tr(
-					'发一次只有几个字的请求，确认密钥、地址和模型都能用。会产生不到一分钱的费用。',
-					'Sends one request of a few words to check the key, endpoint and model. It costs a tiny fraction of a cent.',
-				),
-			)
-			.addButton((button) =>
-				button.setButtonText(tr('测试', 'Test')).onClick(async () => {
-					button.setDisabled(true);
-					result.empty();
-					result.removeClass('is-ok', 'is-error');
-					result.setText(tr('测试中…', 'Testing…'));
-					const outcome = await testConnection({ apiKey: config.apiKey ?? '', baseUrl: config.baseUrl, model: config.model }, async (request) => {
-						const response = await requestUrl({ ...request, throw: false });
-						return { status: response.status, text: response.text };
-					});
-					result.empty();
-					if (outcome.ok) {
-						result.addClass('is-ok');
-						result.setText(tr(`能用，用时 ${outcome.ms} 毫秒。`, `Works, ${outcome.ms} ms.`));
-					} else {
-						result.addClass('is-error');
-						result.createEl('strong', { text: outcome.message });
-						result.createSpan({ text: ` ${outcome.fix}` });
-					}
-					button.setDisabled(false);
-				}),
-			);
-		// 结果显示在按钮那一行下面
-		card.appendChild(result);
-
-		new Setting(card)
 			.setName(tr('配置名称', 'Name'))
 			.setDesc(tr('下面“各功能用哪套”按这个名字选。', 'Used when choosing a configuration for each feature below.'))
 			.addText((text) =>
@@ -442,9 +385,27 @@ export class PolyglotSettingTab extends PluginSettingTab {
 						}
 					}
 					config.name = name;
+					head.setName(name);
 					await save();
 				}),
 			);
+
+		this.aiGroups.push(renderAiSettings(card, {
+			app: this.app,
+			client: this.plugin.ai,
+			slot: config.ai,
+			scene: 'balanced',
+			lang: aiLang(),
+			heading: false,
+			// Translation and analysis are text only, so Claude Code and Codex on this computer can do them.
+			allowLocalAgents: true,
+			onChange: async (slot) => {
+				config.ai = slot;
+				await save();
+				head.setDesc(this.configSummary(config));
+			},
+		}));
+
 	}
 
 	private displayTranslationSettings(containerEl: HTMLElement) {
@@ -465,13 +426,10 @@ export class PolyglotSettingTab extends PluginSettingTab {
 			.setName(tr('添加一套 AI 配置', 'Add an AI configuration'))
 			.addButton((button) =>
 				button.setButtonText(tr('添加', 'Add')).onClick(async () => {
-					const preset = presetFor('deepseek');
 					this.plugin.settings.apiConfigs.push({
-						name: uniqueConfigName(this.plugin.settings.apiConfigs, preset.label),
-						provider: preset.id,
-						baseUrl: preset.endpoint,
-						model: preset.model,
+						name: uniqueConfigName(this.plugin.settings.apiConfigs, 'OpenAI'),
 						enabled: true,
+						ai: { provider: 'openai', model: 'gpt-6-luna' },
 					});
 					await this.plugin.saveSettings();
 					this.redraw();
@@ -479,7 +437,7 @@ export class PolyglotSettingTab extends PluginSettingTab {
 			);
 
 		// --- 功能API选择器 ---
-		new Setting(containerEl).setName(tr('功能API选择', 'AI configuration for each feature')).setHeading();
+		new Setting(containerEl).setName(tr('各功能用哪套', 'AI configuration for each feature')).setHeading();
 
 		const enabledConfigs = this.plugin.settings.apiConfigs.filter(config => config.enabled);
 

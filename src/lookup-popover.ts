@@ -2,14 +2,13 @@ import { Notice, TFile, setIcon } from "obsidian";
 import type PolyglotHelper from "./main";
 import { getDictionaryInfoTS } from "./apis/dictionary";
 import { getJishoInfoTS } from "./apis/jisho";
-import { chatContent, postChatCompletion } from "./apis/llm";
+import { chat, isUsable } from "./ai/kit";
 import type { DictionaryInfo } from "./types";
 
 import { fire } from "./shared/fire";
 import { tr } from './shared/i18n';
 import { showSenseMenu } from './ui/sense-menu';
 import { FIRST_WORD_NOTICE } from './shared/notices';
-import { temperatureFor } from './ai/sampling';
 interface LookupResult {
     reading: string;
     pos: string;
@@ -221,18 +220,16 @@ export class LookupPopover {
 
     private async askModel(prompt: string): Promise<Record<string, string> | null> {
         const config = this.plugin.tryGetApiConfig('quickTranslation');
-        if (!config?.apiKey || !config.baseUrl) return null;
+        if (!isUsable(config)) return null;
         try {
-            const res = await postChatCompletion(config.baseUrl, config.apiKey, {
-                model: config.model,
-                ...temperatureFor(config.model, 0),
-                messages: [
-                    { role: 'system', content: 'You are a concise bilingual dictionary. Output strict JSON only.' },
-                    { role: 'user', content: prompt },
-                ],
-            }, LLM_TIMEOUT_MS);
-            if (res.status !== 200) return null;
-            const raw = chatContent(res).replace(/```(?:json)?\s*([\s\S]*?)\s*```/g, '$1').trim();
+            const reply = await chat(config, {
+                system: 'You are a concise bilingual dictionary. Output strict JSON only.',
+                user: prompt,
+                temperature: 0,
+                json: true,
+                timeoutMs: LLM_TIMEOUT_MS,
+            });
+            const raw = reply.replace(/```(?:json)?\s*([\s\S]*?)\s*```/g, '$1').trim();
             const parsed = JSON.parse(raw) as unknown;
             if (!parsed || typeof parsed !== 'object') return null;
             // 只留字符串字段
