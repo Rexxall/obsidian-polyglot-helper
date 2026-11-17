@@ -7,7 +7,7 @@
   <img src="assets/readme/hero-light.svg" width="100%" alt="Polyglot Helper：読んでいる場所で単語を調べ、保存して復習します。「蔵書」の単語カードに読みの「ぞうしょ」、本のコレクションという意味、「Add to word list」ボタンが表示されています。">
 </picture>
 
-<p align="center"><a href="https://community.obsidian.md/plugins/polyglot-helper"><b>Obsidian からインストール</b></a></p>
+<p align="center"><a href="https://community.obsidian.md/plugins/polyglot-helper"><b>Obsidian からインストール</b></a> · <a href="https://rexxall.github.io/polyglot-helper/">使い方を見る</a></p>
 
 <img src="assets/readme/demo.webp" width="100%" alt="Kaede Books についての日本語の段落がある Ithaca の日記。編集ビューで「蔵書」を選び、コマンドパレットから「Quick word card」を選ぶと、ぞうしょ、collection of books; (personal) library のカードが出ます。「Add to word list」を押すと、閲覧ビューで「蔵書」に下線が付き、ポインタを重ねると読みと意味、保存元の日記が表示されます。">
 

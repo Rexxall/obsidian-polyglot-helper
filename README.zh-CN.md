@@ -7,7 +7,7 @@
   <img src="assets/readme/hero-zh-light.svg" width="100%" alt="Polyglot Helper：在读的地方查词，存下来，下次读到还认得。图中是 蔵書（ぞうしょ，藏书）的词卡和“加入生词本”按钮。">
 </picture>
 
-<p align="center"><a href="https://community.obsidian.md/plugins/polyglot-helper"><b>在 Obsidian 里安装</b></a></p>
+<p align="center"><a href="https://community.obsidian.md/plugins/polyglot-helper"><b>在 Obsidian 里安装</b></a> · <a href="https://rexxall.github.io/polyglot-helper/">看它怎么用</a></p>
 
 <img src="assets/readme/demo.webp" width="100%" alt="一篇 Ithaca 日记里有一段写 Kaede Books 的日文。在编辑视图选中“蔵書”，从命令面板选“查词小卡”，卡片显示 ぞうしょ、collection of books; (personal) library。点“加入生词本”后，阅读视图里“蔵書”带上下划线，指针停上去显示读音和意思，并注明出自那天的日记。">
 

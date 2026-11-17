@@ -7,7 +7,7 @@
   <img src="assets/readme/hero-light.svg" width="100%" alt="Polyglot Helper: look up a word where you read, keep it, and meet it again. A word card for 蔵書 (ぞうしょ, collection of books) with Add to word list.">
 </picture>
 
-<p align="center"><a href="https://community.obsidian.md/plugins/polyglot-helper"><b>Install from Obsidian</b></a></p>
+<p align="center"><a href="https://community.obsidian.md/plugins/polyglot-helper"><b>Install from Obsidian</b></a> · <a href="https://rexxall.github.io/polyglot-helper/">See how it works</a></p>
 
 <img src="assets/readme/demo.webp" width="100%" alt="An Ithaca diary page with a Japanese paragraph about Kaede Books. In editing view, 蔵書 is selected, Quick word card is chosen from the command palette, and the card shows ぞうしょ, collection of books; (personal) library. After Add to word list, reading view underlines 蔵書, and pointing at it shows the reading and meaning, saved from that day’s note.">
 
