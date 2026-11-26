@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.12.0
 
 - **Every AI configuration uses the shared AI service.** OpenAI, Anthropic and Gemini come first, then DeepSeek, OpenRouter, Qwen, Kimi, Zhipu, SiliconFlow, Ollama, LM Studio, Claude Code and Codex on this computer, and any OpenAI-compatible server. Keys are picked from Obsidian's Keychain under shared names, so a key saved once serves every plugin. **Check** lists the models the key can use and shows the balance where the provider offers one; the model menu puts recommended picks first. New configurations start on OpenAI `gpt-6-luna`.
 - Your configurations, their names, models and on/off state, and which one each feature uses, move over on first start. The old single English and OpenAI settings become a configuration only if a key was chosen for them; speech and dictionary keys are unchanged.
